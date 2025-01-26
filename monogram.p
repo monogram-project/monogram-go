@@ -14,6 +14,7 @@ compile_mode :pop11 +strict;
 ;;;     8. Identifiers                          false               "id"
 
 vars glue_chartype = false;
+vars unglue_option = false;
 
 define is_open_bracket( word );
     returnif( word == "(" )( ")" );
@@ -126,15 +127,6 @@ enddefine;
 
 vars procedure read_expr, read_expr_prec;
 
-;;;     0. Comments - # ...                     N/A                 N/A
-;;;     1. Literals - strings, numbers          false               false
-;;;     2. Separators - comma, semi-colon       false               "sep"
-;;;     3. Open Brackets - ( { [                true                "open"
-;;;     4. Close Brackets - ] } )               false               "close"
-;;;     5. End Form - endXXX                    false               "end"
-;;;     6. Keywords - foo: foo?                 false               "keyword"
-;;;     7. Signs - + / %                        true                "sign"
-;;;     8. Identifiers                          false               "id"
 define read_form_expr(opening_word);
     ;;; [read_form_expr ^opening_word] =>
     lvars closing_keywords = [% "end", "end" <> opening_word %];
@@ -237,6 +229,15 @@ define read_expr_prec(prec);
                 lvars dname = delimiter_name( item1 );
                 [apply ^dname ^lhs ^args] -> lhs;
             else
+                if unglue_option and not( proglist.null ) then
+                    lvars next_item = proglist.hd;
+                    if next_item.isword and next_item.is_form_keyword then
+                        ;;; This would normally be an automatic fail. But if
+                        ;;; we allow ungluing then parsing can try to continue.
+                        lvars unglued = consword(#| next_item.destword.erase.erase |#);
+                        conspair( unglued, conspair( unglue_option, tl( proglist ) ) ) -> proglist;
+                    endif
+                endif;
                 lvars rhs = read_expr_prec( p );
                 [operator ^item1 ^lhs ^rhs] -> lhs;
             endif
@@ -276,7 +277,9 @@ define glue( procedure itemiser );
     endprocedure
 enddefine;
 
-define monogram(procedure source);
+
+define monogram(procedure source, unglue);
+    dlocal unglue_option = unglue;
 
     ;;; Might not need this.
     unless glue_chartype do
