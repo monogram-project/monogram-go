@@ -10,9 +10,10 @@ compile_mode :pop11 +strict;
 ;;;     4. Close Brackets - ] } )               false               "close"
 ;;;     5. Start Form - XXX                     false               "start"
 ;;;     6. End Form - endXXX                    false               "end"
-;;;     7. Keywords - foo: foo?                 false               "keyword"
-;;;     8. Signs - + / %                        true                "sign"
-;;;     9. Identifiers                          false               "id"
+;;;     7. Force - !                            false           1   "force"
+;;;     8. Keywords - foo: foo?                 false               "keyword"
+;;;     9. Signs - + / %                        true                "sign"
+;;;    10. Identifiers                          false               "id"
 
 vars unglue_option = false;
 vars optional_statement_separator_option = false;
@@ -74,6 +75,7 @@ define classify_item( item, next_item );
     returnif( L == 0 )( false );
     if L == 1 then
         lvars ch_first = subscrw( 1, item );
+        returnif( ch_first == `!` )( "force" );
         returnif( locchar( ch_first, 1, '({[' ) )( "open" );
         returnif( locchar( ch_first, 1, ']})' ) )( "close" );
         returnif( ch_first == `,` or ch_first == `;` )( "sep" );
@@ -179,7 +181,35 @@ enddefine;
 
 define read_primary_expr();
     lvars item = readitem();
-    if item == "!" then
+    lvars tokentype = classify_item( item, peek_item() );
+    returnunless( tokentype )( [constant ^item] );
+    if tokentype == "keyword" and unglue_option then
+        lvars reclassified_tokentype = classify_item( item, unglue_option );
+        if reclassified_tokentype == "id" then
+            reclassified_tokentype -> tokentype;
+            unglue_option :: proglist -> proglist
+        endif
+    endif;
+    if tokentype == "open" then
+        lvars expr = read_expr();
+        pop11_need_nextreaditem( item.is_open_bracket ) -> _;
+        lvars dname = delimiter_name( item );
+        [delimited ^dname ^expr]
+    elseif tokentype == "start" then
+        read_form_expr( item )
+    elseif tokentype == "id" then
+        ;;; The interpretation depends on what comes next.
+        if null(proglist) then
+            [identifier ^item]
+        else
+            lvars item1 = proglist.hd;
+            if is_form_opening( item1, peek_nth_item(2) ) then
+                read_form_expr( item )
+            else
+                [identifier ^item]
+            endif
+        endif
+    elseif tokentype == "force" then
         lvars item1 = readitem();
         if item1.isword then
             [form [part ^item1]]
@@ -187,37 +217,7 @@ define read_primary_expr();
             mishap( 'Identifier required following `!`', [^item] )
         endif
     else
-        lvars tokentype = classify_item( item, peek_item() );
-        returnunless( tokentype )( [constant ^item] );
-        if tokentype == "keyword" and unglue_option then
-            lvars reclassified_tokentype = classify_item( item, unglue_option );
-            if reclassified_tokentype == "id" then
-                reclassified_tokentype -> tokentype;
-                unglue_option :: proglist -> proglist
-            endif
-        endif;
-        if tokentype == "open" then
-            lvars expr = read_expr();
-            pop11_need_nextreaditem( item.is_open_bracket ) -> _;
-            lvars dname = delimiter_name( item );
-            [delimited ^dname ^expr]
-        elseif tokentype == "start" then
-            read_form_expr( item )
-        elseif tokentype == "id" then
-            ;;; The interpretation depends on what comes next.
-            if null(proglist) then
-                [identifier ^item]
-            else
-                lvars item1 = proglist.hd;
-                if is_form_opening( item1, peek_nth_item(2) ) then
-                    read_form_expr( item )
-                else
-                    [identifier ^item]
-                endif
-            endif
-        else
-            mishap( 'Unexpected token at start of expression', [^item] )
-        endif
+        mishap( 'Unexpected token at start of expression', [^item] )
     endif
 enddefine;
 
