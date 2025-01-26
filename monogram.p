@@ -259,11 +259,11 @@ define glue( procedure itemiser );
             lvars ch = nextchar( itemiser );
             ch -> nextchar( itemiser );
             ;;; [peekchar ^item ^ch] =>
-            if ch == `:` then
+            if ch == `:` or ch == `?` then
                 lvars item1 = itemiser();
                 ;;; [peekitem ^item1] =>
-                if item1 == ":" then
-                    item <> ":"
+                if item1 == ":" or item1 == "?" then
+                    item <> item1
                 else
                     item1.fast_word_string -> nextchar( itemiser );
                     item
