@@ -8,13 +8,15 @@ compile_mode :pop11 +strict;
 ;;;     2. Separators - comma, semi-colon       false               "sep"
 ;;;     3. Open Brackets - ( { [                true                "open"
 ;;;     4. Close Brackets - ] } )               false               "close"
-;;;     5. End Form - endXXX                    false               "end"
-;;;     6. Keywords - foo: foo?                 false               "keyword"
-;;;     7. Signs - + / %                        true                "sign"
-;;;     8. Identifiers                          false               "id"
+;;;     5. Start Form - XXX                     false               "start"
+;;;     6. End Form - endXXX                    false               "end"
+;;;     7. Keywords - foo: foo?                 false               "keyword"
+;;;     8. Signs - + / %                        true                "sign"
+;;;     9. Identifiers                          false               "id"
 
 vars unglue_option = false;
 vars optional_statement_separator_option = false;
+vars inferred_form_starts = [];
 
 define peek_item();
     not( null( proglist ) ) and proglist.hd
@@ -79,7 +81,9 @@ define classify_item( item, next_item );
     endif;
     returnif( item.is_form_end )( "end" );
     returnif( item.is_sign )( "sign" );
-    if next_item == ":" or next_item == "?" then
+    if fast_lmember( item, inferred_form_starts ) then
+        "start"
+    elseif next_item == ":" or next_item == "?" then
         "keyword"
     else
         "id"
@@ -111,6 +115,7 @@ constant max_precedence = 999;
 define precedence( item );
     returnunless( item.isword )( false );
     returnunless( item.is_sign or item.is_open_bracket )( false );
+    returnif( item == ":" )( false );
     lvars n = datalength( item );
     if n > 0 then
         lvars ch = subscrw( 1, item );
@@ -147,6 +152,11 @@ define read_form_expr(opening_word);
                 lvars item1 = proglist.hd;
                 lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
                 ;;; [peek ^item1 ^tokentype1] =>
+                if item1 == ":" and unglue_option then
+                    unglue_option :: proglist -> proglist;
+                    unglue_option -> item1;
+                    "keyword" -> tokentype1;
+                endif;
                 if tokentype1 == "sep" or tokentype1 == "sign" or tokentype1 == "close" then
                     mishap( 'Unexpected item at start of expression (in ' >< opening_word >< ')', [^item1] )
                 elseif tokentype1 == "end" then
@@ -199,6 +209,8 @@ define read_primary_expr();
             pop11_need_nextreaditem( item.is_open_bracket ) -> _;
             lvars dname = delimiter_name( item );
             [delimited ^dname ^expr]
+        elseif tokentype == "start" then
+            read_form_expr( item )
         elseif tokentype == "id" then
             ;;; The interpretation depends on what comes next.
             if null(proglist) then
@@ -213,7 +225,7 @@ define read_primary_expr();
                 endif
             endif
         else
-            [mishap ^item ^tokentype] =>
+            ;;; [mishap ^item ^tokentype] =>
             mishap( 'Unexpected token at start of expression', [^item] )
         endif
     endif
@@ -305,15 +317,28 @@ define glue( procedure itemiser );
     endprocedure
 enddefine;
 
+define infer_form_starts( dlist );
+    [%
+        lvars w;
+        for w in dlist do
+            if w.isword and is_form_end( w ) and w /== "end" then
+                subword( 4, datalength( w ) - 3, w )
+            endif
+        endfor
+    %]
+enddefine;
+
 define monogram(procedure source, unglue, opt_seps);
     dlocal unglue_option = unglue;
     dlocal optional_statement_separator_option = opt_seps;
+    dlocal inferred_form_starts;
 
     lvars procedure itemiser = incharitem(source);
     5 -> item_chartype( `;`, itemiser );
     9 -> item_chartype( `#`, itemiser );
 
     dlocal proglist = pdtolist(itemiser);
-    
+    infer_form_starts( proglist ) -> inferred_form_starts;
+
     read_expr()
 enddefine;
