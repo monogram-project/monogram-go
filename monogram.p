@@ -69,7 +69,6 @@ define is_form_end( word );
 enddefine;
 
 define classify_item( item, next_item );
-    ;;; [classify_item ^item ^next_item] =>
     returnunless( item.isword )( false );
     lvars L = datalength( item );
     returnif( L == 0 )( false );
@@ -92,7 +91,6 @@ enddefine;
 
 define is_form_opening( next_item, item_after );
     lvars tokentype = classify_item( next_item, item_after );
-    ;;; [is_form_opening ^next_item ^tokentype] =>
     not( tokentype ) or tokentype == "id"
 enddefine;
 
@@ -138,20 +136,17 @@ enddefine;
 vars procedure read_expr, read_expr_prec;
 
 define read_form_expr(opening_word);
-    ;;; [read_form_expr ^opening_word] =>
     lvars closing_keywords = [% "end", "end" <> opening_word %];
     lvars current_part = [];
     lvars current_keyword = opening_word;
     lvars contents = [%
         lvars first_expr = true;
         until pop11_try_nextreaditem( closing_keywords ) do
-            ;;; [current_part ^current_part] =>
             if proglist.null then
                 mishap( 'Unexpected end of file while reading form', [^opening_word])
             else
                 lvars item1 = proglist.hd;
                 lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
-                ;;; [peek ^item1 ^tokentype1] =>
                 if item1 == ":" and unglue_option then
                     unglue_option :: proglist -> proglist;
                     unglue_option -> item1;
@@ -160,10 +155,8 @@ define read_form_expr(opening_word);
                 if tokentype1 == "sep" or tokentype1 == "sign" or tokentype1 == "close" then
                     mishap( 'Unexpected item at start of expression (in ' >< opening_word >< ')', [^item1] )
                 elseif tokentype1 == "end" then
-                    ;;; [closing_keywords ^closing_keywords] =>
                     mishap( 'Mismatched closing keyword', [^item1] )
                 elseif tokentype1 == "keyword" then
-                    ;;; [keyword ^item1] =>
                     [part ^current_keyword ^^current_part];
                     [] -> current_part;
                     item1 -> current_keyword;
@@ -186,7 +179,6 @@ enddefine;
 
 define read_primary_expr();
     lvars item = readitem();
-    ;;; [show ^item] =>
     if item == "!" then
         lvars item1 = readitem();
         if item1.isword then
@@ -218,14 +210,12 @@ define read_primary_expr();
             else
                 lvars item1 = proglist.hd;
                 if is_form_opening( item1, peek_nth_item(2) ) then
-                    ;;; [form opening ^item] =>
                     read_form_expr( item )
                 else
                     [identifier ^item]
                 endif
             endif
         else
-            ;;; [mishap ^item ^tokentype] =>
             mishap( 'Unexpected token at start of expression', [^item] )
         endif
     endif
@@ -247,11 +237,9 @@ enddefine;
 
 define read_expr_prec(prec);
     lvars lhs = read_primary_expr();
-    ;;; [lhs ^lhs] =>
     until null( proglist ) do
         lvars item1 = proglist.hd;
         lvars p = precedence( item1 );
-        ;;; [prec ^item1 ^p] =>
         if p and p <= prec then
             proglist.tl -> proglist;
             lvars close_bracket = false;
@@ -260,7 +248,6 @@ define read_expr_prec(prec);
                 lvars dname = delimiter_name( item1 );
                 [apply ^dname ^lhs ^args] -> lhs;
             elseif item1 == "." then
-                ;;; [FOUND .] =>
                 lvars item2 = readitem();
                 lvars tokentype2 = classify_item( item2, peek_item() );
                 if tokentype2 == "id" then
@@ -276,7 +263,6 @@ define read_expr_prec(prec);
                 else
                     mishap( 'Unexpected item after `.`', [^item2] )
                 endif;
-                ;;; [DONE .] =>
             else
                 lvars rhs = read_expr_prec( p );
                 [operator ^item1 ^lhs ^rhs] -> lhs;
@@ -298,10 +284,8 @@ define glue( procedure itemiser );
         if item.isword then
             lvars ch = nextchar( itemiser );
             ch -> nextchar( itemiser );
-            ;;; [peekchar ^item ^ch] =>
             if ch == `:` or ch == `?` then
                 lvars item1 = itemiser();
-                ;;; [peekitem ^item1] =>
                 if item1 == ":" or item1 == "?" then
                     item <> item1
                 else
