@@ -40,6 +40,7 @@ enddefine;
 define is_sign( word );
     lvars ch;
     for ch in_vectorclass word.fast_word_string do
+        nextif( ch == `.` );
         lvars n = item_chartype(ch);
         nextif( n == 3 or n == 10 or n == 11 or n == glue_chartype );
         return( false );
@@ -228,6 +229,24 @@ define read_expr_prec(prec);
                 lvars args = read_arguments( close_bracket );
                 lvars dname = delimiter_name( item1 );
                 [apply ^dname ^lhs ^args] -> lhs;
+            elseif item1 == "." then
+                ;;; [FOUND .] =>
+                lvars item2 = readitem();
+                lvars tokentype2 = classify_item( item2 );
+                if tokentype2 == "id" then
+                    lvars item3 = not( proglist.null ) and proglist.hd;
+                    if item3.is_open_bracket ->> close_bracket then
+                        proglist.tl -> proglist;
+                        lvars args = read_arguments( close_bracket );
+                        lvars dname = delimiter_name( item3 );
+                        [invoke ^dname ^item2 ^lhs ^args] -> lhs
+                    else
+                        [get ^item2 ^lhs] -> lhs
+                    endif
+                else
+                    mishap( 'Unexpected item after `.`', [^item2] )
+                endif;
+                ;;; [DONE .] =>
             else
                 if unglue_option and not( proglist.null ) then
                     lvars next_item = proglist.hd;
@@ -276,7 +295,6 @@ define glue( procedure itemiser );
         endif
     endprocedure
 enddefine;
-
 
 define monogram(procedure source, unglue);
     dlocal unglue_option = unglue;
