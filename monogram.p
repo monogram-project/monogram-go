@@ -16,6 +16,20 @@ compile_mode :pop11 +strict;
 vars glue_chartype = false;
 vars unglue_option = false;
 
+define peek_item();
+    not( null( proglist ) ) and proglist.hd
+enddefine;
+
+define peek_nth_item( n );
+    lvars PL = proglist;
+    while n > 1 do
+        returnif( null( PL ) )( false );
+        PL.tl -> PL;
+        n - 1 -> n;
+    endwhile;
+    not( null( PL ) ) and PL.hd    
+enddefine;
+
 define is_open_bracket( word );
     returnif( word == "(" )( ")" );
     returnif( word == "{" )( "}" );
@@ -52,21 +66,8 @@ define is_form_end( word );
     isstartstring( 'end', word )
 enddefine;
 
-define is_form_keyword( word );
-    lvars L = datalength( word );
-    returnif( L == 0 )( false );
-    lvars ch = subscrw( L, word );
-    ch == `:` or ch == `?`
-enddefine;
-
-define is_identifier( word );
-    returnif( word.is_sign )( false );
-    returnif( word.is_open_bracket or word.is_close_bracket )( false );
-    returnif( word.is_form_end )( false );
-    true
-enddefine;
-
-define classify_item( item );
+define classify_item( item, next_item );
+    ;;; [classify_item ^item ^next_item] =>
     returnunless( item.isword )( false );
     lvars L = datalength( item );
     returnif( L == 0 )( false );
@@ -76,14 +77,17 @@ define classify_item( item );
         returnif( locchar( ch_first, 1, ']})' ) )( "close" );
         returnif( ch_first == `,` or ch_first == `;` )( "sep" );
     endif;
-    returnif( item.is_form_keyword )( "keyword" );
     returnif( item.is_form_end )( "end" );
     returnif( item.is_sign )( "sign" );
-    "id"
+    if next_item == ":" or next_item == "?" then
+        "keyword"
+    else
+        "id"
+    endif
 enddefine;
 
-define is_form_opening( next_item );
-    lvars tokentype = classify_item( next_item );
+define is_form_opening( next_item, item_after );
+    lvars tokentype = classify_item( next_item, item_after );
     ;;; [is_form_opening ^next_item ^tokentype] =>
     not( tokentype ) or tokentype == "id"
 enddefine;
@@ -140,11 +144,10 @@ define read_form_expr(opening_word);
                 mishap( 'Unexpected end of file while reading form', [^opening_word])
             else
                 lvars item1 = proglist.hd;
-                ;;; [peek ^item1] =>
-                lvars tokentype1 = classify_item( item1 );
-                ;;; [tt ^tokentype1] =>
+                lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
+                ;;; [peek ^item1 ^tokentype1] =>
                 if tokentype1 == "sep" or tokentype1 == "sign" or tokentype1 == "close" then
-                    mishap( 'Unexpected item at start of expression', [^item1] )
+                    mishap( 'Unexpected item at start of expression (in ' >< opening_word >< ')', [^item1] )
                 elseif tokentype1 == "end" then
                     ;;; [closing_keywords ^closing_keywords] =>
                     mishap( 'Mismatched closing keyword', [^item1] )
@@ -153,7 +156,8 @@ define read_form_expr(opening_word);
                     [part ^current_keyword ^^current_part];
                     [] -> current_part;
                     item1 -> current_keyword;
-                    proglist.tl -> proglist;
+                    ;;; Skip the `:` or `?`.
+                    proglist.tl.tl -> proglist;
                 else
                     current_part <> [% read_expr() %] -> current_part;
                 endif
@@ -162,20 +166,6 @@ define read_form_expr(opening_word);
         [part ^current_keyword ^^current_part];
     %];
     [form ^^contents]
-enddefine;
-
-;;; You should only calll this in a situation where a form-keyword would
-;;; cause the parse to fail. It will unglue the colon/query and inject the
-;;; unglue-ing token and this gives the parse a second-chance at continuing.
-;;; The motivation is to imitate Python's keywordless-colon.
-define unglue_if_needed();
-    if unglue_option and not( proglist.null ) then
-        lvars next_item = proglist.hd;
-        if next_item.isword and next_item.is_form_keyword then
-            lvars unglued = consword(#| next_item.destword.erase.erase |#);
-            conspair( unglued, conspair( unglue_option, tl( proglist ) ) ) -> proglist;
-        endif
-    endif;
 enddefine;
 
 define read_primary_expr();
@@ -189,11 +179,11 @@ define read_primary_expr();
             mishap( 'Identifier required following `!`', [^item] )
         endif
     else
-        lvars tokentype = classify_item( item );
+        lvars tokentype = classify_item( item, peek_item() );
         returnunless( tokentype )( [constant ^item] );
         if tokentype == "open" then
             lvars expr = read_expr();
-            pop11_need_nextreaditem( item.is_open_bracket ) -> _;        
+            pop11_need_nextreaditem( item.is_open_bracket ) -> _;
             lvars dname = delimiter_name( item );
             [delimited ^dname ^expr]
         elseif tokentype == "id" then
@@ -202,7 +192,7 @@ define read_primary_expr();
                 [identifier ^item]
             else
                 lvars item1 = proglist.hd;
-                if item1.is_form_opening then
+                if is_form_opening( item1, peek_nth_item(2) ) then
                     ;;; [form opening ^item] =>
                     read_form_expr( item )
                 else
@@ -210,6 +200,7 @@ define read_primary_expr();
                 endif
             endif
         else
+            [mishap ^item ^tokentype] =>
             mishap( 'Unexpected token at start of expression', [^item] )
         endif
     endif
@@ -246,7 +237,7 @@ define read_expr_prec(prec);
             elseif item1 == "." then
                 ;;; [FOUND .] =>
                 lvars item2 = readitem();
-                lvars tokentype2 = classify_item( item2 );
+                lvars tokentype2 = classify_item( item2, peek_item() );
                 if tokentype2 == "id" then
                     lvars item3 = not( proglist.null ) and proglist.hd;
                     if item3.is_open_bracket ->> close_bracket then
@@ -313,7 +304,7 @@ define monogram(procedure source, unglue);
     lvars procedure itemiser = incharitem(source);
     5 -> item_chartype( `;`, itemiser );
     9 -> item_chartype( `#`, itemiser );
-    
-    dlocal proglist = pdtolist(glue(itemiser));
+
+    dlocal proglist = pdtolist((itemiser));
     read_expr()
 enddefine;
