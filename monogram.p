@@ -43,7 +43,7 @@ define is_sign( word );
         nextif( n == 3 or n == 10 or n == 11 or n == glue_chartype );
         return( false );
     endfor;
-    return( true );
+    return( word /== "!" );
 enddefine;
 
 define is_form_end( word );
@@ -157,7 +157,7 @@ define read_form_expr(opening_word);
                     mishap( 'Mismatched closing keyword', [^item1] )
                 elseif tokentype1 == "keyword" then
                     ;;; [keyword ^item1] =>
-                    current_keyword :: current_part;
+                    [part ^current_keyword ^^current_part];
                     [] -> current_part;
                     item1 -> current_keyword;
                     proglist.tl -> proglist;
@@ -166,36 +166,46 @@ define read_form_expr(opening_word);
                 endif
             endif
         enduntil;
-        current_keyword :: current_part;
+        [part ^current_keyword ^^current_part];
     %];
     [form ^^contents]
 enddefine;
 
 define read_primary_expr();
     lvars item = readitem();
-    lvars tokentype = classify_item( item );
-    returnunless( tokentype )( [constant ^item] );
-    if tokentype == "open" then
-        lvars expr = read_expr();
-        pop11_need_nextreaditem( item.is_open_bracket ) -> _;        
-        lvars dname = delimiter_name( item );
-        [delimited ^dname ^expr]
-    elseif tokentype == "id" then
-        ;;; The interpretation depends on what comes next.
-        if null(proglist) then
-            [identifier ^item]
+    ;;; [show ^item] =>
+    if item == "!" then
+        lvars item1 = readitem();
+        if item1.isword then
+            [form [part ^item1]]
         else
-            lvars item1 = proglist.hd;
-            if item1.is_form_opening then
-                ;;; [form opening ^item] =>
-                read_form_expr( item )
-            else
-                [identifier ^item]
-            endif
+            mishap( 'Identifier required following `!`', [^item] )
         endif
     else
-        mishap( 'Unexpected token at start of expression', [^item] )
-    endif;
+        lvars tokentype = classify_item( item );
+        returnunless( tokentype )( [constant ^item] );
+        if tokentype == "open" then
+            lvars expr = read_expr();
+            pop11_need_nextreaditem( item.is_open_bracket ) -> _;        
+            lvars dname = delimiter_name( item );
+            [delimited ^dname ^expr]
+        elseif tokentype == "id" then
+            ;;; The interpretation depends on what comes next.
+            if null(proglist) then
+                [identifier ^item]
+            else
+                lvars item1 = proglist.hd;
+                if item1.is_form_opening then
+                    ;;; [form opening ^item] =>
+                    read_form_expr( item )
+                else
+                    [identifier ^item]
+                endif
+            endif
+        else
+            mishap( 'Unexpected token at start of expression', [^item] )
+        endif
+    endif
 enddefine;
 
 define read_arguments( close_bracket );
