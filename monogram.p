@@ -164,6 +164,20 @@ define read_form_expr(opening_word);
     [form ^^contents]
 enddefine;
 
+;;; You should only calll this in a situation where a form-keyword would
+;;; cause the parse to fail. It will unglue the colon/query and inject the
+;;; unglue-ing token and this gives the parse a second-chance at continuing.
+;;; The motivation is to imitate Python's keywordless-colon.
+define unglue_if_needed();
+    if unglue_option and not( proglist.null ) then
+        lvars next_item = proglist.hd;
+        if next_item.isword and next_item.is_form_keyword then
+            lvars unglued = consword(#| next_item.destword.erase.erase |#);
+            conspair( unglued, conspair( unglue_option, tl( proglist ) ) ) -> proglist;
+        endif
+    endif;
+enddefine;
+
 define read_primary_expr();
     lvars item = readitem();
     ;;; [show ^item] =>
@@ -248,15 +262,7 @@ define read_expr_prec(prec);
                 endif;
                 ;;; [DONE .] =>
             else
-                if unglue_option and not( proglist.null ) then
-                    lvars next_item = proglist.hd;
-                    if next_item.isword and next_item.is_form_keyword then
-                        ;;; This would normally be an automatic fail. But if
-                        ;;; we allow ungluing then parsing can try to continue.
-                        lvars unglued = consword(#| next_item.destword.erase.erase |#);
-                        conspair( unglued, conspair( unglue_option, tl( proglist ) ) ) -> proglist;
-                    endif
-                endif;
+                unglue_if_needed();
                 lvars rhs = read_expr_prec( p );
                 [operator ^item1 ^lhs ^rhs] -> lhs;
             endif
