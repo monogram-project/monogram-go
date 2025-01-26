@@ -13,8 +13,8 @@ compile_mode :pop11 +strict;
 ;;;     7. Signs - + / %                        true                "sign"
 ;;;     8. Identifiers                          false               "id"
 
-vars glue_chartype = false;
 vars unglue_option = false;
+vars optional_statement_separator_option = false;
 
 define peek_item();
     not( null( proglist ) ) and proglist.hd
@@ -56,7 +56,7 @@ define is_sign( word );
     for ch in_vectorclass word.fast_word_string do
         nextif( ch == `.` );
         lvars n = item_chartype(ch);
-        nextif( n == 3 or n == 10 or n == 11 or n == glue_chartype );
+        nextif( n == 3 or n == 10 or n == 11 );
         return( false );
     endfor;
     return( word /== "!" );
@@ -138,6 +138,7 @@ define read_form_expr(opening_word);
     lvars current_part = [];
     lvars current_keyword = opening_word;
     lvars contents = [%
+        lvars first_expr = true;
         until pop11_try_nextreaditem( closing_keywords ) do
             ;;; [current_part ^current_part] =>
             if proglist.null then
@@ -158,8 +159,13 @@ define read_form_expr(opening_word);
                     item1 -> current_keyword;
                     ;;; Skip the `:` or `?`.
                     proglist.tl.tl -> proglist;
+                    true -> first_expr;
                 else
+                    if not( first_expr ) and not( optional_statement_separator_option ) then
+                        mishap( 'Semi-colon expected', [^item1] )
+                    endif;
                     current_part <> [% read_expr() %] -> current_part;
+                    pop11_try_nextreaditem( ";" ) -> first_expr;
                 endif
             endif
         enduntil;
@@ -181,6 +187,13 @@ define read_primary_expr();
     else
         lvars tokentype = classify_item( item, peek_item() );
         returnunless( tokentype )( [constant ^item] );
+        if tokentype == "keyword" and unglue_option then
+            lvars reclassified_tokentype = classify_item( item, unglue_option );
+            if reclassified_tokentype == "id" then
+                reclassified_tokentype -> tokentype;
+                unglue_option :: proglist -> proglist
+            endif
+        endif;
         if tokentype == "open" then
             lvars expr = read_expr();
             pop11_need_nextreaditem( item.is_open_bracket ) -> _;
@@ -253,7 +266,6 @@ define read_expr_prec(prec);
                 endif;
                 ;;; [DONE .] =>
             else
-                unglue_if_needed();
                 lvars rhs = read_expr_prec( p );
                 [operator ^item1 ^lhs ^rhs] -> lhs;
             endif
@@ -293,18 +305,15 @@ define glue( procedure itemiser );
     endprocedure
 enddefine;
 
-define monogram(procedure source, unglue);
+define monogram(procedure source, unglue, opt_seps);
     dlocal unglue_option = unglue;
-
-    ;;; Might not need this.
-    unless glue_chartype do
-        item_newtype() -> glue_chartype
-    endunless;
+    dlocal optional_statement_separator_option = opt_seps;
 
     lvars procedure itemiser = incharitem(source);
     5 -> item_chartype( `;`, itemiser );
     9 -> item_chartype( `#`, itemiser );
 
-    dlocal proglist = pdtolist((itemiser));
+    dlocal proglist = pdtolist(itemiser);
+    
     read_expr()
 enddefine;
