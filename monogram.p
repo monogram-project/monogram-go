@@ -12,8 +12,9 @@ compile_mode :pop11 +strict;
 ;;;     6. End Form - endXXX                    false               "end"
 ;;;     7. Force - !                            false           1   "force"
 ;;;     8. Keywords - foo: foo?                 false               "keyword"
-;;;     9. Signs - + / %                        true                "sign"
-;;;    10. Identifiers                          false               "id"
+;;;     9. Label - : ?                          false               "label"
+;;;    10. Signs - + / %                        true                "sign"
+;;;    11. Identifiers                          false               "id"
 
 vars unglue_option = false;
 vars optional_statement_separator_option = false;
@@ -62,7 +63,7 @@ define is_sign( word );
         nextif( n == 3 or n == 10 or n == 11 );
         return( false );
     endfor;
-    return( word /== "!" );
+    return( word /== "!" and word /== ":" and word /== "?" );
 enddefine;
 
 define is_form_end( word );
@@ -76,6 +77,7 @@ define classify_item( item, next_item );
     if L == 1 then
         lvars ch_first = subscrw( 1, item );
         returnif( ch_first == `!` )( "force" );
+        returnif( ch_first == `:` or ch_first == `?` )( "label" );
         returnif( locchar( ch_first, 1, '({[' ) )( "open" );
         returnif( locchar( ch_first, 1, ']})' ) )( "close" );
         returnif( ch_first == `,` or ch_first == `;` )( "sep" );
@@ -91,7 +93,7 @@ define classify_item( item, next_item );
     endif
 enddefine;
 
-define is_form_opening( next_item, item_after );
+define is_id_form_opening( next_item, item_after );
     lvars tokentype = classify_item( next_item, item_after );
     not( tokentype ) or tokentype == "id"
 enddefine;
@@ -149,12 +151,12 @@ define read_form_expr(opening_word);
             else
                 lvars item1 = proglist.hd;
                 lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
-                if item1 == ":" and unglue_option then
+                if tokentype1 == "label" and unglue_option then
                     unglue_option :: proglist -> proglist;
                     unglue_option -> item1;
                     "keyword" -> tokentype1;
                 endif;
-                if tokentype1 == "sep" or tokentype1 == "sign" or tokentype1 == "close" then
+                if tokentype1 == "sep" or tokentype1 == "sign" or tokentype1 == "close" or tokentype1 == "label" then
                     mishap( 'Unexpected item at start of expression (in ' >< opening_word >< ')', [^item1] )
                 elseif tokentype1 == "end" then
                     mishap( 'Mismatched closing keyword', [^item1] )
@@ -203,7 +205,7 @@ define read_primary_expr();
             [identifier ^item]
         else
             lvars item1 = proglist.hd;
-            if is_form_opening( item1, peek_nth_item(2) ) then
+            if is_id_form_opening( item1, peek_nth_item(2) ) then
                 read_form_expr( item )
             else
                 [identifier ^item]
