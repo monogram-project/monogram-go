@@ -17,7 +17,7 @@ compile_mode :pop11 +strict;
 ;;;    11. Identifiers                          false               "id"
 
 vars unglue_option = false;
-vars optional_statement_separator_option = false;
+vars allow_newline_option = false;
 vars inferred_form_starts = [];
 
 define peek_item();
@@ -31,7 +31,7 @@ define peek_nth_item( n );
         PL.tl -> PL;
         n - 1 -> n;
     endwhile;
-    not( null( PL ) ) and PL.hd    
+    not( null( PL ) ) and PL.hd
 enddefine;
 
 define is_open_bracket( word );
@@ -137,12 +137,13 @@ define precedence( item );
 enddefine;
 
 
-vars procedure read_expr, read_expr_prec;
+vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item;
 
 define read_form_expr(opening_word);
     lvars closing_keywords = [% "end", "end" <> opening_word %];
     lvars current_part = [];
     lvars current_keyword = opening_word;
+    lvars procedure read = if allow_newline_option then read_expr_allow_newline else read_expr endif;
     lvars contents = [%
         lvars first_expr = true;
         until pop11_try_nextreaditem( closing_keywords ) do
@@ -151,6 +152,7 @@ define read_form_expr(opening_word);
             else
                 lvars item1 = proglist.hd;
                 lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
+                ;;; {item ^item1 tt ^tokentype1} =>
                 if tokentype1 == "label" and unglue_option then
                     unglue_option :: proglist -> proglist;
                     unglue_option -> item1;
@@ -168,17 +170,34 @@ define read_form_expr(opening_word);
                     proglist.tl.tl -> proglist;
                     true -> first_expr;
                 else
-                    if not( first_expr ) and not( optional_statement_separator_option ) then
-                        mishap( 'Semi-colon expected', [^item1] )
+                    if not( first_expr ) then
+                        lvars msg = if allow_newline_option then 'Semi-colon or line-break expected' else 'Semi-colon expected' endif;
+                        mishap( msg, [^item1] )
                     endif;
-                    current_part <> [% read_expr() %] -> current_part;
+                    current_part <> [% read() %] -> current_part;
                     pop11_try_nextreaditem( ";" ) -> first_expr;
+                    ;;; {peek % proglist.hd, proglist.newline_on_item %} =>
+                    first_expr or (allow_newline_option and proglist.newline_on_item) -> first_expr;
                 endif
             endif
         enduntil;
         [part ^current_keyword ^^current_part];
     %];
     [form ^^contents]
+enddefine;
+
+define read_expr_seq_to( closing_delimiters, breakers, allow_newline );
+	[%
+        if pop11_try_nextreaditem( closing_delimiters ) then
+            ;;; Done.
+        else
+            repeat
+                read_expr();
+                nextif( pop11_try_nextreaditem( breakers ) );
+                quitif( pop11_need_nextreaditem( closing_delimiters ) );
+            endrepeat
+        endif
+	%]
 enddefine;
 
 define read_primary_expr();
@@ -193,10 +212,9 @@ define read_primary_expr();
         endif
     endif;
     if tokentype == "open" then
-        lvars expr = read_expr();
-        pop11_need_nextreaditem( item.is_open_bracket ) -> _;
+		lvars seq = read_expr_seq_to( item.is_open_bracket, [; ,], true );
         lvars dname = delimiter_name( item );
-        [delimited ^dname ^expr]
+        [delimited ^dname ^^seq]
     elseif tokentype == "start" then
         read_form_expr( item )
     elseif tokentype == "id" then
@@ -224,20 +242,10 @@ define read_primary_expr();
 enddefine;
 
 define read_arguments( close_bracket );
-    [arguments %
-        if pop11_try_nextreaditem( close_bracket ) then
-            ;;; Done.
-        else
-            repeat
-                read_expr();
-                nextif( pop11_try_nextreaditem( "," ) );
-                quitif( pop11_need_nextreaditem( close_bracket ) );
-            endrepeat
-        endif
-    %]
+    [arguments ^^(read_expr_seq_to( close_bracket, ",", false))]
 enddefine;
 
-define read_expr_prec(prec);
+define read_expr_prec( prec, accept_newline );
     lvars lhs = read_primary_expr();
     until null( proglist ) do
         lvars item1 = proglist.hd;
@@ -266,7 +274,7 @@ define read_expr_prec(prec);
                     mishap( 'Unexpected item after `.`', [^item2] )
                 endif;
             else
-                lvars rhs = read_expr_prec( p );
+                lvars rhs = read_expr_prec( p, false );
                 [operator ^item1 ^lhs ^rhs] -> lhs;
             endif
         else
@@ -277,31 +285,19 @@ define read_expr_prec(prec);
 enddefine;
 
 define read_expr();
-    read_expr_prec( max_precedence )
+    read_expr_prec( max_precedence, false )
 enddefine;
 
-define glue( procedure itemiser );
-    procedure();
-        lvars item = itemiser();
-        if item.isword then
-            lvars ch = nextchar( itemiser );
-            ch -> nextchar( itemiser );
-            if ch == `:` or ch == `?` then
-                lvars item1 = itemiser();
-                if item1 == ":" or item1 == "?" then
-                    item <> item1
-                else
-                    item1.fast_word_string -> nextchar( itemiser );
-                    item
-                endif
-            else
-                item
-            endif
-        else
-            item
-        endif
-    endprocedure
+define read_expr_allow_newline();
+    read_expr_prec( max_precedence, true )
 enddefine;
+
+vars procedure newline_on_item = newanyproperty( 
+    [], 12, 1, 8,
+    false, false, "tmparg",
+    false, false
+);
+
 
 define infer_form_starts( dlist );
     [%
@@ -314,16 +310,37 @@ define infer_form_starts( dlist );
     %]
 enddefine;
 
+define filter_and_annotate_proglist();
+    ;;; This is a sneaky hack for adding extra info to tokens - via the
+    ;;; pairs of proglist! In this loop we snip out any newlines but mark 
+    ;;; the subsequent pair.
+    lvars p = proglist;
+    until p.null or p.hd /== newline do
+        p.tl -> proglist
+    enduntil;
+    until p.null or p.tl.null do
+        if p.tl.hd == newline then
+            p.tl.tl -> p.tl;
+            true -> newline_on_item( p.tl );
+        else
+            p.tl -> p
+        endif
+    enduntil;
+enddefine;
+
 define monogram(procedure source, unglue, opt_seps);
     dlocal unglue_option = unglue;
-    dlocal optional_statement_separator_option = opt_seps;
+    dlocal allow_newline_option = opt_seps;
     dlocal inferred_form_starts;
+    dlocal popnewline = true;
 
     lvars procedure itemiser = incharitem(source);
     5 -> item_chartype( `;`, itemiser );
     9 -> item_chartype( `#`, itemiser );
 
     dlocal proglist = pdtolist(itemiser);
+    filter_and_annotate_proglist();
+
     infer_form_starts( proglist ) -> inferred_form_starts;
 
     read_expr()
