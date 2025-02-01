@@ -6,6 +6,8 @@ compile_mode :pop11 +strict;
 ;;;     0. Comments - # ...                     N/A                 N/A
 ;;;     1. Literals - strings, numbers          false               false
 ;;;     2. Separators - comma, semi-colon       false               "sep"
+;;;        [a] Expr separator - comma
+;;;        [b] Stmnt separator - semi-colon
 ;;;     3. Open Brackets - ( { [                true                "open"
 ;;;     4. Close Brackets - ] } )               false               "close"
 ;;;     5. Start Form - XXX                     false               "start"
@@ -118,7 +120,7 @@ constant max_precedence = 999;
 define precedence( item );
     returnunless( item.isword )( false );
     returnunless( item.is_sign or item.is_open_bracket )( false );
-    returnif( item == ":" )( false );
+    returnif( item == ":" or item == "?" )( false );
     lvars n = datalength( item );
     if n > 0 then
         lvars ch = subscrw( 1, item );
@@ -200,7 +202,7 @@ define read_expr_seq_to( closing_delimiters, breakers, allow_newline );
                     if pop11_try_nextreaditem( closing_delimiters ) then
                         if b == "," then
                             if allow_trailing_comma then
-                                [form [part ^allow_trailing_comma]]
+                                [trailing_comma]
                             else
                                 mishap('Trailing comma found', [])
                             endif
@@ -346,7 +348,7 @@ define filter_and_annotate_proglist();
     enduntil;
 enddefine;
 
-define :optargs monogram(procedure source -&- unglue=false, opt_seps=false, opt_trailing=false);
+define :optargs monogram(procedure source -&- unglue=false, opt_seps=false, opt_trailing/allow_trailing_comma=false);
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = opt_seps;
     dlocal inferred_form_starts;
