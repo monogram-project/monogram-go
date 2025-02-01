@@ -155,7 +155,6 @@ define read_form_expr(opening_word);
             else
                 lvars item1 = proglist.hd;
                 lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
-                ;;; {item ^item1 tt ^tokentype1} =>
                 if tokentype1 == "label" and unglue_option then
                     unglue_option :: proglist -> proglist;
                     unglue_option -> item1;
@@ -179,7 +178,6 @@ define read_form_expr(opening_word);
                     endif;
                     current_part <> [% read() %] -> current_part;
                     pop11_try_nextreaditem( ";" ) -> first_expr;
-                    ;;; {peek % proglist.hd, proglist.newline_on_item %} =>
                     first_expr or (allow_newline_option and proglist.newline_on_item) -> first_expr;
                 endif
             endif
@@ -216,6 +214,7 @@ define read_expr_seq_to( closing_delimiters, breakers, allow_newline );
             endrepeat;
         endif
 	%];
+    items;
 enddefine;
 
 define read_primary_expr();
@@ -311,7 +310,7 @@ define read_expr_allow_newline();
     read_expr_prec( max_precedence, true )
 enddefine;
 
-vars procedure newline_on_item = newanyproperty( 
+vars procedure newline_on_item = newanyproperty(
     [], 12, 1, 8,
     false, false, "tmparg",
     false, false
@@ -331,7 +330,7 @@ enddefine;
 
 define filter_and_annotate_proglist();
     ;;; This is a sneaky hack for adding extra info to tokens - via the
-    ;;; pairs of proglist! In this loop we snip out any newlines but mark 
+    ;;; pairs of proglist! In this loop we snip out any newlines but mark
     ;;; the subsequent pair.
     lvars p = proglist;
     until p.null or p.hd /== newline do
@@ -347,7 +346,7 @@ define filter_and_annotate_proglist();
     enduntil;
 enddefine;
 
-define monogram(procedure source, unglue, opt_seps, opt_trailing);
+define :optargs monogram(procedure source -&- unglue=false, opt_seps=false, opt_trailing=false);
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = opt_seps;
     dlocal inferred_form_starts;
