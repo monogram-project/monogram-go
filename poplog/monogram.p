@@ -19,6 +19,7 @@ compile_mode :pop11 +strict;
 vars unglue_option = false;
 vars allow_newline_option = false;
 vars inferred_form_starts = [];
+vars allow_trailing_comma = false;
 
 define peek_item();
     not( null( proglist ) ) and proglist.hd
@@ -139,6 +140,8 @@ enddefine;
 
 vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item;
 
+constant semi_comma = [ ; , ];
+
 define read_form_expr(opening_word);
     lvars closing_keywords = [% "end", "end" <> opening_word %];
     lvars current_part = [];
@@ -187,17 +190,32 @@ define read_form_expr(opening_word);
 enddefine;
 
 define read_expr_seq_to( closing_delimiters, breakers, allow_newline );
-	[%
+	lvars items = [%
         if pop11_try_nextreaditem( closing_delimiters ) then
             ;;; Done.
         else
             repeat
                 read_expr();
-                nextif( pop11_try_nextreaditem( breakers ) );
-                quitif( pop11_need_nextreaditem( closing_delimiters ) );
-            endrepeat
+                quitif( pop11_try_nextreaditem( closing_delimiters ) );
+                lvars b;
+                if pop11_try_nextreaditem( breakers ) ->> b then
+                    if pop11_try_nextreaditem( closing_delimiters ) then
+                        if b == "," then
+                            if allow_trailing_comma then
+                                [form [part ^allow_trailing_comma]]
+                            else
+                                mishap('Trailing comma found', [])
+                            endif
+                        endif;
+                        quitloop
+                    endif;
+                else
+                    pop11_need_nextreaditem( closing_delimiters ) -> _;
+                    quitloop
+                endif;
+            endrepeat;
         endif
-	%]
+	%];
 enddefine;
 
 define read_primary_expr();
@@ -212,7 +230,7 @@ define read_primary_expr();
         endif
     endif;
     if tokentype == "open" then
-		lvars seq = read_expr_seq_to( item.is_open_bracket, [; ,], true );
+		lvars seq = read_expr_seq_to( item.is_open_bracket, semi_comma, true );
         lvars dname = delimiter_name( item );
         [delimited ^dname ^^seq]
     elseif tokentype == "start" then
@@ -242,13 +260,14 @@ define read_primary_expr();
 enddefine;
 
 define read_arguments( close_bracket );
-    [arguments ^^(read_expr_seq_to( close_bracket, ",", false))]
+    [arguments ^^(read_expr_seq_to( close_bracket, semi_comma, false))]
 enddefine;
 
 define read_expr_prec( prec, accept_newline );
     lvars lhs = read_primary_expr();
     until null( proglist ) do
         lvars item1 = proglist.hd;
+        quitif( accept_newline and newline_on_item( proglist ) );
         lvars p = precedence( item1 );
         if p and p <= prec then
             proglist.tl -> proglist;
@@ -328,11 +347,12 @@ define filter_and_annotate_proglist();
     enduntil;
 enddefine;
 
-define monogram(procedure source, unglue, opt_seps);
+define monogram(procedure source, unglue, opt_seps, opt_trailing);
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = opt_seps;
     dlocal inferred_form_starts;
     dlocal popnewline = true;
+    dlocal allow_trailing_comma = opt_trailing;
 
     lvars procedure itemiser = incharitem(source);
     5 -> item_chartype( `;`, itemiser );
