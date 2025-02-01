@@ -13,9 +13,12 @@ compile_mode :pop11 +strict;
 ;;;     5. Start Form - XXX                     false               "start"
 ;;;     6. End Form - endXXX                    false               "end"
 ;;;     7. Force - !                            false           1   "force"
-;;;     8. Keywords - foo: foo?                 false               "keyword"
+;;;     8. Form breakers - foo: foo?            false               "keyword"
 ;;;     9. Label - : ?                          false               "label"
 ;;;    10. Signs - + / %                        true                "sign"
+;;;        [a] Method invoke - dot
+;;;        [b] The rest
+;;;        [c] N.B. Note the special role of Force and Labels.
 ;;;    11. Identifiers                          false               "id"
 
 vars unglue_option = false;
