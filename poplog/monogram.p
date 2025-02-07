@@ -13,7 +13,7 @@ compile_mode :pop11 +strict;
 ;;;     5. Start Form - XXX                     false               "start"
 ;;;     6. End Form - endXXX                    false               "end"
 ;;;     7. Force - !                            false           1   "force"
-;;;     8. Form breakers - foo: foo?            false               "keyword"
+;;;     8. Form breakers - foo: foo?            false               "breaker"
 ;;;     9. Label - : ?                          false               "label"
 ;;;    10. Signs - + / %                        true                "sign"
 ;;;        [a] Method invoke - dot
@@ -24,6 +24,14 @@ compile_mode :pop11 +strict;
 vars unglue_option = false;
 vars allow_newline_option = false;
 vars inferred_form_starts = [];
+
+constant semi = ";";
+constant comma = ",";
+constant semi_comma = [ ^semi ^comma ];
+constant question_mark = "?";
+constant colon = ":";
+constant escape_mark = "!";
+
 
 define peek_item();
     not( null( proglist ) ) and proglist.hd
@@ -68,7 +76,7 @@ define is_sign( word );
         nextif( n == 3 or n == 10 or n == 11 );
         return( false );
     endfor;
-    return( word /== "!" and word /== ":" and word /== "?" );
+    return( word /== escape_mark and word /== colon and word /== question_mark );
 enddefine;
 
 define is_form_end( word );
@@ -91,8 +99,8 @@ define classify_item( item, next_item );
     returnif( item.is_sign )( "sign" );
     if fast_lmember( item, inferred_form_starts ) then
         "start"
-    elseif next_item == ":" or next_item == "?" then
-        "keyword"
+    elseif next_item == colon or next_item == question_mark then
+        "breaker"
     else
         "id"
     endif
@@ -122,7 +130,7 @@ constant max_precedence = 999;
 define precedence( item );
     returnunless( item.isword )( false );
     returnunless( item.is_sign or item.is_open_bracket )( false );
-    returnif( item == ":" or item == "?" )( false );
+    returnif( item == colon or item == question_mark )( false );
     lvars n = datalength( item );
     if n > 0 then
         lvars ch = subscrw( 1, item );
@@ -144,9 +152,6 @@ enddefine;
 
 vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item;
 
-constant semi = ";";
-constant comma = ",";
-constant semi_comma = [ ^semi ^comma ];
 
 define read_form_expr(opening_word);
     lvars closing_keywords = [% "end", "end" <> opening_word %];
@@ -154,37 +159,46 @@ define read_form_expr(opening_word);
     lvars current_keyword = opening_word;
     lvars procedure read = if allow_newline_option then read_expr_allow_newline else read_expr endif;
     lvars contents = [%
-        lvars first_expr = true;
+        lvars first_expr_in_part = true;
+        lvars prev_expr_terminated = true;
         until pop11_try_nextreaditem( closing_keywords ) do
             if proglist.null then
                 mishap( 'Unexpected end of file while reading form', [^opening_word])
             else
                 lvars item1 = proglist.hd;
+                {item1 ^item1 ^first_expr_in_part} =>
                 lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
-                if tokentype1 == "label" and unglue_option then
-                    unglue_option :: proglist -> proglist;
+                {tokentype1 ^tokentype1 ^unglue_option} =>
+                if first_expr_in_part and tokentype1 == "breaker" and unglue_option then
+                    [^item1 ^unglue_option ^^(proglist.tl)] -> proglist;
+                    {ungluing1 ^proglist} =>
+                    "id" -> tokentype1;
+                elseif not(first_expr_in_part) and not(prev_expr_terminated) and tokentype1 == "label" and unglue_option then
+                    [^unglue_option ^^proglist] -> proglist;
+                    {ungluing2 ^proglist} =>
                     unglue_option -> item1;
-                    "keyword" -> tokentype1;
+                    "breaker" -> tokentype1;
                 endif;
                 if tokentype1 == "sep" or tokentype1 == "sign" or tokentype1 == "close" or tokentype1 == "label" then
                     mishap( 'Unexpected item at start of expression (in ' >< opening_word >< ')', [^item1] )
                 elseif tokentype1 == "end" then
                     mishap( 'Mismatched closing keyword', [^item1] )
-                elseif tokentype1 == "keyword" then
+                elseif tokentype1 == "breaker" then
                     [part ^current_keyword ^^current_part];
                     [] -> current_part;
                     item1 -> current_keyword;
                     ;;; Skip the `:` or `?`.
-                    proglist.tl.tl -> proglist;
-                    true -> first_expr;
+                    lvars label_item = proglist.tl.dest -> proglist;
+                    label_item == question_mark -> first_expr_in_part;
+                    true -> prev_expr_terminated;
                 else
-                    if not( first_expr ) then
-                        lvars msg = if allow_newline_option then 'Semi-colon or line-break expected' else 'Semi-colon expected' endif;
-                        mishap( msg, [^item1] )
+                    if not( prev_expr_terminated ) then
+                        mishap( 'Semi-colon or line-break expected', [^item1] )
                     endif;
                     current_part <> [% read() %] -> current_part;
-                    pop11_try_nextreaditem( semi ) -> first_expr;
-                    first_expr or (allow_newline_option and proglist.newline_on_item) -> first_expr;
+                    pop11_try_nextreaditem( semi ) -> prev_expr_terminated;
+                    prev_expr_terminated or (allow_newline_option and proglist.newline_on_item) -> prev_expr_terminated;
+                    false -> first_expr_in_part;
                 endif
             endif
         enduntil;
@@ -224,7 +238,7 @@ define read_primary_expr();
     lvars item = readitem();
     lvars tokentype = classify_item( item, peek_item() );
     returnunless( tokentype )( [constant ^item] );
-    if tokentype == "keyword" and unglue_option then
+    if tokentype == "breaker" and unglue_option then
         lvars reclassified_tokentype = classify_item( item, unglue_option );
         if reclassified_tokentype == "id" then
             reclassified_tokentype -> tokentype;
@@ -262,7 +276,8 @@ define read_primary_expr();
 enddefine;
 
 define read_arguments( close_bracket );
-    [arguments ^^(read_expr_seq_to( close_bracket, comma, false))]
+    lvars (sep, args) = read_expr_seq_to( close_bracket, semi_comma, false);
+    sep, [arguments ^^args]
 enddefine;
 
 define read_expr_prec( prec, accept_newline );
@@ -275,9 +290,9 @@ define read_expr_prec( prec, accept_newline );
             proglist.tl -> proglist;
             lvars close_bracket = false;
             if item1.is_open_bracket ->> close_bracket then
-                lvars args = read_arguments( close_bracket );
+                lvars (sep, args) = read_arguments( close_bracket );
                 lvars dname = delimiter_name( item1 );
-                [apply ^dname ^lhs ^args] -> lhs;
+                [apply ^dname ^sep ^lhs ^args] -> lhs;
             elseif item1 == "." then
                 lvars item2 = readitem();
                 lvars tokentype2 = classify_item( item2, peek_item() );
@@ -285,9 +300,9 @@ define read_expr_prec( prec, accept_newline );
                     lvars item3 = not( proglist.null ) and proglist.hd;
                     if item3.is_open_bracket ->> close_bracket then
                         proglist.tl -> proglist;
-                        lvars args = read_arguments( close_bracket );
+                        lvars (sep, args) = read_arguments( close_bracket );
                         lvars dname = delimiter_name( item3 );
-                        [invoke ^dname ^item2 ^lhs ^args] -> lhs
+                        [invoke ^dname ^sep ^item2 ^lhs ^args] -> lhs
                     else
                         [get ^item2 ^lhs] -> lhs
                     endif
@@ -349,7 +364,7 @@ define filter_and_annotate_proglist();
     enduntil;
 enddefine;
 
-define :optargs monogram(procedure source -&- unglue=false, opt_seps=false);
+define :optargs monogram(procedure source -&- unglue="_", opt_seps=true);
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = opt_seps;
     dlocal inferred_form_starts;
