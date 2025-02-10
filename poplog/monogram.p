@@ -166,16 +166,12 @@ define read_form_expr(opening_word);
                 mishap( 'Unexpected end of file while reading form', [^opening_word])
             else
                 lvars item1 = proglist.hd;
-                {item1 ^item1 ^first_expr_in_part} =>
                 lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
-                {tokentype1 ^tokentype1 ^unglue_option} =>
                 if first_expr_in_part and tokentype1 == "breaker" and unglue_option then
                     [^item1 ^unglue_option ^^(proglist.tl)] -> proglist;
-                    {ungluing1 ^proglist} =>
                     "id" -> tokentype1;
                 elseif not(first_expr_in_part) and not(prev_expr_terminated) and tokentype1 == "label" and unglue_option then
                     [^unglue_option ^^proglist] -> proglist;
-                    {ungluing2 ^proglist} =>
                     unglue_option -> item1;
                     "breaker" -> tokentype1;
                 endif;
@@ -364,7 +360,7 @@ define filter_and_annotate_proglist();
     enduntil;
 enddefine;
 
-define :optargs monogram(procedure source -&- unglue="_", opt_seps=true);
+define :optargs monogram(procedure source -&- unglue="_");
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = true; ;;; Fixing this to be true but leaving logic in in case I change course again.
     dlocal inferred_form_starts;
