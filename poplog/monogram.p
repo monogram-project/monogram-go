@@ -30,7 +30,7 @@ constant comma = ",";
 constant semi_comma = [ ^semi ^comma ];
 constant question_mark = "?";
 constant colon = ":";
-constant escape_mark = "!";
+constant escape_mark = "$";
 
 
 define peek_item();
@@ -89,7 +89,7 @@ define classify_item( item, next_item );
     returnif( L == 0 )( false );
     if L == 1 then
         lvars ch_first = subscrw( 1, item );
-        returnif( ch_first == `!` )( "force" );
+        returnif( ch_first == subscrw(1, escape_mark) )( "force" );
         returnif( ch_first == `:` or ch_first == `?` )( "label" );
         returnif( locchar( ch_first, 1, '({[' ) )( "open" );
         returnif( locchar( ch_first, 1, ']})' ) )( "close" );
@@ -264,7 +264,7 @@ define read_primary_expr();
         if item1.isword then
             [form [part ^item1]]
         else
-            mishap( 'Identifier required following `!`', [^item] )
+            mishap( 'Identifier required following `' >< escape_mark >< '`', [^item] )
         endif
     else
         mishap( 'Unexpected token at start of expression', [^item] )

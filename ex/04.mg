@@ -3,6 +3,6 @@ add check():
         x = x +- 1
         z = 1
     else:
-        !pass
+        $pass
     endif
 endadd
