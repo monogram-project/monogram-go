@@ -12,7 +12,7 @@ compile_mode :pop11 +strict;
 ;;;     4. Close Brackets - ] } )               false               "close"
 ;;;     5. Start Form - XXX                     false               "start"
 ;;;     6. End Form - endXXX                    false               "end"
-;;;     7. Force - !                            false           1   "force"
+;;;     7. Force - $                            false           1   "force"
 ;;;     8. Form breakers - foo: foo?            false               "breaker"
 ;;;     9. Label - : ?                          false               "label"
 ;;;    10. Signs - + / %                        true                "sign"
@@ -150,7 +150,7 @@ define precedence( item );
 enddefine;
 
 
-vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item;
+vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item, read_opt_expr_prec;
 
 
 define read_form_expr(opening_word);
@@ -262,7 +262,12 @@ define read_primary_expr();
     elseif tokentype == "force" then
         lvars item1 = readitem();
         if item1.isword then
-            [form [part ^item1]]
+            lvars e = read_opt_expr_prec(max_precedence, true);
+            if e then
+                [form [part ^item1 ^e]]
+            else
+                [form [part ^item1]]
+            endif
         else
             mishap( 'Identifier required following `' >< escape_mark >< '`', [^item] )
         endif
@@ -314,6 +319,15 @@ define read_expr_prec( prec, accept_newline );
         endif
     enduntil;
     return( lhs )
+enddefine;
+
+define read_opt_expr_prec( prec, accept_newline );
+    returnif( proglist.null )( false );
+    lvars item = proglist.hd;
+    lvars tt = classify_item( item, peek_nth_item(2) );
+    returnif( tt == "sep" or tt == "close" or tt == "end" or tt == "breaker" or tt == "label" or tt == "sign" )( false );
+    returnif( accept_newline and newline_on_item( proglist ) )( false );
+    read_expr_prec( prec, accept_newline )
 enddefine;
 
 define read_expr();
@@ -368,6 +382,7 @@ define :optargs monogram(procedure source -&- unglue="_");
 
     lvars procedure itemiser = incharitem(source);
     5 -> item_chartype( `;`, itemiser );
+    7 -> item_chartype( `"`, itemiser );
     9 -> item_chartype( `#`, itemiser );
 
     dlocal proglist = pdtolist(itemiser);
