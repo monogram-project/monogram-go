@@ -24,6 +24,7 @@ compile_mode :pop11 +strict;
 vars unglue_option = false;
 vars allow_newline_option = false;
 vars inferred_form_starts = [];
+vars inferred_forced_words = [];
 
 constant semi = ";";
 constant comma = ",";
@@ -101,6 +102,8 @@ define classify_item( item, next_item );
         "start"
     elseif next_item == colon or next_item == question_mark then
         "breaker"
+    elseif fast_lmember( item, inferred_forced_words ) then
+        mishap( 'Found prefix syntax (' >< escape_mark >< item >< ') also used as an identifier', [^item] )
     else
         "id"
     endif
@@ -248,17 +251,7 @@ define read_primary_expr();
     elseif tokentype == "start" then
         read_form_expr( item )
     elseif tokentype == "id" then
-        ;;; The interpretation depends on what comes next.
-        if null(proglist) then
-            [identifier ^item]
-        else
-            lvars item1 = proglist.hd;
-            if is_id_form_opening( item1, peek_nth_item(2) ) then
-                read_form_expr( item )
-            else
-                [identifier ^item]
-            endif
-        endif
+        [identifier ^item]
     elseif tokentype == "force" then
         lvars item1 = readitem();
         if item1.isword then
@@ -344,6 +337,21 @@ vars procedure newline_on_item = newanyproperty(
     false, false
 );
 
+define infer_forced_words( dlist );
+    [%
+        lvars p;
+        for p on dlist do
+            if p.hd == escape_mark then
+                lvars q = p.tl;
+                unless null(q) do
+                    if q.hd.isword then
+                        q.hd
+                    endif
+                endunless
+            endif
+        endfor;
+    %]
+enddefine;
 
 define infer_form_starts( dlist );
     [%
@@ -378,6 +386,7 @@ define :optargs monogram(procedure source -&- unglue="_");
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = true; ;;; Fixing this to be true but leaving logic in in case I change course again.
     dlocal inferred_form_starts;
+    dlocal inferred_forced_words;
     dlocal popnewline = true;
 
     lvars procedure itemiser = incharitem(source);
@@ -389,6 +398,7 @@ define :optargs monogram(procedure source -&- unglue="_");
     filter_and_annotate_proglist();
 
     infer_form_starts( proglist ) -> inferred_form_starts;
+    infer_forced_words( proglist ) -> inferred_forced_words;
 
     read_expr()
 enddefine;
