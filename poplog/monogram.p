@@ -12,7 +12,7 @@ compile_mode :pop11 +strict;
 ;;;     4. Close Brackets - ] } )               false               "close"
 ;;;     5. Start Form - XXX                     false               "start"
 ;;;     6. End Form - endXXX                    false               "end"
-;;;     7. Force - !                            false           1   "force"
+;;;     7. Force - $                            false           1   "force"
 ;;;     8. Form breakers - foo: foo?            false               "breaker"
 ;;;     9. Label - : ?                          false               "label"
 ;;;    10. Signs - + / %                        true                "sign"
@@ -24,13 +24,14 @@ compile_mode :pop11 +strict;
 vars unglue_option = false;
 vars allow_newline_option = false;
 vars inferred_form_starts = [];
+vars inferred_forced_words = [];
 
 constant semi = ";";
 constant comma = ",";
 constant semi_comma = [ ^semi ^comma ];
 constant question_mark = "?";
 constant colon = ":";
-constant escape_mark = "!";
+constant escape_mark = "$";
 
 
 define peek_item();
@@ -89,7 +90,7 @@ define classify_item( item, next_item );
     returnif( L == 0 )( false );
     if L == 1 then
         lvars ch_first = subscrw( 1, item );
-        returnif( ch_first == `!` )( "force" );
+        returnif( ch_first == subscrw(1, escape_mark) )( "force" );
         returnif( ch_first == `:` or ch_first == `?` )( "label" );
         returnif( locchar( ch_first, 1, '({[' ) )( "open" );
         returnif( locchar( ch_first, 1, ']})' ) )( "close" );
@@ -101,6 +102,8 @@ define classify_item( item, next_item );
         "start"
     elseif next_item == colon or next_item == question_mark then
         "breaker"
+    elseif fast_lmember( item, inferred_forced_words ) then
+        mishap( 'Found prefix syntax (' >< escape_mark >< item >< ') also used as an identifier', [^item] )
     else
         "id"
     endif
@@ -150,7 +153,7 @@ define precedence( item );
 enddefine;
 
 
-vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item;
+vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item, read_opt_expr_prec;
 
 
 define read_form_expr(opening_word);
@@ -248,23 +251,18 @@ define read_primary_expr();
     elseif tokentype == "start" then
         read_form_expr( item )
     elseif tokentype == "id" then
-        ;;; The interpretation depends on what comes next.
-        if null(proglist) then
-            [identifier ^item]
-        else
-            lvars item1 = proglist.hd;
-            if is_id_form_opening( item1, peek_nth_item(2) ) then
-                read_form_expr( item )
-            else
-                [identifier ^item]
-            endif
-        endif
+        [identifier ^item]
     elseif tokentype == "force" then
         lvars item1 = readitem();
         if item1.isword then
-            [form [part ^item1]]
+            lvars e = read_opt_expr_prec(max_precedence, true);
+            if e then
+                [form [part ^item1 ^e]]
+            else
+                [form [part ^item1]]
+            endif
         else
-            mishap( 'Identifier required following `!`', [^item] )
+            mishap( 'Identifier required following `' >< escape_mark >< '`', [^item] )
         endif
     else
         mishap( 'Unexpected token at start of expression', [^item] )
@@ -316,6 +314,15 @@ define read_expr_prec( prec, accept_newline );
     return( lhs )
 enddefine;
 
+define read_opt_expr_prec( prec, accept_newline );
+    returnif( proglist.null )( false );
+    lvars item = proglist.hd;
+    lvars tt = classify_item( item, peek_nth_item(2) );
+    returnif( tt == "sep" or tt == "close" or tt == "end" or tt == "breaker" or tt == "label" or tt == "sign" )( false );
+    returnif( accept_newline and newline_on_item( proglist ) )( false );
+    read_expr_prec( prec, accept_newline )
+enddefine;
+
 define read_expr();
     read_expr_prec( max_precedence, false )
 enddefine;
@@ -330,6 +337,21 @@ vars procedure newline_on_item = newanyproperty(
     false, false
 );
 
+define infer_forced_words( dlist );
+    [%
+        lvars p;
+        for p on dlist do
+            if p.hd == escape_mark then
+                lvars q = p.tl;
+                unless null(q) do
+                    if q.hd.isword then
+                        q.hd
+                    endif
+                endunless
+            endif
+        endfor;
+    %]
+enddefine;
 
 define infer_form_starts( dlist );
     [%
@@ -364,16 +386,19 @@ define :optargs monogram(procedure source -&- unglue="_");
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = true; ;;; Fixing this to be true but leaving logic in in case I change course again.
     dlocal inferred_form_starts;
+    dlocal inferred_forced_words;
     dlocal popnewline = true;
 
     lvars procedure itemiser = incharitem(source);
     5 -> item_chartype( `;`, itemiser );
+    7 -> item_chartype( `"`, itemiser );
     9 -> item_chartype( `#`, itemiser );
 
     dlocal proglist = pdtolist(itemiser);
     filter_and_annotate_proglist();
 
     infer_form_starts( proglist ) -> inferred_form_starts;
+    infer_forced_words( proglist ) -> inferred_forced_words;
 
     read_expr()
 enddefine;
