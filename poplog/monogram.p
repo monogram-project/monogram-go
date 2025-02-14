@@ -21,6 +21,7 @@ compile_mode :pop11 +strict;
 ;;;        [c] N.B. Note the special role of Force and Labels.
 ;;;    11. Identifiers                          false               "id"
 
+vars last_char_read = false;
 vars unglue_option = false;
 vars allow_newline_option = false;
 vars inferred_form_starts = [];
@@ -84,7 +85,7 @@ define is_form_end( word );
     isstartstring( 'end', word )
 enddefine;
 
-define classify_item( item, next_item );
+define classify_item( item, subsequent_items );
     returnunless( item.isword )( false );
     lvars L = datalength( item );
     returnif( L == 0 )( false );
@@ -98,21 +99,32 @@ define classify_item( item, next_item );
     endif;
     returnif( item.is_form_end )( "end" );
     returnif( item.is_sign )( "sign" );
-    if fast_lmember( item, inferred_form_starts ) then
-        "start"
-    elseif next_item == colon or next_item == question_mark then
-        "breaker"
-    elseif fast_lmember( item, inferred_forced_words ) then
+    returnif( fast_lmember( item, inferred_form_starts ) )( "start" );
+        
+    if fast_lmember( item, inferred_forced_words ) then
         mishap( 'Found prefix syntax (' >< escape_mark >< item >< ') also used as an identifier', [^item] )
+    endif;
+
+    lvars rest1 = subsequent_items;
+    lvars next_item = not(rest1.null) and rest1.hd;
+
+    returnunless( next_item )( "id" );
+    returnif( next_item == colon )( "breaker );
+
+    lvars peek1 =
+        not(rest1.whitespace_after_item) and
+        next_item == "-";
+
+    returnunless( peek1 )( "id" );
+
+    lvars rest2 = rest1.tl;
+    if not(rest2.null) and not(rest2.whitespace_after_item) and rest2.hd == enclosing then
+        "breaker"
     else
         "id"
     endif
 enddefine;
 
-define is_id_form_opening( next_item, item_after );
-    lvars tokentype = classify_item( next_item, item_after );
-    not( tokentype ) or tokentype == "id"
-enddefine;
 
 ;;; Precedence rules.
 ;;; 10 . ( [ {
@@ -153,7 +165,9 @@ define precedence( item );
 enddefine;
 
 
-vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item, read_opt_expr_prec;
+vars procedure 
+    read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item, 
+    whitespace_after_item, read_opt_expr_prec;
 
 
 define read_form_expr(opening_word);
@@ -337,6 +351,12 @@ vars procedure newline_on_item = newanyproperty(
     false, false
 );
 
+vars procedure whitespace_after_item = newanyproperty(
+    [], 12, 1, 8,
+    false, false, "tmparg",
+    false, false
+);
+
 define infer_forced_words( dlist );
     [%
         lvars p;
@@ -364,13 +384,22 @@ define infer_form_starts( dlist );
     %]
 enddefine;
 
-define filter_and_annotate_proglist();
+define filter_and_annotate_proglist(itemiser) -> dlist;
+    lvars dlist = pdtolist(itemiser);
+
     ;;; This is a sneaky hack for adding extra info to tokens - via the
-    ;;; pairs of proglist! In this loop we snip out any newlines but mark
+    ;;; pairs of proglist! Here we capture the next character.
+    lvars q;
+    for q on dlist do
+        lvars is_space = last_char_read.isinteger and locchar( last_char_read, 1, '\s\t\n\r' );
+        is_space -> whitespace_after_item( q )
+    endfor;
+
+    ;;; In this loop we snip out any newlines but mark
     ;;; the subsequent pair.
-    lvars p = proglist;
+    lvars p = dlist;
     until p.null or p.hd /== newline do
-        p.tl -> proglist
+        p.tl -> dlist
     enduntil;
     until p.null or p.tl.null do
         if p.tl.hd == newline then
@@ -382,20 +411,24 @@ define filter_and_annotate_proglist();
     enduntil;
 enddefine;
 
+define wrap(procedure source);
+    source() ->> last_char_read
+enddefine;
+
 define :optargs monogram(procedure source -&- unglue="_");
+    dlocal last_char_read;
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = true; ;;; Fixing this to be true but leaving logic in in case I change course again.
     dlocal inferred_form_starts;
     dlocal inferred_forced_words;
     dlocal popnewline = true;
 
-    lvars procedure itemiser = incharitem(source);
+    lvars procedure itemiser = incharitem(wrap(%source%));
     5 -> item_chartype( `;`, itemiser );
     7 -> item_chartype( `"`, itemiser );
     9 -> item_chartype( `#`, itemiser );
 
-    dlocal proglist = pdtolist(itemiser);
-    filter_and_annotate_proglist();
+    dlocal proglist = filter_and_annotate_proglist(itemiser);
 
     infer_form_starts( proglist ) -> inferred_form_starts;
     infer_forced_words( proglist ) -> inferred_forced_words;
