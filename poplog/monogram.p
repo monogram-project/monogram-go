@@ -13,14 +13,16 @@ compile_mode :pop11 +strict;
 ;;;     5. Start Form - XXX                     false               "start"
 ;;;     6. End Form - endXXX                    false               "end"
 ;;;     7. Force - $                            false           1   "force"
-;;;     8. Form breakers - foo: foo?            false               "breaker"
-;;;     9. Label - : ?                          false               "label"
-;;;    10. Signs - + / %                        true                "sign"
+;;;     8. Form breakers - foo:                 false               "breaker"
+;;;     9. Form breakers - else-if              false               "breaker1"
+;;;    10. Label - : ?                          false               "label"
+;;;    11. Signs - + / %                        true                "sign"
 ;;;        [a] Method invoke - dot
 ;;;        [b] The rest
 ;;;        [c] N.B. Note the special role of Force and Labels.
-;;;    11. Identifiers                          false               "id"
+;;;    12. Identifiers                          false               "id"
 
+vars last_char_read = false;
 vars unglue_option = false;
 vars allow_newline_option = false;
 vars inferred_form_starts = [];
@@ -29,24 +31,9 @@ vars inferred_forced_words = [];
 constant semi = ";";
 constant comma = ",";
 constant semi_comma = [ ^semi ^comma ];
-constant question_mark = "?";
 constant colon = ":";
 constant escape_mark = "$";
 
-
-define peek_item();
-    not( null( proglist ) ) and proglist.hd
-enddefine;
-
-define peek_nth_item( n );
-    lvars PL = proglist;
-    while n > 1 do
-        returnif( null( PL ) )( false );
-        PL.tl -> PL;
-        n - 1 -> n;
-    endwhile;
-    not( null( PL ) ) and PL.hd
-enddefine;
 
 define is_open_bracket( word );
     returnif( word == "(" )( ")" );
@@ -77,14 +64,16 @@ define is_sign( word );
         nextif( n == 3 or n == 10 or n == 11 );
         return( false );
     endfor;
-    return( word /== escape_mark and word /== colon and word /== question_mark );
+    return( word /== escape_mark and word /== colon );
 enddefine;
 
 define is_form_end( word );
     isstartstring( 'end', word )
 enddefine;
 
-define classify_item( item, next_item );
+vars procedure whitespace_after_item;
+
+define classify_item( item, subsequent_items );
     returnunless( item.isword )( false );
     lvars L = datalength( item );
     returnif( L == 0 )( false );
@@ -98,21 +87,32 @@ define classify_item( item, next_item );
     endif;
     returnif( item.is_form_end )( "end" );
     returnif( item.is_sign )( "sign" );
-    if fast_lmember( item, inferred_form_starts ) then
-        "start"
-    elseif next_item == colon or next_item == question_mark then
-        "breaker"
-    elseif fast_lmember( item, inferred_forced_words ) then
+    returnif( fast_lmember( item, inferred_form_starts ) )( "start" );
+        
+    if fast_lmember( item, inferred_forced_words ) then
         mishap( 'Found prefix syntax (' >< escape_mark >< item >< ') also used as an identifier', [^item] )
+    endif;
+
+    lvars rest1 = subsequent_items;
+    lvars next_item = not(rest1.null) and rest1.hd;
+
+    returnunless( next_item )( "id" );
+    returnif( next_item == colon )( "breaker" );
+
+    lvars peek1 =
+        not(rest1.whitespace_after_item) and
+        next_item == "-";
+    
+    returnunless( peek1 )( "id" );
+
+    lvars rest2 = rest1.tl;
+    if not( rest2.null ) and fast_lmember( rest2.hd, inferred_form_starts ) then
+        "breaker1"
     else
         "id"
     endif
 enddefine;
 
-define is_id_form_opening( next_item, item_after );
-    lvars tokentype = classify_item( next_item, item_after );
-    not( tokentype ) or tokentype == "id"
-enddefine;
 
 ;;; Precedence rules.
 ;;; 10 . ( [ {
@@ -133,7 +133,7 @@ constant max_precedence = 999;
 define precedence( item );
     returnunless( item.isword )( false );
     returnunless( item.is_sign or item.is_open_bracket )( false );
-    returnif( item == colon or item == question_mark )( false );
+    returnif( item == colon )( false );
     lvars n = datalength( item );
     if n > 0 then
         lvars ch = subscrw( 1, item );
@@ -153,7 +153,9 @@ define precedence( item );
 enddefine;
 
 
-vars procedure read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item, read_opt_expr_prec;
+vars procedure 
+    read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item, 
+    read_opt_expr_prec;
 
 
 define read_form_expr(opening_word);
@@ -169,7 +171,7 @@ define read_form_expr(opening_word);
                 mishap( 'Unexpected end of file while reading form', [^opening_word])
             else
                 lvars item1 = proglist.hd;
-                lvars tokentype1 = classify_item( item1, peek_nth_item(2) );
+                lvars tokentype1 = classify_item( item1, proglist.tl );
                 if first_expr_in_part and tokentype1 == "breaker" and unglue_option then
                     [^item1 ^unglue_option ^^(proglist.tl)] -> proglist;
                     "id" -> tokentype1;
@@ -188,7 +190,19 @@ define read_form_expr(opening_word);
                     item1 -> current_keyword;
                     ;;; Skip the `:` or `?`.
                     lvars label_item = proglist.tl.dest -> proglist;
-                    label_item == question_mark -> first_expr_in_part;
+                    false -> first_expr_in_part;
+                    true -> prev_expr_terminated;
+                elseif tokentype1 == "breaker1" then
+                    ;;; Skip the `-` `if`
+                    lvars (t1, t2) = proglist.tl.dest.dest -> proglist;
+                    lvars kw = consword( item1 >< t1 >< t2 );
+                    if t2 /== opening_word then
+                        mishap( 'Mismatched breaker found', [FOUND ^kw INSIDE ^opening_word])
+                    endif;
+                    [part ^current_keyword ^^current_part];
+                    [] -> current_part;
+                    kw -> current_keyword;
+                    true -> first_expr_in_part;
                     true -> prev_expr_terminated;
                 else
                     if not( prev_expr_terminated ) then
@@ -235,10 +249,10 @@ enddefine;
 
 define read_primary_expr();
     lvars item = readitem();
-    lvars tokentype = classify_item( item, peek_item() );
+    lvars tokentype = classify_item( item, proglist );
     returnunless( tokentype )( [constant ^item] );
     if tokentype == "breaker" and unglue_option then
-        lvars reclassified_tokentype = classify_item( item, unglue_option );
+        lvars reclassified_tokentype = classify_item( item, [^unglue_option] );
         if reclassified_tokentype == "id" then
             reclassified_tokentype -> tokentype;
             unglue_option :: proglist -> proglist
@@ -289,7 +303,7 @@ define read_expr_prec( prec, accept_newline );
                 [apply ^dname ^sep ^lhs ^args] -> lhs;
             elseif item1 == "." then
                 lvars item2 = readitem();
-                lvars tokentype2 = classify_item( item2, peek_item() );
+                lvars tokentype2 = classify_item( item2, proglist );
                 if tokentype2 == "id" then
                     lvars item3 = not( proglist.null ) and proglist.hd;
                     if item3.is_open_bracket ->> close_bracket then
@@ -317,7 +331,7 @@ enddefine;
 define read_opt_expr_prec( prec, accept_newline );
     returnif( proglist.null )( false );
     lvars item = proglist.hd;
-    lvars tt = classify_item( item, peek_nth_item(2) );
+    lvars tt = classify_item( item, proglist.tl );
     returnif( tt == "sep" or tt == "close" or tt == "end" or tt == "breaker" or tt == "label" or tt == "sign" )( false );
     returnif( accept_newline and newline_on_item( proglist ) )( false );
     read_expr_prec( prec, accept_newline )
@@ -332,6 +346,12 @@ define read_expr_allow_newline();
 enddefine;
 
 vars procedure newline_on_item = newanyproperty(
+    [], 12, 1, 8,
+    false, false, "tmparg",
+    false, false
+);
+
+vars procedure whitespace_after_item = newanyproperty(
     [], 12, 1, 8,
     false, false, "tmparg",
     false, false
@@ -364,13 +384,25 @@ define infer_form_starts( dlist );
     %]
 enddefine;
 
-define filter_and_annotate_proglist();
+
+define filter_and_annotate_proglist(itemiser) -> dlist;
+    lvars dlist = pdtolist(itemiser);
+
     ;;; This is a sneaky hack for adding extra info to tokens - via the
-    ;;; pairs of proglist! In this loop we snip out any newlines but mark
+    ;;; pairs of proglist! We also hack proglist around quite a bit.
+    
+    ;;; Here we capture the next character.
+    lvars q;
+    for q on dlist do
+        lvars is_space = last_char_read.isinteger and locchar( last_char_read, 1, '\s\t\n\r' );
+        is_space -> whitespace_after_item( q )
+    endfor;
+
+    ;;; In this loop we snip out any newlines but mark
     ;;; the subsequent pair.
-    lvars p = proglist;
+    lvars p = dlist;
     until p.null or p.hd /== newline do
-        p.tl -> proglist
+        p.tl -> dlist
     enduntil;
     until p.null or p.tl.null do
         if p.tl.hd == newline then
@@ -382,20 +414,24 @@ define filter_and_annotate_proglist();
     enduntil;
 enddefine;
 
+define wrap(procedure source);
+    source() ->> last_char_read
+enddefine;
+
 define :optargs monogram(procedure source -&- unglue="_");
+    dlocal last_char_read;
     dlocal unglue_option = unglue;
     dlocal allow_newline_option = true; ;;; Fixing this to be true but leaving logic in in case I change course again.
     dlocal inferred_form_starts;
     dlocal inferred_forced_words;
     dlocal popnewline = true;
 
-    lvars procedure itemiser = incharitem(source);
+    lvars procedure itemiser = incharitem(wrap(%source%));
     5 -> item_chartype( `;`, itemiser );
     7 -> item_chartype( `"`, itemiser );
     9 -> item_chartype( `#`, itemiser );
 
-    dlocal proglist = pdtolist(itemiser);
-    filter_and_annotate_proglist();
+    dlocal proglist = filter_and_annotate_proglist(itemiser);
 
     infer_form_starts( proglist ) -> inferred_form_starts;
     infer_forced_words( proglist ) -> inferred_forced_words;
