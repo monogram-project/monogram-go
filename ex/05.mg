@@ -1,9 +1,9 @@
 foo
     if x:
         1
-    else-if y:
+    else-if y then:
         2
     else:
-        2
+        3
     endif
 endfoo
