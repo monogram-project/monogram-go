@@ -196,6 +196,9 @@ define read_form_expr(opening_word);
                     ;;; Skip the `-` `if`
                     lvars (t1, t2) = proglist.tl.dest.dest -> proglist;
                     lvars kw = consword( item1 >< t1 >< t2 );
+                    if t2 /== opening_word then
+                        mishap( 'Mismatched breaker found', [FOUND ^kw INSIDE ^opening_word])
+                    endif;
                     [part ^current_keyword ^^current_part];
                     [] -> current_part;
                     kw -> current_keyword;
