@@ -164,6 +164,16 @@ vars procedure
     read_expr, read_expr_prec, read_expr_allow_newline, newline_on_item, 
     read_opt_expr_prec;
 
+define sep_as_word( sep );
+    if sep == comma then
+        "comma"
+    elseif sep == semi then
+        "semicolon"
+    else
+        "undefined"
+    endif
+enddefine;
+
 
 define read_form_expr(opening_word);
     dlocal inside_form = true;
@@ -279,7 +289,7 @@ define read_primary_expr();
     if tokentype == "open" then
 		lvars (sep, seq) = read_expr_seq_to( item.is_open_bracket, semi_comma, true );
         lvars dname = delimiter_name( item );
-        consNode( "delimited", $(kind=dname, separator=sep), seq )
+        consNode( "delimited", $(kind=dname, separator=sep.sep_as_word), seq )
     elseif tokentype == "start" then
         read_form_expr( item )
     elseif tokentype == "id" then
@@ -320,7 +330,7 @@ define read_expr_prec( prec, accept_newline );
             if item1.is_open_bracket ->> close_bracket then
                 lvars (sep, args) = read_arguments( close_bracket );
                 lvars dname = delimiter_name( item1 );
-                consNode( "apply", $(kind=dname, separator=sep), [^lhs ^args] ) -> lhs;
+                consNode( "apply", $(kind=dname, separator=sep.sep_as_word), [^lhs ^args] ) -> lhs;
             elseif item1 == "." then
                 lvars item2 = readitem();
                 lvars tokentype2 = classify_item( item2, proglist );
@@ -330,7 +340,7 @@ define read_expr_prec( prec, accept_newline );
                         proglist.tl -> proglist;
                         lvars (sep, args) = read_arguments( close_bracket );
                         lvars dname = delimiter_name( item3 );
-                        consNode( "invoke", $(kind=dname, separator=sep, name=item2), [^lhs ^args] ) -> lhs
+                        consNode( "invoke", $(kind=dname, separator=sep.sep_as_word, name=item2), [^lhs ^args] ) -> lhs
                     else
                         consNode( "get", $(name=item2), [^lhs] ) -> lhs
                     endif
