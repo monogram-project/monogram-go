@@ -2,7 +2,7 @@
 
 _"It's source code, Jim. But not as we know it!"_
 
-Monogram is a "nothing built-in" notation for writing domain-specific programs and
+Monogram is a "no batteries" notation for writing domain-specific programs and
 configuration files. It is easy for humans to read and write. It is easy for machines 
 to parse and generate. It deliberately borrows from many programming languages 
 but feels familiar to Python and Ruby programmers.
