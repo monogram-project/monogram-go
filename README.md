@@ -62,6 +62,12 @@ And Monogram can easily translate this into XML (shown below) or [JSON](docs/jso
 </form>
 ```
 
+Here's the same structure visualised as a graph:
+
+<img src="https://github.com/user-attachments/assets/e9dcdcc0-1d4d-4e6c-9667-622ffacabd24" alt="Description" width="700">
+
+
+
 But the slightly mysterious thing is that Monogram has no idea what `def` or
 `if` might mean! Nor does it have a clue about `*` or `-` either. And it
 definitely cannot execute this program. Because Monogram is just a notation for
