@@ -66,7 +66,7 @@ And yet Monogram can easily translate this example into neatly structured XML
 </form>
 ```
 
-Or it can render the code as a diagram using graphviz. Here's the same
+Or it can render the code as a diagram using Mermaid (below) or Graphviz. Here's the same
 structure visualised as a graph.
 
 ```mermaid
