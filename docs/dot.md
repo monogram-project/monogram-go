@@ -17,7 +17,7 @@ enddef
 We can target Graphviz's dot notations as an output format. 
 And this is what the factorial example expands into:
 
-```mermaid
+```dot
 digraph G {
   bgcolor="transparent";
   node [shape="box", style="filled", fontname="Ubuntu Mono"];
@@ -68,3 +68,9 @@ digraph G {
   "124112413530752" -> "124112413531072";
 }
 ```
+
+We can convert into PNG and other formats:
+![factorial](https://github.com/user-attachments/assets/167c91d2-ea30-4901-bab9-b41d00b56b16)
+
+
+
