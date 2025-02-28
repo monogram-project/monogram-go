@@ -1,36 +1,3 @@
-# Translation to JSON
-
-## Example
-
-Here's the factorial example from the first page.  
-
-```txt
-def f(n):
-    if n <= 1:
-        1
-    else:
-        n * f(n - 1)
-    endif
-enddef
-```
-
-We can target JSON as an output format. The format of each node is
-a bit verbose but easy to understand.
-
-```json
-{
-    "role": "{{NODE NAME}}",
-    "ATTRIBUTE_1": "VALUE_1", 
-    ... 
-    "ATTRIBUTE_N": "VALUE_N",
-    "children": [ 
-        ...
-    ]
-}
-```
-
-And this is what the factorial example expands into:
-```json
 {
     "role": "form",
     "children": [
@@ -149,4 +116,3 @@ And this is what the factorial example expands into:
         }
     ]
 }
-```
