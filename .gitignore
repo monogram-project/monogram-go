@@ -5,3 +5,5 @@
 *.psv
 /examples/attic/
 /examples/_build/
+/make_examples/_build/
+/make_examples/attic/
