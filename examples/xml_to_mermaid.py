@@ -30,6 +30,8 @@ def xml_to_mermaid(xml_string):
             label = f'{node.tag}: {value}'
         elif 'value' in node.attrib:
             label = f'{node.tag}: {node.attrib["value"]}'
+        if len(label) > 20:
+            label = label.replace(': ', ':<br/>')
         # Determine the fill color based on the tag name
         fillcolor = tag_colors.get(node.tag, "lightgray")
         # Add the current node to the Mermaid notation with custom class
