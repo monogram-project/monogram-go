@@ -2,3 +2,6 @@
 /poplog/test.p
 /xml_to_dot/attic/
 /xml_to_dot/_build/
+*.psv
+/examples/attic/
+/examples/_build/
