@@ -11,6 +11,10 @@ build: mkbuild
     sed '/^<title>.*$/d' < _build/grammar.html > _build/tmp.html
     wkhtmltoimage _build/tmp.html _build/grammar.png
     wkhtmltopdf _build/tmp.html _build/grammar.pdf
+    poetry run python3 tabatkins2html.py --input mg_token_rules.txt --title 'Monogram Token Rules' > _build/token_rules.html
+    sed '/^<title>.*$/d' < _build/token_rules.html > _build/tmp.html
+    wkhtmltoimage _build/tmp.html _build/token_rules.png
+    wkhtmltopdf _build/tmp.html _build/token_rules.pdf    
     rm _build/tmp.html
 
 transfer:
@@ -18,6 +22,10 @@ transfer:
     cp _build/grammar.html ../docs/grammar.html
     cp _build/grammar.png ../docs/images/grammar.png
     cp _build/grammar.pdf ../docs/images/grammar.pdf
+    cp _build/token_rules.html ../docs/token_rules.html
+    cp _build/token_rules.png ../docs/images/token_rules.png
+    cp _build/token_rules.pdf ../docs/images/token_rules.pdf
+        
 
 clean:
     rm -rf _build

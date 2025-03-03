@@ -1,0 +1,229 @@
+// Token
+Diagram(
+	Comment('Token'),
+	Choice(
+		0,
+		NonTerminal('Number'),
+		NonTerminal('String'),
+		NonTerminal('Identifier'),
+		NonTerminal('FormStart'),
+		NonTerminal('FormEnd'),
+		NonTerminal('Operator')
+	)
+)
+
+// Number
+Diagram(
+	Comment('Number'),
+	Sequence(
+		Optional(Terminal('-')),
+		Choice(
+			0,
+			Terminal('0'),
+			Sequence(
+				OneOrMore(Terminal('digit 0-9')),
+				Optional(
+					Sequence(
+						Terminal('.'),
+						OneOrMore(Terminal('digit'))
+					)
+				),
+				Optional(
+					Sequence(
+						Choice(0, Terminal('E'), Terminal('e')),
+						Optional(Choice(0, Terminal('+'), Terminal('-'))),
+						OneOrMore(Terminal('digit'))
+					)
+				)
+			)
+		)
+	)
+)
+
+// String
+Diagram(
+	Comment('String'),
+	Choice(0,
+		NonTerminal('SingleQuotedString'),
+		NonTerminal('DoubleQuotedString'),
+		NonTerminal('BackQuotedString')
+	)
+)
+
+// SingleQuotedString
+Diagram(
+	Comment('SingleQuotedString'),
+	Sequence(
+		Terminal('\''),
+		ZeroOrMore(
+			Choice(
+				0,
+				Terminal('Any codepoint except \' or \\'),
+				NonTerminal('EscapeSequence'),
+				NonTerminal('Interpolation')
+			)
+		),
+		Terminal('\'')
+	)
+)
+
+// DoubleQuotedString
+Diagram(
+	Comment('DoubleQuotedString'),
+	Sequence(
+		Terminal('"'),
+		ZeroOrMore(
+			Choice(
+				0,
+				Terminal('Any codepoint except " or \\'),
+				NonTerminal('EscapeSequence'),
+				NonTerminal('Interpolation')
+			)
+		),
+		Terminal('"')
+	)
+)
+
+// BackQuotedString
+Diagram(
+	Comment('BackQuotedString'),
+	Sequence(
+		Terminal('`'),
+		ZeroOrMore(
+			Choice(
+				0,
+				Terminal('Any codepoint except ` or \\'),
+				NonTerminal('EscapeSequence'),
+				NonTerminal('Interpolation')
+			)
+		),
+		Terminal('`')
+	)
+)
+
+// Interpolation
+Diagram(
+	Comment('Interpolation'),
+	Choice(
+		0,
+		Sequence(Terminal('\\('), NonTerminal('Expression'), Terminal(')')),
+		Sequence(Terminal('\\['), NonTerminal('Expression'), Terminal(']')),
+		Sequence(Terminal('\\{'), NonTerminal('Expression'), Terminal('}'))
+	)
+)
+
+// Identifier
+Diagram(
+	Comment('Identifier'),
+	Choice(
+		0,
+		Terminal('BasicIdentifier'),
+		Terminal('QuotedIdentifier')
+	)
+)
+
+// BasicIdentifier
+Diagram(
+	Comment('BasicIdentifier'),
+	Sequence(
+		Choice(0, Terminal('letter'), Terminal('_')),
+		Optional(
+			Sequence(
+				ZeroOrMore(
+					Choice(
+						1,
+						Terminal('digit 0-9'),
+						Terminal('letter'),
+						Terminal('_')
+					)
+				),
+				Choice(
+					1,
+					NonTerminal('digit'),
+					NonTerminal('letter')
+				)
+			)
+		)
+	)
+)
+
+// QuotedIdentifier
+Diagram(
+	Comment('QuotedIdentifier'),
+	Sequence(
+		Terminal('_'),
+		ZeroOrMore(
+			Choice(
+				0,
+				Terminal('Any codepoint except _ or \\'),
+				NonTerminal('EscapeSequence')
+			)
+		),
+		Terminal('_')
+	)
+)
+
+// FormStart
+Diagram(
+	Comment('FormStart'),
+	NonTerminal('Basic Identifier (with matching FormEnd)')
+)
+
+// FormEnd
+Diagram(
+	Comment('FormEnd'),
+	Sequence(
+		Terminal('end'),
+		NonTerminal('BasicIdentifier')
+	)
+)
+
+// Operator
+Diagram(
+	Comment('Operator'),
+	OneOrMore(
+		Choice(
+			0,
+			Terminal('-'),
+			Terminal(':'),
+			Terminal('!'),
+			Terminal('?'),
+			Terminal('.'),
+			Terminal('@'),
+			Terminal('*'),
+			Terminal('/'),
+			Terminal('&'),
+			Terminal('%'),
+			Terminal('^'),
+			Terminal('+'),
+			Terminal('<'),
+			Terminal('>'),
+			Terminal('|'),
+			Terminal('$')
+		)
+	)
+)
+
+// EscapeSequence
+Diagram(
+	Comment('EscapeSequence'),
+	Sequence(
+		Terminal('\\'),
+		Choice(
+			0,	
+			Terminal('_'),
+			Terminal('"'),
+			Terminal('\''),
+			Terminal('`'),
+			Terminal('\\'),
+			Terminal('/'),
+			Terminal('b'),
+			Terminal('f'),
+			Terminal('n'),
+			Terminal('r'),
+			Terminal('t'),
+			Sequence(Terminal('u'), Terminal('4 hex digits'))
+		)
+	)
+)
+
