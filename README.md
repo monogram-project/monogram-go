@@ -137,4 +137,4 @@ For more examples and more output formats (like JSON, YAML, PNG) see the
 
 ## Monogram grammar in railroad diagrams
 
-![Monogram Grammar PDF](docs/images/grammar.pdf)
+![Monogram Grammar PDF](docs/images/grammar.png)
