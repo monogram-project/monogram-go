@@ -135,9 +135,10 @@ For more examples and more output formats (like JSON, YAML, PNG) see the
 [examples page](docs/examples.md).
 
 
-## Monogram grammar in railroad diagrams
+## Monogram grammar
 
-![Monogram Grammar PDF](docs/images/grammar.png) (Also available in
+Here's the grammar for Monogram; also available in
 [HTML](docs/grammar.html), [PDF](docs/grammar.pdf) and
-[PNG](docs/images/grammar.png))
+[PNG](docs/images/grammar.png).
 
+![Monogram Grammar PDF](docs/images/grammar.png) 
