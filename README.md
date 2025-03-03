@@ -138,7 +138,7 @@ For more examples and more output formats (like JSON, YAML, PNG) see the
 ## Monogram grammar
 
 Here's the grammar for Monogram; also available in
-[HTML](docs/grammar.html), [PDF](docs/grammar.pdf) and
+[HTML](docs/grammar.html), [PDF](docs/images/grammar.pdf) and
 [PNG](docs/images/grammar.png).
 
 ![Monogram Grammar PDF](docs/images/grammar.png) 
