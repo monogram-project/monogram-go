@@ -1,0 +1,25 @@
+[private]
+default:
+    just --list
+
+[private]
+mkbuild:
+    mkdir -p _build
+
+build: mkbuild
+    poetry run python3 tabatkins2html.py --input mg_grammar_tabatkins.txt --title 'Monogram Grammar' > _build/grammar.html
+    sed '/^<title>.*$/d' < _build/grammar.html > _build/tmp.html
+    wkhtmltoimage _build/tmp.html _build/grammar.png
+    wkhtmltopdf _build/tmp.html _build/grammar.pdf
+    rm _build/tmp.html
+
+transfer:
+    mkdir -p ../docs/images
+    cp _build/grammar.html ../docs/grammar.html
+    cp _build/grammar.png ../docs/images/grammar.png
+    cp _build/grammar.pdf ../docs/images/grammar.pdf
+
+clean:
+    rm -rf _build
+
+rebuild: clean build

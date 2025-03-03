@@ -133,3 +133,12 @@ when you want an application/domain-specific language.
 
 For more examples and more output formats (like JSON, YAML, PNG) see the 
 [examples page](docs/examples.md).
+
+
+## Monogram grammar
+
+Here's the grammar for Monogram; also available in
+[HTML](docs/grammar.html), [PDF](docs/grammar.pdf) and
+[PNG](docs/images/grammar.png).
+
+![Monogram Grammar PDF](docs/images/grammar.png) 
