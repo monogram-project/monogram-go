@@ -1,0 +1,180 @@
+// Grammar
+Diagram(
+	Comment('Document'),
+	ZeroOrMore(NonTerminal('expression'))
+)
+
+// Expression
+Diagram(
+	Comment('Expression'),
+	Choice(0,
+		NonTerminal('literal'),
+		NonTerminal('identifier'),
+		NonTerminal('delimited expression'),
+		NonTerminal('apply expression'),
+		NonTerminal('get expression'),
+		NonTerminal('invoke expression'),
+		NonTerminal('operator expression'),
+		NonTerminal('form expression'),
+	)
+)
+
+// Arguments
+Diagram(
+	Comment('Arguments'),
+	Optional(
+		Sequence(
+			NonTerminal('expression'),
+			ZeroOrMore(
+				Sequence(
+					Terminal(','),
+					NonTerminal('expression')
+				)
+			)
+		)
+	)
+)
+
+// Statements
+Diagram(
+	Comment('Statements'),
+	Sequence(
+		ZeroOrMore(
+			Sequence(
+				NonTerminal('expression'),
+				Choice(0, Terminal(';'), Terminal('\\n'))
+			)
+		),
+		Optional(NonTerminal('expression'))
+	)
+)
+
+// Literal
+Diagram(
+	Comment('Literal'),
+	Choice(0,
+		NonTerminal('number'),
+		NonTerminal('string')
+	)
+)
+
+// DelimitedExpression
+Diagram(
+	Comment('DelimitedExpression'),
+	Choice(
+		0,
+		Sequence(
+			Terminal('('),
+			NonTerminal('arguments'),
+			Terminal(')')
+		),
+		Sequence(
+			Terminal('['),
+			NonTerminal('arguments'),
+			Terminal(']')
+		),
+		Sequence(
+			Terminal('{'),
+			NonTerminal('arguments'),
+			Terminal('}')
+		)
+	)
+)
+
+// ApplyExpression
+Diagram(
+	Comment('ApplyExpression'),
+	Sequence(
+		NonTerminal('expression'),
+		NonTerminal('delimited expression')
+	)
+)
+
+// GetExpression
+Diagram(
+	Comment('GetExpression'),
+	Sequence(
+		NonTerminal('expression'),
+		Terminal('.'),
+		NonTerminal('identifier')
+	)
+)
+
+// InvokeExpression
+Diagram(
+	Comment('InvokeExpression'),
+	Sequence(
+		NonTerminal('get expression'),
+		NonTerminal('delimited expression')
+	)
+)
+
+// OperatorExpression
+Diagram(
+	Comment('OperatorExpression'),
+	Sequence(
+		NonTerminal('expression'),
+		NonTerminal('operator'),
+		NonTerminal('expression')
+	)
+)
+
+// FormExpression
+Diagram(
+	Comment('FormExpression'),
+	Sequence(
+		NonTerminal('form-start'),
+		Optional(
+			Sequence(
+				NonTerminal('expression'),
+				Terminal(':')
+			)
+		),
+		NonTerminal('statements'),
+		ZeroOrMore(NonTerminal('part')),
+		NonTerminal('form-end')
+	)
+)
+
+// Part
+Diagram(
+	Comment('Part'),
+	Choice(
+		0,
+		Sequence(
+			NonTerminal('named breaker'),
+			NonTerminal('statements')
+		),
+		Sequence(
+			Terminal('cascaded breaker'),
+			Optional(
+				Sequence(
+					NonTerminal('expression'),
+					Terminal(':')
+				)
+			),
+			NonTerminal('statements')
+		)
+	)
+)
+
+// NamedBreaker
+Diagram(
+	Comment('NamedBreaker'),
+	Sequence(
+		NonTerminal('identifier'),
+		Terminal(':'),
+	)
+)
+
+
+// Cascaded Breaker
+Diagram(
+	Comment('CascadedBreaker'),
+	Sequence(
+		NonTerminal('identifier'),
+		Terminal('-'),
+		NonTerminal('enclosing-form-start'),
+		Terminal(':')
+	)
+)

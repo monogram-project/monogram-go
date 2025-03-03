@@ -133,3 +133,8 @@ when you want an application/domain-specific language.
 
 For more examples and more output formats (like JSON, YAML, PNG) see the 
 [examples page](docs/examples.md).
+
+
+## Monogram grammar in railroad diagrams
+
+![Monogram Grammar PDF](docs/images/grammar.pdf)
