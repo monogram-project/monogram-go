@@ -25,7 +25,6 @@ transfer:
     cp _build/token_rules.html ../docs/token_rules.html
     cp _build/token_rules.png ../docs/images/token_rules.png
     cp _build/token_rules.pdf ../docs/images/token_rules.pdf
-        
 
 clean:
     rm -rf _build

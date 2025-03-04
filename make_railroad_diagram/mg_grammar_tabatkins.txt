@@ -1,7 +1,7 @@
 // Grammar
 Diagram(
 	Comment('Document'),
-	ZeroOrMore(NonTerminal('expression'))
+	ZeroOrMore(NonTerminal('Expression'))
 )
 
 // Expression
@@ -10,12 +10,13 @@ Diagram(
 	Choice(0,
 		NonTerminal('literal'),
 		NonTerminal('identifier'),
-		NonTerminal('delimited expression'),
-		NonTerminal('apply expression'),
-		NonTerminal('get expression'),
-		NonTerminal('invoke expression'),
-		NonTerminal('operator expression'),
-		NonTerminal('form expression'),
+		NonTerminal('DelimitedExpression'),
+		NonTerminal('ApplyExpression'),
+		NonTerminal('GetExpression'),
+		NonTerminal('InvokExpression'),
+		NonTerminal('OperatorExpression'),
+		NonTerminal('FormExpression'),
+		NonTerminal('MacroExpression')
 	)
 )
 
@@ -24,11 +25,11 @@ Diagram(
 	Comment('Arguments'),
 	Optional(
 		Sequence(
-			NonTerminal('expression'),
+			NonTerminal('Expression'),
 			ZeroOrMore(
 				Sequence(
 					Terminal(','),
-					NonTerminal('expression')
+					NonTerminal('Expression')
 				)
 			)
 		)
@@ -41,11 +42,11 @@ Diagram(
 	Sequence(
 		ZeroOrMore(
 			Sequence(
-				NonTerminal('expression'),
+				NonTerminal('Expression'),
 				Choice(0, Terminal(';'), Terminal('\\n'))
 			)
 		),
-		Optional(NonTerminal('expression'))
+		Optional(NonTerminal('Expression'))
 	)
 )
 
@@ -85,8 +86,8 @@ Diagram(
 Diagram(
 	Comment('ApplyExpression'),
 	Sequence(
-		NonTerminal('expression'),
-		NonTerminal('delimited expression')
+		NonTerminal('Expression'),
+		NonTerminal('DelimitedExpression')
 	)
 )
 
@@ -94,7 +95,7 @@ Diagram(
 Diagram(
 	Comment('GetExpression'),
 	Sequence(
-		NonTerminal('expression'),
+		NonTerminal('Expression'),
 		Terminal('.'),
 		NonTerminal('identifier')
 	)
@@ -104,8 +105,8 @@ Diagram(
 Diagram(
 	Comment('InvokeExpression'),
 	Sequence(
-		NonTerminal('get expression'),
-		NonTerminal('delimited expression')
+		NonTerminal('GetExpression'),
+		NonTerminal('DelimitedExpression')
 	)
 )
 
@@ -113,9 +114,9 @@ Diagram(
 Diagram(
 	Comment('OperatorExpression'),
 	Sequence(
-		NonTerminal('expression'),
+		NonTerminal('Expression'),
 		NonTerminal('operator'),
-		NonTerminal('expression')
+		NonTerminal('Expression')
 	)
 )
 
@@ -126,7 +127,7 @@ Diagram(
 		NonTerminal('form-start'),
 		Optional(
 			Sequence(
-				NonTerminal('expression'),
+				NonTerminal('Expression'),
 				Terminal(':')
 			)
 		),
@@ -149,7 +150,7 @@ Diagram(
 			Terminal('cascaded breaker'),
 			Optional(
 				Sequence(
-					NonTerminal('expression'),
+					NonTerminal('Expression'),
 					Terminal(':')
 				)
 			),
@@ -176,5 +177,15 @@ Diagram(
 		Terminal('-'),
 		NonTerminal('enclosing-form-start'),
 		Terminal(':')
+	)
+)
+
+// MacroExpression
+Diagram(
+	Comment('MacroExpression'),
+	Sequence(
+		NonTerminal('identifier'),
+		Terminal('!'),
+		Optional(NonTerminal('Expression'))
 	)
 )
