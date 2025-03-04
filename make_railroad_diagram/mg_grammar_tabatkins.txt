@@ -1,191 +1,191 @@
 // Grammar
 Diagram(
-	Comment('Document'),
-	ZeroOrMore(NonTerminal('Expression'))
+    Comment('Document'),
+    ZeroOrMore(NonTerminal('Expression'))
 )
 
 // Expression
 Diagram(
-	Comment('Expression'),
-	Choice(0,
-		NonTerminal('literal'),
-		NonTerminal('identifier'),
-		NonTerminal('DelimitedExpression'),
-		NonTerminal('ApplyExpression'),
-		NonTerminal('GetExpression'),
-		NonTerminal('InvokExpression'),
-		NonTerminal('OperatorExpression'),
-		NonTerminal('FormExpression'),
-		NonTerminal('MacroExpression')
-	)
+    Comment('Expression'),
+    Choice(0,
+        NonTerminal('literal'),
+        NonTerminal('identifier'),
+        NonTerminal('DelimitedExpression'),
+        NonTerminal('ApplyExpression'),
+        NonTerminal('GetExpression'),
+        NonTerminal('InvokExpression'),
+        NonTerminal('OperatorExpression'),
+        NonTerminal('FormExpression'),
+        NonTerminal('MacroExpression')
+    )
 )
 
 // Arguments
 Diagram(
-	Comment('Arguments'),
-	Optional(
-		Sequence(
-			NonTerminal('Expression'),
-			ZeroOrMore(
-				Sequence(
-					Terminal(','),
-					NonTerminal('Expression')
-				)
-			)
-		)
-	)
+    Comment('Arguments'),
+    Optional(
+        Sequence(
+            NonTerminal('Expression'),
+            ZeroOrMore(
+                Sequence(
+                    Terminal(','),
+                    NonTerminal('Expression')
+                )
+            )
+        )
+    )
 )
 
 // Statements
 Diagram(
-	Comment('Statements'),
-	Sequence(
-		ZeroOrMore(
-			Sequence(
-				NonTerminal('Expression'),
-				Choice(0, Terminal(';'), Terminal('\\n'))
-			)
-		),
-		Optional(NonTerminal('Expression'))
-	)
+    Comment('Statements'),
+    Sequence(
+        ZeroOrMore(
+            Sequence(
+                NonTerminal('Expression'),
+                Choice(0, Terminal(';'), Terminal('\\n'))
+            )
+        ),
+        Optional(NonTerminal('Expression'))
+    )
 )
 
 // Literal
 Diagram(
-	Comment('Literal'),
-	Choice(0,
-		NonTerminal('number'),
-		NonTerminal('string')
-	)
+    Comment('Literal'),
+    Choice(0,
+        NonTerminal('number'),
+        NonTerminal('string')
+    )
 )
 
 // DelimitedExpression
 Diagram(
-	Comment('DelimitedExpression'),
-	Choice(
-		0,
-		Sequence(
-			Terminal('('),
-			NonTerminal('arguments'),
-			Terminal(')')
-		),
-		Sequence(
-			Terminal('['),
-			NonTerminal('arguments'),
-			Terminal(']')
-		),
-		Sequence(
-			Terminal('{'),
-			NonTerminal('arguments'),
-			Terminal('}')
-		)
-	)
+    Comment('DelimitedExpression'),
+    Choice(
+        0,
+        Sequence(
+            Terminal('('),
+            NonTerminal('arguments'),
+            Terminal(')')
+        ),
+        Sequence(
+            Terminal('['),
+            NonTerminal('arguments'),
+            Terminal(']')
+        ),
+        Sequence(
+            Terminal('{'),
+            NonTerminal('arguments'),
+            Terminal('}')
+        )
+    )
 )
 
 // ApplyExpression
 Diagram(
-	Comment('ApplyExpression'),
-	Sequence(
-		NonTerminal('Expression'),
-		NonTerminal('DelimitedExpression')
-	)
+    Comment('ApplyExpression'),
+    Sequence(
+        NonTerminal('Expression'),
+        NonTerminal('DelimitedExpression')
+    )
 )
 
 // GetExpression
 Diagram(
-	Comment('GetExpression'),
-	Sequence(
-		NonTerminal('Expression'),
-		Terminal('.'),
-		NonTerminal('identifier')
-	)
+    Comment('GetExpression'),
+    Sequence(
+        NonTerminal('Expression'),
+        Terminal('.'),
+        NonTerminal('identifier')
+    )
 )
 
 // InvokeExpression
 Diagram(
-	Comment('InvokeExpression'),
-	Sequence(
-		NonTerminal('GetExpression'),
-		NonTerminal('DelimitedExpression')
-	)
+    Comment('InvokeExpression'),
+    Sequence(
+        NonTerminal('GetExpression'),
+        NonTerminal('DelimitedExpression')
+    )
 )
 
 // OperatorExpression
 Diagram(
-	Comment('OperatorExpression'),
-	Sequence(
-		NonTerminal('Expression'),
-		NonTerminal('operator'),
-		NonTerminal('Expression')
-	)
+    Comment('OperatorExpression'),
+    Sequence(
+        NonTerminal('Expression'),
+        NonTerminal('operator'),
+        NonTerminal('Expression')
+    )
 )
 
 // FormExpression
 Diagram(
-	Comment('FormExpression'),
-	Sequence(
-		NonTerminal('form-start'),
-		Optional(
-			Sequence(
-				NonTerminal('Expression'),
-				Terminal(':')
-			)
-		),
-		NonTerminal('statements'),
-		ZeroOrMore(NonTerminal('part')),
-		NonTerminal('form-end')
-	)
+    Comment('FormExpression'),
+    Sequence(
+        NonTerminal('form-start'),
+        Optional(
+            Sequence(
+                NonTerminal('Expression'),
+                Terminal(':')
+            )
+        ),
+        NonTerminal('statements'),
+        ZeroOrMore(NonTerminal('part')),
+        NonTerminal('form-end')
+    )
 )
 
 // Part
 Diagram(
-	Comment('Part'),
-	Choice(
-		0,
-		Sequence(
-			NonTerminal('named breaker'),
-			NonTerminal('statements')
-		),
-		Sequence(
-			Terminal('cascaded breaker'),
-			Optional(
-				Sequence(
-					NonTerminal('Expression'),
-					Terminal(':')
-				)
-			),
-			NonTerminal('statements')
-		)
-	)
+    Comment('Part'),
+    Choice(
+        0,
+        Sequence(
+            NonTerminal('named breaker'),
+            NonTerminal('statements')
+        ),
+        Sequence(
+            Terminal('cascaded breaker'),
+            Optional(
+                Sequence(
+                    NonTerminal('Expression'),
+                    Terminal(':')
+                )
+            ),
+            NonTerminal('statements')
+        )
+    )
 )
 
 // NamedBreaker
 Diagram(
-	Comment('NamedBreaker'),
-	Sequence(
-		NonTerminal('identifier'),
-		Terminal(':'),
-	)
+    Comment('NamedBreaker'),
+    Sequence(
+        NonTerminal('identifier'),
+        Terminal(':'),
+    )
 )
 
 
 // Cascaded Breaker
 Diagram(
-	Comment('CascadedBreaker'),
-	Sequence(
-		NonTerminal('identifier'),
-		Terminal('-'),
-		NonTerminal('enclosing-form-start'),
-		Terminal(':')
-	)
+    Comment('CascadedBreaker'),
+    Sequence(
+        NonTerminal('identifier'),
+        Terminal('-'),
+        NonTerminal('enclosing-form-start'),
+        Terminal(':')
+    )
 )
 
 // MacroExpression
 Diagram(
-	Comment('MacroExpression'),
-	Sequence(
-		NonTerminal('identifier'),
-		Terminal('!'),
-		Optional(NonTerminal('Expression'))
-	)
+    Comment('MacroExpression'),
+    Sequence(
+        NonTerminal('identifier'),
+        Terminal('!'),
+        Optional(NonTerminal('Expression'))
+    )
 )
