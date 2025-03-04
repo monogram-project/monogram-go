@@ -46,7 +46,19 @@ Diagram(
     Choice(0,
         NonTerminal('SingleQuotedString'),
         NonTerminal('DoubleQuotedString'),
-        NonTerminal('BackQuotedString')
+        NonTerminal('BackQuotedString'),
+
+        NonTerminal('SingleQuotedRawString'),
+        NonTerminal('DoubleQuotedRawString'),
+        NonTerminal('BackQuotedRawString'),
+
+        NonTerminal('SingleQuotedLongString'),
+        NonTerminal('DoubleQuotedLongString'),
+        NonTerminal('BackQuotedLongString'),
+
+        NonTerminal('SingleQuotedLongRawString'),
+        NonTerminal('DoubleQuotedLongRawString'),
+        NonTerminal('BackQuotedLongRawString'),
     )
 )
 
@@ -75,7 +87,7 @@ Diagram(
         ZeroOrMore(
             Choice(
                 0,
-                Terminal('Any codepoint except " or \\'),
+                Terminal('Any codepoint except " or \\ or newline'),
                 NonTerminal('EscapeSequence'),
                 NonTerminal('Interpolation')
             )
@@ -92,7 +104,7 @@ Diagram(
         ZeroOrMore(
             Choice(
                 0,
-                Terminal('Any codepoint except ` or \\'),
+                Terminal('Any codepoint except ` or \\ or newline'),
                 NonTerminal('EscapeSequence'),
                 NonTerminal('Interpolation')
             )
@@ -100,6 +112,120 @@ Diagram(
         Terminal('`')
     )
 )
+
+
+// SingleQuotedRawString
+Diagram(
+    Comment('SingleQuotedRawString'),
+    Sequence(
+        Terminal('\\\''),
+        ZeroOrMore(Terminal('Any codepoint except \' or newline')),
+        Terminal('\'')
+    )
+)
+
+// DoubleQuotedRawString
+Diagram(
+    Comment('DoubleQuotedRawString'),
+    Sequence(
+        Terminal('\\"'),
+        ZeroOrMore(Terminal('Any codepoint except " or newline')),
+        Terminal('"')
+    )
+)
+
+// BackQuotedRawString
+Diagram(
+    Comment('BackQuotedRawString'),
+    Sequence(
+        Terminal('\\`'),
+        ZeroOrMore(Terminal('Any codepoint except ` or newline')),
+        Terminal('`')
+    )
+)
+
+// SingleQuotedLongString
+Diagram(
+    Comment('SingleQuotedLongString'),
+    Sequence(
+        Terminal('\'\'\''),
+        ZeroOrMore(
+            Choice(
+                0,
+                Terminal('Any codepoint except \' or \\'),
+                NonTerminal('EscapeSequence'),
+                NonTerminal('Interpolation')
+            )
+        ),
+        Terminal('\'\'\'')
+    )
+)
+
+// DoubleQuotedLongString
+Diagram(
+    Comment('DoubleQuotedLongString'),
+    Sequence(
+        Terminal('"""'),
+        ZeroOrMore(
+            Choice(
+                0,
+                Terminal('Any codepoint except " or \\'),
+                NonTerminal('EscapeSequence'),
+                NonTerminal('Interpolation')
+            )
+        ),
+        Terminal('"""')
+    )
+)
+
+// BackQuotedLongString
+Diagram(
+    Comment('BackQuotedLongString'),
+    Sequence(
+        Terminal('```'),
+        ZeroOrMore(
+            Choice(
+                0,
+                Terminal('Any codepoint except ` or \\'),
+                NonTerminal('EscapeSequence'),
+                NonTerminal('Interpolation')
+            )
+        ),
+        Terminal('```')
+    )
+)
+
+// SingleQuotedLongRawString
+Diagram(
+    Comment('SingleQuotedLongRawString'),
+    Sequence(
+        Terminal('\\\'\'\''),
+        ZeroOrMore(Terminal('Any codepoint (but not 3x\')')),
+        Terminal('\'\'\'')
+    )
+)
+
+// DoubleQuotedLongRawString
+Diagram(
+    Comment('DoubleQuotedLongRawString'),
+    Sequence(
+        Terminal('\\"""'),
+        ZeroOrMore(Terminal('Any codepoint (but not 3x\")')),
+        Terminal('"""')
+    )
+)
+
+// BackQuotedLongRawString
+Diagram(
+    Comment('BackQuotedLongRawString'),
+    Sequence(
+        Terminal('\\```'),
+        ZeroOrMore(Terminal('Any codepoint (but not 3x\`)')),
+        Terminal('```')
+    )
+)
+
+
 
 // Interpolation
 Diagram(
