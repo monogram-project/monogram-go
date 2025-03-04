@@ -59,6 +59,23 @@ arbitrary names for identifiers.
     - The situation where an underbar is only at one end of an identifier
       needs to be handled differently, which complicates the understanding.
 
+### Additional Notes
 
+The driving use-case for this decision was to permit variables such as
+`endoscopy`. This would normally be seen as a form-end matching `oscopy`. Option
+3 handles this as `_endoscopy_`. This is an identifier that starts _and
+finishes_ with an underbar. The underbars act as delimiting quotes,
+escape-syntax (`\`) is enabled but whitespace must be quoted. 
+
+N.B. Starting with an underbar and not finishing on an underbar but using escape
+syntax is a token-error e.g. `_\s\n`.
+
+This supports:
+
+  - Form starts and ends as identifiers e.g. `_if_` and `_endif_`.
+  - Arbitrary names as identifiers e.g. `_#123_` and `_\s_`.
+  - Discard i.e. `_`
+  - Ordinary variables that simply start with an underbar e.g. `_labrador`
+  - Raw string syntax with backslash e.g. \'This is a raw string'. Note the syntax combines with multi-line syntax.
 
 
