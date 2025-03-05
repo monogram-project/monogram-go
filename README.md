@@ -137,7 +137,52 @@ For more examples and more output formats (like JSON, YAML, PNG) see the
 
 ## Monogram grammar
 
-Here's the grammar for Monogram; also available in
+### Overview of tokens
+
+The basic building blocks of a Monogram document are tokens - that is to say
+numbers (`123`, `-0.12`), strings (`"hello, world"`), symbols (`{`, `}`), signs
+(`:`, `++`) and various kinds of identifiers (`true`, `x`, `while`). These will
+be largely familiar to anyone used to working with JSON or any mainstream
+programming language.
+
+Full details of tokenisation are given on [this page](docs/tokens.md) but
+because these are generally so familiar to most programmers we highlight just a
+few aspects that will be less familiar here:
+
+- **Strings** support all three quote characters: single , double and back quotes.
+    - All three are completely symmetrical in their design.
+    - And support escape sequences, string interpolation, and raw and multiline
+      versions.
+
+- **Symbols** include parentheses, brackets and braces as well as punctuation such
+  as `,` and `;` (but not `.`)
+    - The three different brackets are treated symmetrically
+    - So these are all valid expressions, for instance: `m.f(x)`,  `m.f[x]`, `m.f{x}`.
+
+- **Operators** are runs of sign-characters. In addition to familiar single-character
+  operators such as `+`, `*`, `^`, Monogram allows for arbitrary combinations
+  such as `:=`, `-->` or even `++^=!$$`. 
+    - These primarily play the role of infix operators.
+    - Operator precedence is decided on the first character of the sign and follows
+      the precedence rules of the C-programming language. As a consequence,
+      we can use sequences such as `s = x + y * z` and get expected results.
+    - N.B. If the first character is repeated then the precedence is slightly 
+      adjusted so it binds slightly more tightly. Which is why `p = a == b`
+      binds the expected way. 
+
+- **Identifiers** 
+  - Support string-like quotes using underscores e.g. `_hello, world_`
+  is a valid identifier. 
+  - Identifiers starting `end` are key to the way the grammar works as they
+    mark reserved words.
+
+### Overview of the grammar
+
+_WORK IN PROGRESS, March 2025_
+
+### Railroad diagrams
+
+Here's the grammar for Monogram as a railroad diagram; also available in
 [HTML](docs/grammar.html), [PDF](docs/images/grammar.pdf) and
 [PNG](docs/images/grammar.png).
 
