@@ -21,10 +21,11 @@ to explain the thinking behind some of the less familiar-looking tokens.
   e.g. `(x + y) * z` vs `f[x, y]` and `x.m(p, q)`.
 
 - Signs: these are runs of sign-characters such as `+`, `**`, `-->` and so
-  on. These play the role of infix operators e.g. `x := y`.
+  on. These primarily play the role of infix operators e.g. `x := y`. In
+  some places they act as supporting 'punctuation'.
 
 - Identifiers: the usual rule for identifiers is followed - they start with
-  an alphabetical character or an underscore and contine with these plus digits.
+  an alphabetical character or an underscore and continue with those, plus digits.
   However Mongram also supports the use of underscore as an identifier 
   quoting mechanism.
 
