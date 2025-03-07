@@ -78,6 +78,14 @@ define new_monogram_builder();
         pop( "form" )
     enddefine;
 
+    define lconstant start_macro( t );
+        push( [macro] )
+    enddefine;
+
+    define lconstant end_macro();
+        pop( "macro" )
+    enddefine;
+
     define lconstant start_invoke( t );
         push( [invoke ^t] )
     enddefine;
@@ -133,6 +141,8 @@ define new_monogram_builder();
             end_form = end_form,
             start_part = start_part,
             end_part = end_part,
+            start_macro = start_macro,
+            end_macro = end_macro,
             start_invoke = start_invoke,
             end_invoke = end_invoke,
             start_get = start_get,

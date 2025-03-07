@@ -219,7 +219,7 @@ Diagram(
 Diagram(
     Comment('BackQuotedLongRawString'),
     Sequence(
-        Terminal('\\```'),
+        Terminal('\\\\```'),
         ZeroOrMore(Terminal('Any codepoint (but not 3x\`)')),
         Terminal('```')
     )
@@ -243,8 +243,8 @@ Diagram(
     Comment('Identifier'),
     Choice(
         0,
-        Terminal('BasicIdentifier'),
-        Terminal('QuotedIdentifier')
+        NonTerminal('BasicIdentifier'),
+        NonTerminal('QuotedIdentifier')
     )
 )
 
@@ -252,22 +252,32 @@ Diagram(
 Diagram(
     Comment('BasicIdentifier'),
     Sequence(
-        Choice(0, Terminal('letter'), Terminal('_')),
-        Optional(
-            Sequence(
-                ZeroOrMore(
-                    Choice(
-                        1,
-                        Terminal('digit 0-9'),
-                        Terminal('letter'),
-                        Terminal('_')
-                    )
-                ),
+        Optional(Terminal('_')),
+        NonTerminal('CoreIdentifier'),
+        Optional(Terminal('_'))
+    )
+)
+
+// CoreIdentifier
+Diagram(
+    Comment('CoreIdentifier'),
+    Choice(
+        0, 
+        Terminal('letter'),
+        Sequence(
+            Terminal('letter'),
+            ZeroOrMore(
                 Choice(
                     1,
-                    NonTerminal('digit'),
-                    NonTerminal('letter')
+                    Terminal('digit 0-9'),
+                    Terminal('letter'),
+                    Terminal('_')
                 )
+            ),
+            Choice(
+                0,
+                NonTerminal('letter'),
+                NonTerminal('digit')
             )
         )
     )
@@ -292,7 +302,7 @@ Diagram(
 // FormStart
 Diagram(
     Comment('FormStart'),
-    NonTerminal('Basic Identifier (with matching FormEnd)')
+    NonTerminal('CoreIdentifier (with matching FormEnd)')
 )
 
 // FormEnd
@@ -300,7 +310,7 @@ Diagram(
     Comment('FormEnd'),
     Sequence(
         Terminal('end'),
-        NonTerminal('BasicIdentifier')
+        NonTerminal('CoreIdentifier')
     )
 )
 

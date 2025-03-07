@@ -5,6 +5,12 @@ into two levels: tokenisation and then parsing the token stream. On this page
 we describe the different kinds of tokens that Monogram recognises and try
 to explain the thinking behind some of the less familiar-looking tokens.
 
+## Comments
+
+Monogram supports `#` as the end of line comment character in the same way
+as Python, Ruby and Bash. These are simply discarded by a Monogram processor.
+
+
 ## The different types of tokens
 
 - Numbers: positive and negative integers and floats. 

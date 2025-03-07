@@ -16,7 +16,7 @@ Diagram(
         NonTerminal('InvokExpression'),
         NonTerminal('OperatorExpression'),
         NonTerminal('FormExpression'),
-        NonTerminal('MacroExpression')
+        NonTerminal('PrefixForm')
     )
 )
 
@@ -173,18 +173,18 @@ Diagram(
 Diagram(
     Comment('CascadedBreaker'),
     Sequence(
-        NonTerminal('identifier'),
+        NonTerminal('CoreIdentifier'),
         Terminal('-'),
         NonTerminal('enclosing-form-start'),
         Terminal(':')
     )
 )
 
-// MacroExpression
+// `PrefixForm`
 Diagram(
-    Comment('MacroExpression'),
+    Comment('PrefixForm'),
     Sequence(
-        NonTerminal('identifier'),
+        NonTerminal('CoreIdentifier'),
         Terminal('!'),
         Optional(NonTerminal('Expression'))
     )
