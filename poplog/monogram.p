@@ -327,7 +327,7 @@ define read_primary_expr();
         lvars p = precedence( item );
         if p then
             lvars e = read_expr_prec( p, false );
-            consNode( "operator", $(name=item), [ ^e ] )
+            consNode( "operator", $(name=item, syntax="prefix"), [ ^e ] )
         else
             mishap( 'Unexpected token at start of expression', [^item] )
         endif
@@ -370,7 +370,7 @@ define read_expr_prec( prec, accept_newline );
                 endif;
             else
                 lvars rhs = read_expr_prec( p, false );
-                consNode( "operator", $(name=item1), [^lhs ^rhs] ) -> lhs;
+                consNode( "operator", $(name=item1, syntax="infix"), [^lhs ^rhs] ) -> lhs;
             endif
         else
             quitloop

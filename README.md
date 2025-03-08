@@ -39,7 +39,7 @@ And yet Monogram can easily translate this example into neatly structured XML
     <part keyword="_">
         <form syntax="surround">
             <part keyword="if">
-                <operator name="&lt;=">
+                <operator name="&lt;=" syntax="infix">
                     <identifier name="n"/>
                     <number value="1"/>
                 </operator>
@@ -48,12 +48,12 @@ And yet Monogram can easily translate this example into neatly structured XML
                 <number value="1"/>
             </part>
             <part keyword="else">
-                <operator name="*">
+                <operator name="*" syntax="infix">
                     <identifier name="n"/>
                     <apply kind="parentheses" separator="undefined">
                         <identifier name="f"/>
                         <arguments>
-                            <operator name="-">
+                            <operator name="-" syntax="infix">
                                 <identifier name="n"/>
                                 <number value="1"/>
                             </operator>
@@ -190,9 +190,9 @@ of 'sign' characters can be used as an infix operator. This will turn into
 (say) XML that looks like:
 
 ```xml
-<operator name="+">
+<operator name="+" syntax="infix">
     <identifier name="alpha"/>
-    <operator name="*">
+    <operator name="*" syntax="infix">
         <identifier name="beta"/>
         <identifier name="gamma"/>
     </operator>
@@ -294,7 +294,7 @@ would turn into:
         </apply>
     </part>
     <part keyword="do">
-        <operator name="+=">
+        <operator name="+=" syntax="infix">
             <identifier name="x"/>
             <number value="1"/>
         </operator>
