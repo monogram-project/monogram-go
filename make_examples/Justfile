@@ -6,6 +6,10 @@ publish:
     cp _build/*.md ../docs
     cp _build/images/*.png ../docs/images
 
+clean:
+    rm -rf _build
+
+rebuild: clean build
 
 build: (page 'factorial') (page 'arithmetic') (page 'cosine_addition') (page 'json_blob')
 
