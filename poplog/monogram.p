@@ -323,9 +323,14 @@ define read_primary_expr();
         else
             mishap( 'Identifier required following `' >< macro_mark >< '`', [^item] )
         endif
-    elseif tokentype == tt_sign then
     else
-        mishap( 'Unexpected token at start of expression', [^item] )
+        lvars p = precedence( item );
+        if p then
+            lvars e = read_expr_prec( p, false );
+            consNode( "operator", $(name=item), [ ^e ] )
+        else
+            mishap( 'Unexpected token at start of expression', [^item] )
+        endif
     endif
 enddefine;
 
