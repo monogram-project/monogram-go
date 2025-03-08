@@ -27,7 +27,7 @@ execute this program.
 And yet Monogram can easily translate this example into neatly structured XML
 (shown below). Or it can translate to [JSON](docs/json.md) or [YAML](docs/yaml.md).
 ```xml
-<form>
+<form syntax="surround">
     <part keyword="def">
         <apply kind="parentheses" separator="undefined">
             <identifier name="f"/>
@@ -37,7 +37,7 @@ And yet Monogram can easily translate this example into neatly structured XML
         </apply>
     </part>
     <part keyword="_">
-        <form>
+        <form syntax="surround">
             <part keyword="if">
                 <operator name="&lt;=">
                     <identifier name="n"/>
@@ -71,59 +71,59 @@ Alternatively it can render the code as a diagram using Mermaid (below) or
 
 ```mermaid
 graph TD
-  126587637945888["form"]:::custom_form;
-  126587637945968["part: def"]:::custom_part;
-  126587637945888 --> 126587637945968;
-  126587637946048["apply"]:::custom_apply;
-  126587637945968 --> 126587637946048;
-  126587637946128["identifier: f"]:::custom_identifier;
-  126587637946048 --> 126587637946128;
-  126587637946208["arguments"]:::custom_arguments;
-  126587637946048 --> 126587637946208;
-  126587637946288["identifier: n"]:::custom_identifier;
-  126587637946208 --> 126587637946288;
-  126587637946368["part: _"]:::custom_part;
-  126587637945888 --> 126587637946368;
-  126587637946448["form"]:::custom_form;
-  126587637946368 --> 126587637946448;
-  126587637946528["part: if"]:::custom_part;
-  126587637946448 --> 126587637946528;
-  126587637946608["operator: <="]:::custom_operator;
-  126587637946528 --> 126587637946608;
-  126587637946688["identifier: n"]:::custom_identifier;
-  126587637946608 --> 126587637946688;
-  126587637946768["number: 1"]:::custom_number;
-  126587637946608 --> 126587637946768;
-  126587637946848["part: _"]:::custom_part;
-  126587637946448 --> 126587637946848;
-  126587637946928["number: 1"]:::custom_number;
-  126587637946848 --> 126587637946928;
-  126587637947008["part: else"]:::custom_part;
-  126587637946448 --> 126587637947008;
-  126587637947088["operator: *"]:::custom_operator;
-  126587637947008 --> 126587637947088;
-  126587637947168["identifier: n"]:::custom_identifier;
-  126587637947088 --> 126587637947168;
-  126587637947248["apply"]:::custom_apply;
-  126587637947088 --> 126587637947248;
-  126587637947408["identifier: f"]:::custom_identifier;
-  126587637947248 --> 126587637947408;
-  126587637947568["arguments"]:::custom_arguments;
-  126587637947248 --> 126587637947568;
-  126587637947728["operator: -"]:::custom_operator;
-  126587637947568 --> 126587637947728;
-  126587637947888["identifier: n"]:::custom_identifier;
-  126587637947728 --> 126587637947888;
-  126587637948048["number: 1"]:::custom_number;
-  126587637947728 --> 126587637948048;
+  137321037236880["form: surround"]:::custom_form;
+  137321037236960["part: def"]:::custom_part;
+  137321037236880 --> 137321037236960;
+  137321037237040["apply"]:::custom_apply;
+  137321037236960 --> 137321037237040;
+  137321037237120["identifier: f"]:::custom_identifier;
+  137321037237040 --> 137321037237120;
+  137321037237200["arguments"]:::custom_arguments;
+  137321037237040 --> 137321037237200;
+  137321037237280["identifier: n"]:::custom_identifier;
+  137321037237200 --> 137321037237280;
+  137321037237360["part: _"]:::custom_part;
+  137321037236880 --> 137321037237360;
+  137321037237440["form: surround"]:::custom_form;
+  137321037237360 --> 137321037237440;
+  137321037237520["part: if"]:::custom_part;
+  137321037237440 --> 137321037237520;
+  137321037237600["operator: <="]:::custom_operator;
+  137321037237520 --> 137321037237600;
+  137321037237680["identifier: n"]:::custom_identifier;
+  137321037237600 --> 137321037237680;
+  137321037237760["number: 1"]:::custom_number;
+  137321037237600 --> 137321037237760;
+  137321037237840["part: _"]:::custom_part;
+  137321037237440 --> 137321037237840;
+  137321037237920["number: 1"]:::custom_number;
+  137321037237840 --> 137321037237920;
+  137321037238000["part: else"]:::custom_part;
+  137321037237440 --> 137321037238000;
+  137321037238080["operator: *"]:::custom_operator;
+  137321037238000 --> 137321037238080;
+  137321037238160["identifier: n"]:::custom_identifier;
+  137321037238080 --> 137321037238160;
+  137321037238240["apply"]:::custom_apply;
+  137321037238080 --> 137321037238240;
+  137321037238400["identifier: f"]:::custom_identifier;
+  137321037238240 --> 137321037238400;
+  137321037238560["arguments"]:::custom_arguments;
+  137321037238240 --> 137321037238560;
+  137321037238720["operator: -"]:::custom_operator;
+  137321037238560 --> 137321037238720;
+  137321037238880["identifier: n"]:::custom_identifier;
+  137321037238720 --> 137321037238880;
+  137321037239040["number: 1"]:::custom_number;
+  137321037238720 --> 137321037239040;
 
-classDef custom_form fill:lightpink,stroke:#000,stroke-width:2px;
-classDef custom_part fill:#FFD8E1,stroke:#000,stroke-width:2px;
-classDef custom_apply fill:lightgreen,stroke:#000,stroke-width:2px;
-classDef custom_identifier fill:Honeydew,stroke:#000,stroke-width:2px;
-classDef custom_arguments fill:PaleTurquoise,stroke:#000,stroke-width:2px;
-classDef custom_operator fill:#C0FFC0,stroke:#000,stroke-width:2px;
-classDef custom_number fill:lightgoldenrodyellow,stroke:#000,stroke-width:2px;
+classDef custom_form fill:lightpink,stroke:#333,stroke-width:2px;
+classDef custom_part fill:#FFD8E1,stroke:#333,stroke-width:2px;
+classDef custom_apply fill:lightgreen,stroke:#333,stroke-width:2px;
+classDef custom_identifier fill:Honeydew,stroke:#333,stroke-width:2px;
+classDef custom_arguments fill:PaleTurquoise,stroke:#333,stroke-width:2px;
+classDef custom_operator fill:#C0FFC0,stroke:#333,stroke-width:2px;
+classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
 ```
 
 In other words, Monogram is just a notation for writing program-like "code" but
@@ -286,7 +286,7 @@ and the second part is sandwiched between `do:` and `endwhile`. This example
 would turn into:
 
 ```xml
-<form>
+<form syntax="surround">
     <part keyword="while">
         <apply kind="parentheses" separator="undefined">
             <identifier name="test"/>
@@ -356,7 +356,7 @@ treated as if it was named `_` (this can be overridden).
 Hence the above example would turn into this XML:
 
 ```xml
-<form>
+<form syntax="surround">
     <part keyword="if">
         <apply kind="parentheses" separator="undefined">
             <identifier name="test"/>
@@ -400,19 +400,19 @@ takes a single optional expression. And this example turns into the following
 XML, where the prefix form is treated as a form with an optional part:
 
 ```xml
-<form>
+<form syntax="surround">
     <part keyword="if">
         <identifier name="t"/>
     </part>
     <part keyword="_">
-        <form>
+        <form syntax="prefix">
             <part keyword="return">
                 <number value="99"/>
             </part>
         </form>
     </part>
     <part keyword="else">
-        <form>
+        <form syntax="prefix">
             <part keyword="pass"/>
         </form>
     </part>

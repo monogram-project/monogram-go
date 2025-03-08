@@ -36,6 +36,9 @@ constant semi_comma = [ ^semi ^comma ];
 constant colon = ":";
 constant macro_mark = "!";
 
+constant syntax_prefix = $(syntax="prefix");
+constant syntax_outfix = $(syntax="surround");
+
 
 define is_open_bracket( word );
     returnif( word == "(" )( ")" );
@@ -235,7 +238,7 @@ define read_form_expr(opening_word);
         enduntil;
         consNode( "part", $(keyword = current_keyword), current_part );
     %];
-    consNode( "form", null_attrs, contents)
+    consNode( "form", syntax_outfix, contents)
 enddefine;
 
 define read_expr_seq_to( closing_delimiters, breakers, allow_newline );
@@ -301,9 +304,9 @@ define read_primary_expr();
         if item.isword then
             lvars e = read_opt_expr_prec(max_precedence, true);
             if e then
-                consNode( "form", null_attrs, [% consNode( "part", $(keyword=item), [^e] ) %] )
+                consNode( "form", syntax_prefix, [% consNode( "part", $(keyword=item), [^e] ) %] )
             else
-                consNode( "form", null_attrs, [% consNode( "part", $(keyword=item), [] ) %] )
+                consNode( "form", syntax_prefix, [% consNode( "part", $(keyword=item), [] ) %] )
             endif
         else
             mishap( 'Identifier required following `' >< macro_mark >< '`', [^item] )
