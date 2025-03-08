@@ -20,51 +20,51 @@ And this is what it looks like:
 
 ```mermaid
 graph LR
-  139835609729600["form: surround"]:::custom_form;
-  139835609729680["part: def"]:::custom_part;
-  139835609729600 --> 139835609729680;
-  139835609729760["apply"]:::custom_apply;
-  139835609729680 --> 139835609729760;
-  139835609729840["identifier: f"]:::custom_identifier;
-  139835609729760 --> 139835609729840;
-  139835609729920["arguments"]:::custom_arguments;
-  139835609729760 --> 139835609729920;
-  139835609730000["identifier: n"]:::custom_identifier;
-  139835609729920 --> 139835609730000;
-  139835609730080["part: _"]:::custom_part;
-  139835609729600 --> 139835609730080;
-  139835609730160["form: surround"]:::custom_form;
-  139835609730080 --> 139835609730160;
-  139835609730240["part: if"]:::custom_part;
-  139835609730160 --> 139835609730240;
-  139835609730320["operator: <="]:::custom_operator;
-  139835609730240 --> 139835609730320;
-  139835609730400["identifier: n"]:::custom_identifier;
-  139835609730320 --> 139835609730400;
-  139835609730480["number: 1"]:::custom_number;
-  139835609730320 --> 139835609730480;
-  139835609730560["part: _"]:::custom_part;
-  139835609730160 --> 139835609730560;
-  139835609730640["number: 1"]:::custom_number;
-  139835609730560 --> 139835609730640;
-  139835609730720["part: else"]:::custom_part;
-  139835609730160 --> 139835609730720;
-  139835609730800["operator: *"]:::custom_operator;
-  139835609730720 --> 139835609730800;
-  139835609730880["identifier: n"]:::custom_identifier;
-  139835609730800 --> 139835609730880;
-  139835609730960["apply"]:::custom_apply;
-  139835609730800 --> 139835609730960;
-  139835609731120["identifier: f"]:::custom_identifier;
-  139835609730960 --> 139835609731120;
-  139835609731280["arguments"]:::custom_arguments;
-  139835609730960 --> 139835609731280;
-  139835609731440["operator: -"]:::custom_operator;
-  139835609731280 --> 139835609731440;
-  139835609731600["identifier: n"]:::custom_identifier;
-  139835609731440 --> 139835609731600;
-  139835609731760["number: 1"]:::custom_number;
-  139835609731440 --> 139835609731760;
+  137264901933712["form: surround"]:::custom_form;
+  137264901933792["part: def"]:::custom_part;
+  137264901933712 --> 137264901933792;
+  137264901933872["apply"]:::custom_apply;
+  137264901933792 --> 137264901933872;
+  137264901933952["identifier: f"]:::custom_identifier;
+  137264901933872 --> 137264901933952;
+  137264901934032["arguments"]:::custom_arguments;
+  137264901933872 --> 137264901934032;
+  137264901934112["identifier: n"]:::custom_identifier;
+  137264901934032 --> 137264901934112;
+  137264901934192["part: _"]:::custom_part;
+  137264901933712 --> 137264901934192;
+  137264901934272["form: surround"]:::custom_form;
+  137264901934192 --> 137264901934272;
+  137264901934352["part: if"]:::custom_part;
+  137264901934272 --> 137264901934352;
+  137264901934432["operator: <="]:::custom_operator;
+  137264901934352 --> 137264901934432;
+  137264901934512["identifier: n"]:::custom_identifier;
+  137264901934432 --> 137264901934512;
+  137264901934592["number: 1"]:::custom_number;
+  137264901934432 --> 137264901934592;
+  137264901934672["part: _"]:::custom_part;
+  137264901934272 --> 137264901934672;
+  137264901934752["number: 1"]:::custom_number;
+  137264901934672 --> 137264901934752;
+  137264901934832["part: else"]:::custom_part;
+  137264901934272 --> 137264901934832;
+  137264901934912["operator: *"]:::custom_operator;
+  137264901934832 --> 137264901934912;
+  137264901934992["identifier: n"]:::custom_identifier;
+  137264901934912 --> 137264901934992;
+  137264901935072["apply"]:::custom_apply;
+  137264901934912 --> 137264901935072;
+  137264901935232["identifier: f"]:::custom_identifier;
+  137264901935072 --> 137264901935232;
+  137264901935392["arguments"]:::custom_arguments;
+  137264901935072 --> 137264901935392;
+  137264901935552["operator: -"]:::custom_operator;
+  137264901935392 --> 137264901935552;
+  137264901935712["identifier: n"]:::custom_identifier;
+  137264901935552 --> 137264901935712;
+  137264901935872["number: 1"]:::custom_number;
+  137264901935552 --> 137264901935872;
 
 classDef custom_form fill:lightpink,stroke:#333,stroke-width:2px;
 classDef custom_part fill:#FFD8E1,stroke:#333,stroke-width:2px;
@@ -91,7 +91,7 @@ classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
     <part keyword="_">
         <form syntax="surround">
             <part keyword="if">
-                <operator name="&lt;=">
+                <operator name="&lt;=" syntax="infix">
                     <identifier name="n"/>
                     <number value="1"/>
                 </operator>
@@ -100,12 +100,12 @@ classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
                 <number value="1"/>
             </part>
             <part keyword="else">
-                <operator name="*">
+                <operator name="*" syntax="infix">
                     <identifier name="n"/>
                     <apply kind="parentheses" separator="undefined">
                         <identifier name="f"/>
                         <arguments>
-                            <operator name="-">
+                            <operator name="-" syntax="infix">
                                 <identifier name="n"/>
                                 <number value="1"/>
                             </operator>
@@ -183,6 +183,7 @@ And this is what it expands into:
                                 {
                                     "role": "operator",
                                     "name": "<=",
+                                    "syntax": "infix",
                                     "children": [
                                         {
                                             "role": "identifier",
@@ -213,6 +214,7 @@ And this is what it expands into:
                                 {
                                     "role": "operator",
                                     "name": "*",
+                                    "syntax": "infix",
                                     "children": [
                                         {
                                             "role": "identifier",
@@ -233,6 +235,7 @@ And this is what it expands into:
                                                         {
                                                             "role": "operator",
                                                             "name": "-",
+                                                            "syntax": "infix",
                                                             "children": [
                                                                 {
                                                                     "role": "identifier",
@@ -306,6 +309,7 @@ children:
       children:
       - role: operator
         name: <=
+        syntax: infix
         children:
         - role: identifier
           name: n
@@ -321,6 +325,7 @@ children:
       children:
       - role: operator
         name: '*'
+        syntax: infix
         children:
         - role: identifier
           name: n
@@ -334,6 +339,7 @@ children:
             children:
             - role: operator
               name: '-'
+              syntax: infix
               children:
               - role: identifier
                 name: n
@@ -348,51 +354,51 @@ children:
 digraph G {
   bgcolor="transparent";
   node [shape="box", style="filled", fontname="Ubuntu Mono"];
-  "129493713095232" [label="form: surround", shape="box", fillcolor="lightpink"];
-  "129493713095312" [label="part: def", shape="box", fillcolor="#FFD8E1"];
-  "129493713095232" -> "129493713095312";
-  "129493713095392" [label="apply", shape="box", fillcolor="lightgreen"];
-  "129493713095312" -> "129493713095392";
-  "129493713095472" [label="identifier: f", shape="box", fillcolor="Honeydew"];
-  "129493713095392" -> "129493713095472";
-  "129493713095552" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
-  "129493713095392" -> "129493713095552";
-  "129493713095632" [label="identifier: n", shape="box", fillcolor="Honeydew"];
-  "129493713095552" -> "129493713095632";
-  "129493713095712" [label="part: _", shape="box", fillcolor="#FFD8E1"];
-  "129493713095232" -> "129493713095712";
-  "129493713095792" [label="form: surround", shape="box", fillcolor="lightpink"];
-  "129493713095712" -> "129493713095792";
-  "129493713095872" [label="part: if", shape="box", fillcolor="#FFD8E1"];
-  "129493713095792" -> "129493713095872";
-  "129493713095952" [label="operator: <=", shape="box", fillcolor="#C0FFC0"];
-  "129493713095872" -> "129493713095952";
-  "129493713096032" [label="identifier: n", shape="box", fillcolor="Honeydew"];
-  "129493713095952" -> "129493713096032";
-  "129493713096112" [label="number: 1", shape="box", fillcolor="lightgoldenrodyellow"];
-  "129493713095952" -> "129493713096112";
-  "129493713096192" [label="part: _", shape="box", fillcolor="#FFD8E1"];
-  "129493713095792" -> "129493713096192";
-  "129493713096272" [label="number: 1", shape="box", fillcolor="lightgoldenrodyellow"];
-  "129493713096192" -> "129493713096272";
-  "129493713096352" [label="part: else", shape="box", fillcolor="#FFD8E1"];
-  "129493713095792" -> "129493713096352";
-  "129493713096432" [label="operator: *", shape="box", fillcolor="#C0FFC0"];
-  "129493713096352" -> "129493713096432";
-  "129493713096512" [label="identifier: n", shape="box", fillcolor="Honeydew"];
-  "129493713096432" -> "129493713096512";
-  "129493713096592" [label="apply", shape="box", fillcolor="lightgreen"];
-  "129493713096432" -> "129493713096592";
-  "129493713096752" [label="identifier: f", shape="box", fillcolor="Honeydew"];
-  "129493713096592" -> "129493713096752";
-  "129493713096912" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
-  "129493713096592" -> "129493713096912";
-  "129493713097072" [label="operator: -", shape="box", fillcolor="#C0FFC0"];
-  "129493713096912" -> "129493713097072";
-  "129493713097232" [label="identifier: n", shape="box", fillcolor="Honeydew"];
-  "129493713097072" -> "129493713097232";
-  "129493713097392" [label="number: 1", shape="box", fillcolor="lightgoldenrodyellow"];
-  "129493713097072" -> "129493713097392";
+  "134126260210240" [label="form: surround", shape="box", fillcolor="lightpink"];
+  "134126260210320" [label="part: def", shape="box", fillcolor="#FFD8E1"];
+  "134126260210240" -> "134126260210320";
+  "134126260210400" [label="apply", shape="box", fillcolor="lightgreen"];
+  "134126260210320" -> "134126260210400";
+  "134126260210480" [label="identifier: f", shape="box", fillcolor="Honeydew"];
+  "134126260210400" -> "134126260210480";
+  "134126260210560" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
+  "134126260210400" -> "134126260210560";
+  "134126260210640" [label="identifier: n", shape="box", fillcolor="Honeydew"];
+  "134126260210560" -> "134126260210640";
+  "134126260210720" [label="part: _", shape="box", fillcolor="#FFD8E1"];
+  "134126260210240" -> "134126260210720";
+  "134126260210800" [label="form: surround", shape="box", fillcolor="lightpink"];
+  "134126260210720" -> "134126260210800";
+  "134126260210880" [label="part: if", shape="box", fillcolor="#FFD8E1"];
+  "134126260210800" -> "134126260210880";
+  "134126260210960" [label="operator", shape="box", fillcolor="#C0FFC0"];
+  "134126260210880" -> "134126260210960";
+  "134126260211040" [label="identifier: n", shape="box", fillcolor="Honeydew"];
+  "134126260210960" -> "134126260211040";
+  "134126260211120" [label="number: 1", shape="box", fillcolor="lightgoldenrodyellow"];
+  "134126260210960" -> "134126260211120";
+  "134126260211200" [label="part: _", shape="box", fillcolor="#FFD8E1"];
+  "134126260210800" -> "134126260211200";
+  "134126260211280" [label="number: 1", shape="box", fillcolor="lightgoldenrodyellow"];
+  "134126260211200" -> "134126260211280";
+  "134126260211360" [label="part: else", shape="box", fillcolor="#FFD8E1"];
+  "134126260210800" -> "134126260211360";
+  "134126260211440" [label="operator", shape="box", fillcolor="#C0FFC0"];
+  "134126260211360" -> "134126260211440";
+  "134126260211520" [label="identifier: n", shape="box", fillcolor="Honeydew"];
+  "134126260211440" -> "134126260211520";
+  "134126260211600" [label="apply", shape="box", fillcolor="lightgreen"];
+  "134126260211440" -> "134126260211600";
+  "134126260211760" [label="identifier: f", shape="box", fillcolor="Honeydew"];
+  "134126260211600" -> "134126260211760";
+  "134126260211920" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
+  "134126260211600" -> "134126260211920";
+  "134126260212080" [label="operator", shape="box", fillcolor="#C0FFC0"];
+  "134126260211920" -> "134126260212080";
+  "134126260212240" [label="identifier: n", shape="box", fillcolor="Honeydew"];
+  "134126260212080" -> "134126260212240";
+  "134126260212400" [label="number: 1", shape="box", fillcolor="lightgoldenrodyellow"];
+  "134126260212080" -> "134126260212400";
 }
 ```
 
