@@ -16,8 +16,8 @@ arbitrary names for identifiers.
 
 - Option 1: `\endfoo`, using backslash to escape an identifier
 - Option 2: `\"foo+bar"`, escaping a string
-- Option 3: `_endfoo_`, `_foo+bar_`, using underbars as delimiting quote-marks 
-  and allowing escape sequences.
+- Option 3: `_endfoo_`, `_foo\+bar_`, using underbars as delimiting quote-marks 
+  and requiring escape sequences.
 
 **Outcome**: Option 3
 
@@ -58,6 +58,9 @@ arbitrary names for identifiers.
 - Cons
     - The situation where an underbar is only at one end of an identifier
       needs to be handled differently, which complicates the understanding.
+    - The fix is to require all non-alphanumerics to be escaped.
+    - This only works because the only non-alphabetic escape sequences are
+      for interpolation, which we do not need to support.
 
 ### Additional Notes
 
@@ -73,7 +76,7 @@ syntax is a token-error e.g. `_\s\n`.
 This supports:
 
   - Form starts and ends as identifiers e.g. `_if_` and `_endif_`.
-  - Arbitrary names as identifiers e.g. `_#123_` and `_\s_`.
+  - Arbitrary names as identifiers e.g. `_\#123_` and `_\s_`.
   - Discard i.e. `_`
   - Ordinary variables that simply start with an underbar e.g. `_labrador`
   - Raw string syntax with backslash e.g. \'This is a raw string'. Note the syntax combines with multi-line syntax.
