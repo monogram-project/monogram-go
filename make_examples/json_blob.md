@@ -2,7 +2,9 @@
 
 ## Monogram
 
-Monograph supports JSON expressions:
+Monograph supports JSON expressions. Since Monogram is a good deal more 
+complicated than JSON, it is not too surprising that translating a JSON
+expression into a Monogram-tree looks quite different from plain JSON!
 
 ```txt
 #include mg
