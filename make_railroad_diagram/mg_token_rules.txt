@@ -274,16 +274,13 @@ Diagram(
     Sequence(
         Optional(NonTerminal('BasicIdentifier')),
         NonTerminal('EscapeSequence'),
-        Optional(
-            Sequence(
-                NonTerminal('BasicIdentifier'),
-                ZeroOrMore(
-                    Sequence(
-                        NonTerminal('EscapeSequence'),
-                        NonTerminal('BasicIdentifier')
-                    )
-                ),
-                Optional(NonTerminal('EscapeSequence'))
+        ZeroOrMore(
+            Choice(
+                1,
+                Terminal('digit 0-9'),
+                Terminal('letter'),
+                Terminal('_'),
+                NonTerminal('EscapeSequence')
             )
         )
     )

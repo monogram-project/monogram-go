@@ -17,7 +17,7 @@ build: mkbuild
     wkhtmltopdf _build/tmp.html _build/token_rules.pdf    
     rm _build/tmp.html
 
-transfer:
+publish:
     mkdir -p ../docs/images
     cp _build/grammar.html ../docs/grammar.html
     cp _build/grammar.png ../docs/images/grammar.png
