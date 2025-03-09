@@ -14,43 +14,43 @@ And this is what it looks like:
 
 ```mermaid
 graph LR
-  133315168832304["operator: -"]:::custom_operator;
-  133315168832384["operator: *"]:::custom_operator;
-  133315168832304 --> 133315168832384;
-  133315168832464["apply"]:::custom_apply;
-  133315168832384 --> 133315168832464;
-  133315168832544["identifier: cos"]:::custom_identifier;
-  133315168832464 --> 133315168832544;
-  133315168832624["arguments"]:::custom_arguments;
-  133315168832464 --> 133315168832624;
-  133315168832704["identifier: A"]:::custom_identifier;
-  133315168832624 --> 133315168832704;
-  133315168832784["apply"]:::custom_apply;
-  133315168832384 --> 133315168832784;
-  133315168832864["identifier: cos"]:::custom_identifier;
-  133315168832784 --> 133315168832864;
-  133315168832944["arguments"]:::custom_arguments;
-  133315168832784 --> 133315168832944;
-  133315168833024["identifier: B"]:::custom_identifier;
-  133315168832944 --> 133315168833024;
-  133315168833104["operator: *"]:::custom_operator;
-  133315168832304 --> 133315168833104;
-  133315168833184["apply"]:::custom_apply;
-  133315168833104 --> 133315168833184;
-  133315168833264["identifier: sin"]:::custom_identifier;
-  133315168833184 --> 133315168833264;
-  133315168833344["arguments"]:::custom_arguments;
-  133315168833184 --> 133315168833344;
-  133315168833424["identifier: A"]:::custom_identifier;
-  133315168833344 --> 133315168833424;
-  133315168833504["apply"]:::custom_apply;
-  133315168833104 --> 133315168833504;
-  133315168833584["identifier: sin"]:::custom_identifier;
-  133315168833504 --> 133315168833584;
-  133315168833664["arguments"]:::custom_arguments;
-  133315168833504 --> 133315168833664;
-  133315168833744["identifier: B"]:::custom_identifier;
-  133315168833664 --> 133315168833744;
+  125861360682544["operator: -"]:::custom_operator;
+  125861360682624["operator: *"]:::custom_operator;
+  125861360682544 --> 125861360682624;
+  125861360682704["apply"]:::custom_apply;
+  125861360682624 --> 125861360682704;
+  125861360682784["identifier: cos"]:::custom_identifier;
+  125861360682704 --> 125861360682784;
+  125861360682864["arguments"]:::custom_arguments;
+  125861360682704 --> 125861360682864;
+  125861360682944["identifier: A"]:::custom_identifier;
+  125861360682864 --> 125861360682944;
+  125861360683024["apply"]:::custom_apply;
+  125861360682624 --> 125861360683024;
+  125861360683104["identifier: cos"]:::custom_identifier;
+  125861360683024 --> 125861360683104;
+  125861360683184["arguments"]:::custom_arguments;
+  125861360683024 --> 125861360683184;
+  125861360683264["identifier: B"]:::custom_identifier;
+  125861360683184 --> 125861360683264;
+  125861360683344["operator: *"]:::custom_operator;
+  125861360682544 --> 125861360683344;
+  125861360683424["apply"]:::custom_apply;
+  125861360683344 --> 125861360683424;
+  125861360683504["identifier: sin"]:::custom_identifier;
+  125861360683424 --> 125861360683504;
+  125861360683584["arguments"]:::custom_arguments;
+  125861360683424 --> 125861360683584;
+  125861360683664["identifier: A"]:::custom_identifier;
+  125861360683584 --> 125861360683664;
+  125861360683744["apply"]:::custom_apply;
+  125861360683344 --> 125861360683744;
+  125861360683824["identifier: sin"]:::custom_identifier;
+  125861360683744 --> 125861360683824;
+  125861360683904["arguments"]:::custom_arguments;
+  125861360683744 --> 125861360683904;
+  125861360683984["identifier: B"]:::custom_identifier;
+  125861360683904 --> 125861360683984;
 
 classDef custom_form fill:lightpink,stroke:#333,stroke-width:2px;
 classDef custom_part fill:#FFD8E1,stroke:#333,stroke-width:2px;
@@ -65,8 +65,8 @@ classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
 ## XML
 
 ```xml
-<operator name="-" syntax="infix">
-    <operator name="*" syntax="infix">
+<operator name="-">
+    <operator name="*">
         <apply kind="parentheses" separator="undefined">
             <identifier name="cos"/>
             <arguments>
@@ -80,7 +80,7 @@ classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
             </arguments>
         </apply>
     </operator>
-    <operator name="*" syntax="infix">
+    <operator name="*">
         <apply kind="parentheses" separator="undefined">
             <identifier name="sin"/>
             <arguments>
@@ -120,12 +120,10 @@ And this is what it expands into:
 {
     "role": "operator",
     "name": "-",
-    "syntax": "infix",
     "children": [
         {
             "role": "operator",
             "name": "*",
-            "syntax": "infix",
             "children": [
                 {
                     "role": "apply",
@@ -172,7 +170,6 @@ And this is what it expands into:
         {
             "role": "operator",
             "name": "*",
-            "syntax": "infix",
             "children": [
                 {
                     "role": "apply",
@@ -241,11 +238,9 @@ And this is what it expands into:
 ```yaml
 role: operator
 name: '-'
-syntax: infix
 children:
 - role: operator
   name: '*'
-  syntax: infix
   children:
   - role: apply
     kind: parentheses
@@ -269,7 +264,6 @@ children:
         name: B
 - role: operator
   name: '*'
-  syntax: infix
   children:
   - role: apply
     kind: parentheses
@@ -300,43 +294,43 @@ children:
 digraph G {
   bgcolor="transparent";
   node [shape="box", style="filled", fontname="Ubuntu Mono"];
-  "138166528379616" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "138166528379696" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "138166528379616" -> "138166528379696";
-  "138166528379776" [label="apply", shape="box", fillcolor="lightgreen"];
-  "138166528379696" -> "138166528379776";
-  "138166528379856" [label="identifier: cos", shape="box", fillcolor="Honeydew"];
-  "138166528379776" -> "138166528379856";
-  "138166528379936" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
-  "138166528379776" -> "138166528379936";
-  "138166528380016" [label="identifier: A", shape="box", fillcolor="Honeydew"];
-  "138166528379936" -> "138166528380016";
-  "138166528380096" [label="apply", shape="box", fillcolor="lightgreen"];
-  "138166528379696" -> "138166528380096";
-  "138166528380176" [label="identifier: cos", shape="box", fillcolor="Honeydew"];
-  "138166528380096" -> "138166528380176";
-  "138166528380256" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
-  "138166528380096" -> "138166528380256";
-  "138166528380336" [label="identifier: B", shape="box", fillcolor="Honeydew"];
-  "138166528380256" -> "138166528380336";
-  "138166528380416" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "138166528379616" -> "138166528380416";
-  "138166528380496" [label="apply", shape="box", fillcolor="lightgreen"];
-  "138166528380416" -> "138166528380496";
-  "138166528380576" [label="identifier: sin", shape="box", fillcolor="Honeydew"];
-  "138166528380496" -> "138166528380576";
-  "138166528380656" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
-  "138166528380496" -> "138166528380656";
-  "138166528380736" [label="identifier: A", shape="box", fillcolor="Honeydew"];
-  "138166528380656" -> "138166528380736";
-  "138166528380816" [label="apply", shape="box", fillcolor="lightgreen"];
-  "138166528380416" -> "138166528380816";
-  "138166528380896" [label="identifier: sin", shape="box", fillcolor="Honeydew"];
-  "138166528380816" -> "138166528380896";
-  "138166528380976" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
-  "138166528380816" -> "138166528380976";
-  "138166528381056" [label="identifier: B", shape="box", fillcolor="Honeydew"];
-  "138166528380976" -> "138166528381056";
+  "137852306425392" [label="operator: -", shape="box", fillcolor="#C0FFC0"];
+  "137852306425472" [label="operator: *", shape="box", fillcolor="#C0FFC0"];
+  "137852306425392" -> "137852306425472";
+  "137852306425552" [label="apply", shape="box", fillcolor="lightgreen"];
+  "137852306425472" -> "137852306425552";
+  "137852306425632" [label="identifier: cos", shape="box", fillcolor="Honeydew"];
+  "137852306425552" -> "137852306425632";
+  "137852306425712" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
+  "137852306425552" -> "137852306425712";
+  "137852306425792" [label="identifier: A", shape="box", fillcolor="Honeydew"];
+  "137852306425712" -> "137852306425792";
+  "137852306425872" [label="apply", shape="box", fillcolor="lightgreen"];
+  "137852306425472" -> "137852306425872";
+  "137852306425952" [label="identifier: cos", shape="box", fillcolor="Honeydew"];
+  "137852306425872" -> "137852306425952";
+  "137852306426032" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
+  "137852306425872" -> "137852306426032";
+  "137852306426112" [label="identifier: B", shape="box", fillcolor="Honeydew"];
+  "137852306426032" -> "137852306426112";
+  "137852306426192" [label="operator: *", shape="box", fillcolor="#C0FFC0"];
+  "137852306425392" -> "137852306426192";
+  "137852306426272" [label="apply", shape="box", fillcolor="lightgreen"];
+  "137852306426192" -> "137852306426272";
+  "137852306426352" [label="identifier: sin", shape="box", fillcolor="Honeydew"];
+  "137852306426272" -> "137852306426352";
+  "137852306426432" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
+  "137852306426272" -> "137852306426432";
+  "137852306426512" [label="identifier: A", shape="box", fillcolor="Honeydew"];
+  "137852306426432" -> "137852306426512";
+  "137852306426592" [label="apply", shape="box", fillcolor="lightgreen"];
+  "137852306426192" -> "137852306426592";
+  "137852306426672" [label="identifier: sin", shape="box", fillcolor="Honeydew"];
+  "137852306426592" -> "137852306426672";
+  "137852306426752" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
+  "137852306426592" -> "137852306426752";
+  "137852306426832" [label="identifier: B", shape="box", fillcolor="Honeydew"];
+  "137852306426752" -> "137852306426832";
 }
 ```
 

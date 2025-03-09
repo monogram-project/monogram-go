@@ -13,23 +13,23 @@ And this is what it looks like:
 
 ```mermaid
 graph LR
-  132919964535440["operator: -"]:::custom_operator;
-  132919964535520["operator: +"]:::custom_operator;
-  132919964535440 --> 132919964535520;
-  132919964535600["operator: *"]:::custom_operator;
-  132919964535520 --> 132919964535600;
-  132919964535680["number: 2"]:::custom_number;
-  132919964535600 --> 132919964535680;
-  132919964535760["operator: *"]:::custom_operator;
-  132919964535600 --> 132919964535760;
-  132919964535840["number: 100"]:::custom_number;
-  132919964535760 --> 132919964535840;
-  132919964535920["number: 100"]:::custom_number;
-  132919964535760 --> 132919964535920;
-  132919964536000["number: 100"]:::custom_number;
-  132919964535520 --> 132919964536000;
-  132919964536080["number: 1"]:::custom_number;
-  132919964535440 --> 132919964536080;
+  133333870806336["operator: -"]:::custom_operator;
+  133333870806416["operator: +"]:::custom_operator;
+  133333870806336 --> 133333870806416;
+  133333870806496["operator: *"]:::custom_operator;
+  133333870806416 --> 133333870806496;
+  133333870806576["number: 2"]:::custom_number;
+  133333870806496 --> 133333870806576;
+  133333870806656["operator: *"]:::custom_operator;
+  133333870806496 --> 133333870806656;
+  133333870806736["number: 100"]:::custom_number;
+  133333870806656 --> 133333870806736;
+  133333870806816["number: 100"]:::custom_number;
+  133333870806656 --> 133333870806816;
+  133333870806896["number: 100"]:::custom_number;
+  133333870806416 --> 133333870806896;
+  133333870806976["number: 1"]:::custom_number;
+  133333870806336 --> 133333870806976;
 
 classDef custom_form fill:lightpink,stroke:#333,stroke-width:2px;
 classDef custom_part fill:#FFD8E1,stroke:#333,stroke-width:2px;
@@ -44,11 +44,11 @@ classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
 ## XML
 
 ```xml
-<operator name="-" syntax="infix">
-    <operator name="+" syntax="infix">
-        <operator name="*" syntax="infix">
+<operator name="-">
+    <operator name="+">
+        <operator name="*">
             <number value="2"/>
-            <operator name="*" syntax="infix">
+            <operator name="*">
                 <number value="100"/>
                 <number value="100"/>
             </operator>
@@ -82,17 +82,14 @@ And this is what it expands into:
 {
     "role": "operator",
     "name": "-",
-    "syntax": "infix",
     "children": [
         {
             "role": "operator",
             "name": "+",
-            "syntax": "infix",
             "children": [
                 {
                     "role": "operator",
                     "name": "*",
-                    "syntax": "infix",
                     "children": [
                         {
                             "role": "number",
@@ -101,7 +98,6 @@ And this is what it expands into:
                         {
                             "role": "operator",
                             "name": "*",
-                            "syntax": "infix",
                             "children": [
                                 {
                                     "role": "number",
@@ -149,21 +145,17 @@ And this is what it expands into:
 ```yaml
 role: operator
 name: '-'
-syntax: infix
 children:
 - role: operator
   name: +
-  syntax: infix
   children:
   - role: operator
     name: '*'
-    syntax: infix
     children:
     - role: number
       value: 2
     - role: operator
       name: '*'
-      syntax: infix
       children:
       - role: number
         value: 100
@@ -182,23 +174,23 @@ children:
 digraph G {
   bgcolor="transparent";
   node [shape="box", style="filled", fontname="Ubuntu Mono"];
-  "136041549089344" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "136041549089424" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "136041549089344" -> "136041549089424";
-  "136041549089504" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "136041549089424" -> "136041549089504";
-  "136041549089584" [label="number: 2", shape="box", fillcolor="lightgoldenrodyellow"];
-  "136041549089504" -> "136041549089584";
-  "136041549089664" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "136041549089504" -> "136041549089664";
-  "136041549089744" [label="number: 100", shape="box", fillcolor="lightgoldenrodyellow"];
-  "136041549089664" -> "136041549089744";
-  "136041549089824" [label="number: 100", shape="box", fillcolor="lightgoldenrodyellow"];
-  "136041549089664" -> "136041549089824";
-  "136041549089904" [label="number: 100", shape="box", fillcolor="lightgoldenrodyellow"];
-  "136041549089424" -> "136041549089904";
-  "136041549089984" [label="number: 1", shape="box", fillcolor="lightgoldenrodyellow"];
-  "136041549089344" -> "136041549089984";
+  "126301167011136" [label="operator: -", shape="box", fillcolor="#C0FFC0"];
+  "126301167011216" [label="operator: +", shape="box", fillcolor="#C0FFC0"];
+  "126301167011136" -> "126301167011216";
+  "126301167011296" [label="operator: *", shape="box", fillcolor="#C0FFC0"];
+  "126301167011216" -> "126301167011296";
+  "126301167011376" [label="number: 2", shape="box", fillcolor="lightgoldenrodyellow"];
+  "126301167011296" -> "126301167011376";
+  "126301167011456" [label="operator: *", shape="box", fillcolor="#C0FFC0"];
+  "126301167011296" -> "126301167011456";
+  "126301167011536" [label="number: 100", shape="box", fillcolor="lightgoldenrodyellow"];
+  "126301167011456" -> "126301167011536";
+  "126301167011616" [label="number: 100", shape="box", fillcolor="lightgoldenrodyellow"];
+  "126301167011456" -> "126301167011616";
+  "126301167011696" [label="number: 100", shape="box", fillcolor="lightgoldenrodyellow"];
+  "126301167011216" -> "126301167011696";
+  "126301167011776" [label="number: 1", shape="box", fillcolor="lightgoldenrodyellow"];
+  "126301167011136" -> "126301167011776";
 }
 ```
 

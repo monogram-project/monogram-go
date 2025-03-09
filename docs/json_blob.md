@@ -41,113 +41,113 @@ And this is what it looks like:
 
 ```mermaid
 graph LR
-  135567336016528["delimited"]:::custom_delimited;
-  135567336016608["operator: :"]:::custom_operator;
-  135567336016528 --> 135567336016608;
-  135567336016688["string: person"]:::custom_string;
-  135567336016608 --> 135567336016688;
-  135567336016768["delimited"]:::custom_delimited;
-  135567336016608 --> 135567336016768;
-  135567336016848["operator: :"]:::custom_operator;
-  135567336016768 --> 135567336016848;
-  135567336016928["string: name"]:::custom_string;
-  135567336016848 --> 135567336016928;
-  135567336017008["string: Alice"]:::custom_string;
-  135567336016848 --> 135567336017008;
-  135567336017088["operator: :"]:::custom_operator;
-  135567336016768 --> 135567336017088;
-  135567336017168["string: age"]:::custom_string;
-  135567336017088 --> 135567336017168;
-  135567336017248["number: 25"]:::custom_number;
-  135567336017088 --> 135567336017248;
-  135567336017328["operator: :"]:::custom_operator;
-  135567336016768 --> 135567336017328;
-  135567336017408["string: isStudent"]:::custom_string;
-  135567336017328 --> 135567336017408;
-  135567336017488["identifier: true"]:::custom_identifier;
-  135567336017328 --> 135567336017488;
-  135567336017568["operator: :"]:::custom_operator;
-  135567336016768 --> 135567336017568;
-  135567336017648["string: skills"]:::custom_string;
-  135567336017568 --> 135567336017648;
-  135567336017728["delimited"]:::custom_delimited;
-  135567336017568 --> 135567336017728;
-  135567336017808["string: Python"]:::custom_string;
-  135567336017728 --> 135567336017808;
-  135567336017888["string: JavaScript"]:::custom_string;
-  135567336017728 --> 135567336017888;
-  135567336017968["string: SQL"]:::custom_string;
-  135567336017728 --> 135567336017968;
-  135567336018048["operator: :"]:::custom_operator;
-  135567336016768 --> 135567336018048;
-  135567336018128["string: address"]:::custom_string;
-  135567336018048 --> 135567336018128;
-  135567336018208["delimited"]:::custom_delimited;
-  135567336018048 --> 135567336018208;
-  135567336018288["operator: :"]:::custom_operator;
-  135567336018208 --> 135567336018288;
-  135567336018448["string: street"]:::custom_string;
-  135567336018288 --> 135567336018448;
-  135567336018608["string:<br/>123 Maple Street"]:::custom_string;
-  135567336018288 --> 135567336018608;
-  135567336018688["operator: :"]:::custom_operator;
-  135567336018208 --> 135567336018688;
-  135567336018848["string: city"]:::custom_string;
-  135567336018688 --> 135567336018848;
-  135567336019008["string: Exampleville"]:::custom_string;
-  135567336018688 --> 135567336019008;
-  135567336019088["operator: :"]:::custom_operator;
-  135567336018208 --> 135567336019088;
-  135567336019248["string: country"]:::custom_string;
-  135567336019088 --> 135567336019248;
-  135567336019408["string: Neverland"]:::custom_string;
-  135567336019088 --> 135567336019408;
-  135567336019488["operator: :"]:::custom_operator;
-  135567336016768 --> 135567336019488;
-  135567336019568["string:<br/>favoriteBooks"]:::custom_string;
-  135567336019488 --> 135567336019568;
-  135567336019648["delimited"]:::custom_delimited;
-  135567336019488 --> 135567336019648;
-  135567336019728["delimited"]:::custom_delimited;
-  135567336019648 --> 135567336019728;
-  135567336019888["operator: :"]:::custom_operator;
-  135567336019728 --> 135567336019888;
-  135567336020048["string: title"]:::custom_string;
-  135567336019888 --> 135567336020048;
-  135567336020208["string:<br/>To Kill a Mockingbird"]:::custom_string;
-  135567336019888 --> 135567336020208;
-  135567336020448["operator: :"]:::custom_operator;
-  135567336019728 --> 135567336020448;
-  135567336020608["string: author"]:::custom_string;
-  135567336020448 --> 135567336020608;
-  135567336020768["string: Harper Lee"]:::custom_string;
-  135567336020448 --> 135567336020768;
-  135567336021008["operator: :"]:::custom_operator;
-  135567336019728 --> 135567336021008;
-  135567336021168["string:<br/>yearPublished"]:::custom_string;
-  135567336021008 --> 135567336021168;
-  135567336021328["number: 1960"]:::custom_number;
-  135567336021008 --> 135567336021328;
-  135567336021488["delimited"]:::custom_delimited;
-  135567336019648 --> 135567336021488;
-  135567336021648["operator: :"]:::custom_operator;
-  135567336021488 --> 135567336021648;
-  135567336021808["string: title"]:::custom_string;
-  135567336021648 --> 135567336021808;
-  135567336021968["string: 1984"]:::custom_string;
-  135567336021648 --> 135567336021968;
-  135567336022208["operator: :"]:::custom_operator;
-  135567336021488 --> 135567336022208;
-  135567336022368["string: author"]:::custom_string;
-  135567336022208 --> 135567336022368;
-  135567336022528["string:<br/>George Orwell"]:::custom_string;
-  135567336022208 --> 135567336022528;
-  135567336022768["operator: :"]:::custom_operator;
-  135567336021488 --> 135567336022768;
-  135567336022928["string:<br/>yearPublished"]:::custom_string;
-  135567336022768 --> 135567336022928;
-  135567336023088["number: 1949"]:::custom_number;
-  135567336022768 --> 135567336023088;
+  127816185283824["delimited"]:::custom_delimited;
+  127816185283904["operator: :"]:::custom_operator;
+  127816185283824 --> 127816185283904;
+  127816185283984["string: person"]:::custom_string;
+  127816185283904 --> 127816185283984;
+  127816185284064["delimited"]:::custom_delimited;
+  127816185283904 --> 127816185284064;
+  127816185284144["operator: :"]:::custom_operator;
+  127816185284064 --> 127816185284144;
+  127816185284224["string: name"]:::custom_string;
+  127816185284144 --> 127816185284224;
+  127816185284304["string: Alice"]:::custom_string;
+  127816185284144 --> 127816185284304;
+  127816185284384["operator: :"]:::custom_operator;
+  127816185284064 --> 127816185284384;
+  127816185284464["string: age"]:::custom_string;
+  127816185284384 --> 127816185284464;
+  127816185284544["number: 25"]:::custom_number;
+  127816185284384 --> 127816185284544;
+  127816185284624["operator: :"]:::custom_operator;
+  127816185284064 --> 127816185284624;
+  127816185284704["string: isStudent"]:::custom_string;
+  127816185284624 --> 127816185284704;
+  127816185284784["identifier: true"]:::custom_identifier;
+  127816185284624 --> 127816185284784;
+  127816185284864["operator: :"]:::custom_operator;
+  127816185284064 --> 127816185284864;
+  127816185284944["string: skills"]:::custom_string;
+  127816185284864 --> 127816185284944;
+  127816185285024["delimited"]:::custom_delimited;
+  127816185284864 --> 127816185285024;
+  127816185285104["string: Python"]:::custom_string;
+  127816185285024 --> 127816185285104;
+  127816185285184["string: JavaScript"]:::custom_string;
+  127816185285024 --> 127816185285184;
+  127816185285264["string: SQL"]:::custom_string;
+  127816185285024 --> 127816185285264;
+  127816185285344["operator: :"]:::custom_operator;
+  127816185284064 --> 127816185285344;
+  127816185285424["string: address"]:::custom_string;
+  127816185285344 --> 127816185285424;
+  127816185285504["delimited"]:::custom_delimited;
+  127816185285344 --> 127816185285504;
+  127816185285584["operator: :"]:::custom_operator;
+  127816185285504 --> 127816185285584;
+  127816185285744["string: street"]:::custom_string;
+  127816185285584 --> 127816185285744;
+  127816185285904["string:<br/>123 Maple Street"]:::custom_string;
+  127816185285584 --> 127816185285904;
+  127816185285984["operator: :"]:::custom_operator;
+  127816185285504 --> 127816185285984;
+  127816185286144["string: city"]:::custom_string;
+  127816185285984 --> 127816185286144;
+  127816185286304["string: Exampleville"]:::custom_string;
+  127816185285984 --> 127816185286304;
+  127816185286384["operator: :"]:::custom_operator;
+  127816185285504 --> 127816185286384;
+  127816185286544["string: country"]:::custom_string;
+  127816185286384 --> 127816185286544;
+  127816185286704["string: Neverland"]:::custom_string;
+  127816185286384 --> 127816185286704;
+  127816185286784["operator: :"]:::custom_operator;
+  127816185284064 --> 127816185286784;
+  127816185286864["string:<br/>favoriteBooks"]:::custom_string;
+  127816185286784 --> 127816185286864;
+  127816185286944["delimited"]:::custom_delimited;
+  127816185286784 --> 127816185286944;
+  127816185287024["delimited"]:::custom_delimited;
+  127816185286944 --> 127816185287024;
+  127816185287184["operator: :"]:::custom_operator;
+  127816185287024 --> 127816185287184;
+  127816185287344["string: title"]:::custom_string;
+  127816185287184 --> 127816185287344;
+  127816185287504["string:<br/>To Kill a Mockingbird"]:::custom_string;
+  127816185287184 --> 127816185287504;
+  127816185287744["operator: :"]:::custom_operator;
+  127816185287024 --> 127816185287744;
+  127816185287904["string: author"]:::custom_string;
+  127816185287744 --> 127816185287904;
+  127816185288064["string: Harper Lee"]:::custom_string;
+  127816185287744 --> 127816185288064;
+  127816185288304["operator: :"]:::custom_operator;
+  127816185287024 --> 127816185288304;
+  127816185288464["string:<br/>yearPublished"]:::custom_string;
+  127816185288304 --> 127816185288464;
+  127816185288624["number: 1960"]:::custom_number;
+  127816185288304 --> 127816185288624;
+  127816185288784["delimited"]:::custom_delimited;
+  127816185286944 --> 127816185288784;
+  127816185288944["operator: :"]:::custom_operator;
+  127816185288784 --> 127816185288944;
+  127816185289104["string: title"]:::custom_string;
+  127816185288944 --> 127816185289104;
+  127816185289264["string: 1984"]:::custom_string;
+  127816185288944 --> 127816185289264;
+  127816185289504["operator: :"]:::custom_operator;
+  127816185288784 --> 127816185289504;
+  127816185289664["string: author"]:::custom_string;
+  127816185289504 --> 127816185289664;
+  127816185289824["string:<br/>George Orwell"]:::custom_string;
+  127816185289504 --> 127816185289824;
+  127816185290064["operator: :"]:::custom_operator;
+  127816185288784 --> 127816185290064;
+  127816185290224["string:<br/>yearPublished"]:::custom_string;
+  127816185290064 --> 127816185290224;
+  127816185290384["number: 1949"]:::custom_number;
+  127816185290064 --> 127816185290384;
 
 classDef custom_form fill:lightpink,stroke:#333,stroke-width:2px;
 classDef custom_part fill:#FFD8E1,stroke:#333,stroke-width:2px;
@@ -163,22 +163,22 @@ classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
 
 ```xml
 <delimited kind="braces" separator="undefined">
-    <operator name=":" syntax="infix">
+    <operator name=":">
         <string quote=":" value="person"/>
         <delimited kind="braces" separator="comma">
-            <operator name=":" syntax="infix">
+            <operator name=":">
                 <string quote=":" value="name"/>
                 <string quote="," value="Alice"/>
             </operator>
-            <operator name=":" syntax="infix">
+            <operator name=":">
                 <string quote=":" value="age"/>
                 <number value="25"/>
             </operator>
-            <operator name=":" syntax="infix">
+            <operator name=":">
                 <string quote=":" value="isStudent"/>
                 <identifier name="true"/>
             </operator>
-            <operator name=":" syntax="infix">
+            <operator name=":">
                 <string quote=":" value="skills"/>
                 <delimited kind="brackets" separator="comma">
                     <string quote="," value="Python"/>
@@ -186,50 +186,50 @@ classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
                     <string quote="]" value="SQL"/>
                 </delimited>
             </operator>
-            <operator name=":" syntax="infix">
+            <operator name=":">
                 <string quote=":" value="address"/>
                 <delimited kind="braces" separator="comma">
-                    <operator name=":" syntax="infix">
+                    <operator name=":">
                         <string quote=":" value="street"/>
                         <string quote="," value="123 Maple Street"/>
                     </operator>
-                    <operator name=":" syntax="infix">
+                    <operator name=":">
                         <string quote=":" value="city"/>
                         <string quote="," value="Exampleville"/>
                     </operator>
-                    <operator name=":" syntax="infix">
+                    <operator name=":">
                         <string quote=":" value="country"/>
                         <string quote="&quot;" value="Neverland"/>
                     </operator>
                 </delimited>
             </operator>
-            <operator name=":" syntax="infix">
+            <operator name=":">
                 <string quote=":" value="favoriteBooks"/>
                 <delimited kind="brackets" separator="comma">
                     <delimited kind="braces" separator="comma">
-                        <operator name=":" syntax="infix">
+                        <operator name=":">
                             <string quote=":" value="title"/>
                             <string quote="," value="To Kill a Mockingbird"/>
                         </operator>
-                        <operator name=":" syntax="infix">
+                        <operator name=":">
                             <string quote=":" value="author"/>
                             <string quote="," value="Harper Lee"/>
                         </operator>
-                        <operator name=":" syntax="infix">
+                        <operator name=":">
                             <string quote=":" value="yearPublished"/>
                             <number value="1960"/>
                         </operator>
                     </delimited>
                     <delimited kind="braces" separator="comma">
-                        <operator name=":" syntax="infix">
+                        <operator name=":">
                             <string quote=":" value="title"/>
                             <string quote="," value="1984"/>
                         </operator>
-                        <operator name=":" syntax="infix">
+                        <operator name=":">
                             <string quote=":" value="author"/>
                             <string quote="," value="George Orwell"/>
                         </operator>
-                        <operator name=":" syntax="infix">
+                        <operator name=":">
                             <string quote=":" value="yearPublished"/>
                             <number value="1949"/>
                         </operator>
@@ -269,7 +269,6 @@ And this is what it expands into:
         {
             "role": "operator",
             "name": ":",
-            "syntax": "infix",
             "children": [
                 {
                     "role": "string",
@@ -284,7 +283,6 @@ And this is what it expands into:
                         {
                             "role": "operator",
                             "name": ":",
-                            "syntax": "infix",
                             "children": [
                                 {
                                     "role": "string",
@@ -301,7 +299,6 @@ And this is what it expands into:
                         {
                             "role": "operator",
                             "name": ":",
-                            "syntax": "infix",
                             "children": [
                                 {
                                     "role": "string",
@@ -317,7 +314,6 @@ And this is what it expands into:
                         {
                             "role": "operator",
                             "name": ":",
-                            "syntax": "infix",
                             "children": [
                                 {
                                     "role": "string",
@@ -333,7 +329,6 @@ And this is what it expands into:
                         {
                             "role": "operator",
                             "name": ":",
-                            "syntax": "infix",
                             "children": [
                                 {
                                     "role": "string",
@@ -367,7 +362,6 @@ And this is what it expands into:
                         {
                             "role": "operator",
                             "name": ":",
-                            "syntax": "infix",
                             "children": [
                                 {
                                     "role": "string",
@@ -382,7 +376,6 @@ And this is what it expands into:
                                         {
                                             "role": "operator",
                                             "name": ":",
-                                            "syntax": "infix",
                                             "children": [
                                                 {
                                                     "role": "string",
@@ -399,7 +392,6 @@ And this is what it expands into:
                                         {
                                             "role": "operator",
                                             "name": ":",
-                                            "syntax": "infix",
                                             "children": [
                                                 {
                                                     "role": "string",
@@ -416,7 +408,6 @@ And this is what it expands into:
                                         {
                                             "role": "operator",
                                             "name": ":",
-                                            "syntax": "infix",
                                             "children": [
                                                 {
                                                     "role": "string",
@@ -437,7 +428,6 @@ And this is what it expands into:
                         {
                             "role": "operator",
                             "name": ":",
-                            "syntax": "infix",
                             "children": [
                                 {
                                     "role": "string",
@@ -457,7 +447,6 @@ And this is what it expands into:
                                                 {
                                                     "role": "operator",
                                                     "name": ":",
-                                                    "syntax": "infix",
                                                     "children": [
                                                         {
                                                             "role": "string",
@@ -474,7 +463,6 @@ And this is what it expands into:
                                                 {
                                                     "role": "operator",
                                                     "name": ":",
-                                                    "syntax": "infix",
                                                     "children": [
                                                         {
                                                             "role": "string",
@@ -491,7 +479,6 @@ And this is what it expands into:
                                                 {
                                                     "role": "operator",
                                                     "name": ":",
-                                                    "syntax": "infix",
                                                     "children": [
                                                         {
                                                             "role": "string",
@@ -514,7 +501,6 @@ And this is what it expands into:
                                                 {
                                                     "role": "operator",
                                                     "name": ":",
-                                                    "syntax": "infix",
                                                     "children": [
                                                         {
                                                             "role": "string",
@@ -531,7 +517,6 @@ And this is what it expands into:
                                                 {
                                                     "role": "operator",
                                                     "name": ":",
-                                                    "syntax": "infix",
                                                     "children": [
                                                         {
                                                             "role": "string",
@@ -548,7 +533,6 @@ And this is what it expands into:
                                                 {
                                                     "role": "operator",
                                                     "name": ":",
-                                                    "syntax": "infix",
                                                     "children": [
                                                         {
                                                             "role": "string",
@@ -600,7 +584,6 @@ separator: undefined
 children:
 - role: operator
   name: ':'
-  syntax: infix
   children:
   - role: string
     quote: ':'
@@ -611,7 +594,6 @@ children:
     children:
     - role: operator
       name: ':'
-      syntax: infix
       children:
       - role: string
         quote: ':'
@@ -621,7 +603,6 @@ children:
         value: Alice
     - role: operator
       name: ':'
-      syntax: infix
       children:
       - role: string
         quote: ':'
@@ -630,7 +611,6 @@ children:
         value: 25
     - role: operator
       name: ':'
-      syntax: infix
       children:
       - role: string
         quote: ':'
@@ -639,7 +619,6 @@ children:
         name: 'true'
     - role: operator
       name: ':'
-      syntax: infix
       children:
       - role: string
         quote: ':'
@@ -659,7 +638,6 @@ children:
           value: SQL
     - role: operator
       name: ':'
-      syntax: infix
       children:
       - role: string
         quote: ':'
@@ -670,7 +648,6 @@ children:
         children:
         - role: operator
           name: ':'
-          syntax: infix
           children:
           - role: string
             quote: ':'
@@ -680,7 +657,6 @@ children:
             value: 123 Maple Street
         - role: operator
           name: ':'
-          syntax: infix
           children:
           - role: string
             quote: ':'
@@ -690,7 +666,6 @@ children:
             value: Exampleville
         - role: operator
           name: ':'
-          syntax: infix
           children:
           - role: string
             quote: ':'
@@ -700,7 +675,6 @@ children:
             value: Neverland
     - role: operator
       name: ':'
-      syntax: infix
       children:
       - role: string
         quote: ':'
@@ -715,7 +689,6 @@ children:
           children:
           - role: operator
             name: ':'
-            syntax: infix
             children:
             - role: string
               quote: ':'
@@ -725,7 +698,6 @@ children:
               value: To Kill a Mockingbird
           - role: operator
             name: ':'
-            syntax: infix
             children:
             - role: string
               quote: ':'
@@ -735,7 +707,6 @@ children:
               value: Harper Lee
           - role: operator
             name: ':'
-            syntax: infix
             children:
             - role: string
               quote: ':'
@@ -748,7 +719,6 @@ children:
           children:
           - role: operator
             name: ':'
-            syntax: infix
             children:
             - role: string
               quote: ':'
@@ -758,7 +728,6 @@ children:
               value: '1984'
           - role: operator
             name: ':'
-            syntax: infix
             children:
             - role: string
               quote: ':'
@@ -768,7 +737,6 @@ children:
               value: George Orwell
           - role: operator
             name: ':'
-            syntax: infix
             children:
             - role: string
               quote: ':'
@@ -784,114 +752,114 @@ children:
 digraph G {
   bgcolor="transparent";
   node [shape="box", style="filled", fontname="Ubuntu Mono"];
-  "127935933057600" [label="delimited", shape="box", fillcolor="lightgray"];
-  "127935933057680" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933057600" -> "127935933057680";
-  "127935933057760" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933057680" -> "127935933057760";
-  "127935933057840" [label="delimited", shape="box", fillcolor="lightgray"];
-  "127935933057680" -> "127935933057840";
-  "127935933057920" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933057840" -> "127935933057920";
-  "127935933058000" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933057920" -> "127935933058000";
-  "127935933058080" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933057920" -> "127935933058080";
-  "127935933058160" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933057840" -> "127935933058160";
-  "127935933058240" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933058160" -> "127935933058240";
-  "127935933058320" [label="number: 25", shape="box", fillcolor="lightgoldenrodyellow"];
-  "127935933058160" -> "127935933058320";
-  "127935933058400" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933057840" -> "127935933058400";
-  "127935933058480" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933058400" -> "127935933058480";
-  "127935933058560" [label="identifier: true", shape="box", fillcolor="Honeydew"];
-  "127935933058400" -> "127935933058560";
-  "127935933058640" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933057840" -> "127935933058640";
-  "127935933058720" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933058640" -> "127935933058720";
-  "127935933058800" [label="delimited", shape="box", fillcolor="lightgray"];
-  "127935933058640" -> "127935933058800";
-  "127935933058880" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933058800" -> "127935933058880";
-  "127935933058960" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933058800" -> "127935933058960";
-  "127935933059040" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933058800" -> "127935933059040";
-  "127935933059120" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933057840" -> "127935933059120";
-  "127935933059200" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933059120" -> "127935933059200";
-  "127935933059280" [label="delimited", shape="box", fillcolor="lightgray"];
-  "127935933059120" -> "127935933059280";
-  "127935933059360" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933059280" -> "127935933059360";
-  "127935933059520" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933059360" -> "127935933059520";
-  "127935933059680" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933059360" -> "127935933059680";
-  "127935933059760" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933059280" -> "127935933059760";
-  "127935933059920" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933059760" -> "127935933059920";
-  "127935933060080" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933059760" -> "127935933060080";
-  "127935933060160" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933059280" -> "127935933060160";
-  "127935933060320" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933060160" -> "127935933060320";
-  "127935933060480" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933060160" -> "127935933060480";
-  "127935933060560" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933057840" -> "127935933060560";
-  "127935933060640" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933060560" -> "127935933060640";
-  "127935933060720" [label="delimited", shape="box", fillcolor="lightgray"];
-  "127935933060560" -> "127935933060720";
-  "127935933060800" [label="delimited", shape="box", fillcolor="lightgray"];
-  "127935933060720" -> "127935933060800";
-  "127935933060960" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933060800" -> "127935933060960";
-  "127935933061120" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933060960" -> "127935933061120";
-  "127935933061280" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933060960" -> "127935933061280";
-  "127935933061520" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933060800" -> "127935933061520";
-  "127935933061680" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933061520" -> "127935933061680";
-  "127935933061840" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933061520" -> "127935933061840";
-  "127935933062080" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933060800" -> "127935933062080";
-  "127935933062240" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933062080" -> "127935933062240";
-  "127935933062400" [label="number: 1960", shape="box", fillcolor="lightgoldenrodyellow"];
-  "127935933062080" -> "127935933062400";
-  "127935933062560" [label="delimited", shape="box", fillcolor="lightgray"];
-  "127935933060720" -> "127935933062560";
-  "127935933062720" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933062560" -> "127935933062720";
-  "127935933062880" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933062720" -> "127935933062880";
-  "127935933063040" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933062720" -> "127935933063040";
-  "127935933063280" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933062560" -> "127935933063280";
-  "127935933063440" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933063280" -> "127935933063440";
-  "127935933063600" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933063280" -> "127935933063600";
-  "127935933063840" [label="operator", shape="box", fillcolor="#C0FFC0"];
-  "127935933062560" -> "127935933063840";
-  "127935933064000" [label="string", shape="box", fillcolor="lightgray"];
-  "127935933063840" -> "127935933064000";
-  "127935933064160" [label="number: 1949", shape="box", fillcolor="lightgoldenrodyellow"];
-  "127935933063840" -> "127935933064160";
+  "128030047569216" [label="delimited", shape="box", fillcolor="lightgray"];
+  "128030047569296" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047569216" -> "128030047569296";
+  "128030047569376" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047569296" -> "128030047569376";
+  "128030047569456" [label="delimited", shape="box", fillcolor="lightgray"];
+  "128030047569296" -> "128030047569456";
+  "128030047569536" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047569456" -> "128030047569536";
+  "128030047569616" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047569536" -> "128030047569616";
+  "128030047569696" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047569536" -> "128030047569696";
+  "128030047569776" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047569456" -> "128030047569776";
+  "128030047569856" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047569776" -> "128030047569856";
+  "128030047569936" [label="number: 25", shape="box", fillcolor="lightgoldenrodyellow"];
+  "128030047569776" -> "128030047569936";
+  "128030047570016" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047569456" -> "128030047570016";
+  "128030047570096" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047570016" -> "128030047570096";
+  "128030047570176" [label="identifier: true", shape="box", fillcolor="Honeydew"];
+  "128030047570016" -> "128030047570176";
+  "128030047570256" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047569456" -> "128030047570256";
+  "128030047570336" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047570256" -> "128030047570336";
+  "128030047570416" [label="delimited", shape="box", fillcolor="lightgray"];
+  "128030047570256" -> "128030047570416";
+  "128030047570496" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047570416" -> "128030047570496";
+  "128030047570576" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047570416" -> "128030047570576";
+  "128030047570656" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047570416" -> "128030047570656";
+  "128030047570736" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047569456" -> "128030047570736";
+  "128030047570816" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047570736" -> "128030047570816";
+  "128030047570896" [label="delimited", shape="box", fillcolor="lightgray"];
+  "128030047570736" -> "128030047570896";
+  "128030047570976" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047570896" -> "128030047570976";
+  "128030047571136" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047570976" -> "128030047571136";
+  "128030047571296" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047570976" -> "128030047571296";
+  "128030047571376" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047570896" -> "128030047571376";
+  "128030047571536" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047571376" -> "128030047571536";
+  "128030047571696" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047571376" -> "128030047571696";
+  "128030047571776" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047570896" -> "128030047571776";
+  "128030047571936" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047571776" -> "128030047571936";
+  "128030047572096" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047571776" -> "128030047572096";
+  "128030047572176" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047569456" -> "128030047572176";
+  "128030047572256" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047572176" -> "128030047572256";
+  "128030047572336" [label="delimited", shape="box", fillcolor="lightgray"];
+  "128030047572176" -> "128030047572336";
+  "128030047572416" [label="delimited", shape="box", fillcolor="lightgray"];
+  "128030047572336" -> "128030047572416";
+  "128030047572576" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047572416" -> "128030047572576";
+  "128030047572736" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047572576" -> "128030047572736";
+  "128030047572896" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047572576" -> "128030047572896";
+  "128030047573136" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047572416" -> "128030047573136";
+  "128030047573296" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047573136" -> "128030047573296";
+  "128030047573456" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047573136" -> "128030047573456";
+  "128030047573696" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047572416" -> "128030047573696";
+  "128030047573856" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047573696" -> "128030047573856";
+  "128030047574016" [label="number: 1960", shape="box", fillcolor="lightgoldenrodyellow"];
+  "128030047573696" -> "128030047574016";
+  "128030047574176" [label="delimited", shape="box", fillcolor="lightgray"];
+  "128030047572336" -> "128030047574176";
+  "128030047574336" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047574176" -> "128030047574336";
+  "128030047574496" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047574336" -> "128030047574496";
+  "128030047574656" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047574336" -> "128030047574656";
+  "128030047574896" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047574176" -> "128030047574896";
+  "128030047575056" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047574896" -> "128030047575056";
+  "128030047575216" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047574896" -> "128030047575216";
+  "128030047575456" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "128030047574176" -> "128030047575456";
+  "128030047575616" [label="string", shape="box", fillcolor="lightgray"];
+  "128030047575456" -> "128030047575616";
+  "128030047575776" [label="number: 1949", shape="box", fillcolor="lightgoldenrodyellow"];
+  "128030047575456" -> "128030047575776";
 }
 ```
 
-![Image generated for example](images/factorial.png)
+![Image generated for example](images/json_blob.png)

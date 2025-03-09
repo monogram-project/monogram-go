@@ -75,4 +75,4 @@ And this is what it expands into:
 #include dot
 ```
 
-![Image generated for example](images/factorial.png)
+![Image generated for example](images/let.png)
