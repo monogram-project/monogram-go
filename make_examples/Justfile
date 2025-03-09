@@ -11,7 +11,7 @@ clean:
 
 rebuild: clean build
 
-build: (page 'factorial') (page 'arithmetic') (page 'cosine_addition') (page '_blob')
+build: (page 'factorial') (page 'arithmetic') (page 'cosine_addition') (page 'json_blob')
 
 
 page STEM: (generate STEM)
