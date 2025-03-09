@@ -16,10 +16,12 @@ arbitrary names for identifiers.
 
 - Option 1: `\endfoo`, using backslash to escape an identifier
 - Option 2: `\"foo+bar"`, escaping a string
-- Option 3: `_endfoo_`, `_foo\+bar_`, using underbars as delimiting quote-marks 
-  and requiring escape sequences.
+- Option 3: `_endfoo_`, `_foo+bar_`, using underbars as delimiting quote-marks 
+  and allowing escape sequences.
+- Option 4: `\_endfoo`, using backslash to make the escape sequence part of
+  and identifier combined with (say) `\_` as the null sequence expander.
 
-**Outcome**: Option 3
+**Outcome**: Option 4
 
 ## Consequences
 
@@ -36,7 +38,7 @@ arbitrary names for identifiers.
     - Easy to learn and understand
     - Handles form-ends neatly
 - Cons
-    - Cannot handle any other exceptions
+    - Cannot handle any other use-cases
 - Interesting
     - Can be combined with Option 2 for improved coverage
 
@@ -54,31 +56,41 @@ arbitrary names for identifiers.
     - Easy to use
     - Handles arbitrary identifiers
     - No competition for the syntax
-    - Does not consume the symbol space
+    - Not all existing identifiers are handled as before
 - Cons
     - The situation where an underbar is only at one end of an identifier
       needs to be handled differently, which complicates the understanding.
-    - The fix is to require all non-alphanumerics to be escaped.
-    - This only works because the only non-alphabetic escape sequences are
-      for interpolation, which we do not need to support.
+    - Under test, we found the clash with _dunder_ variables was uncomfortable.
+
+### Option 4
+
+- Pros 
+    - Easy to use
+    - Handles arbitrary identifiers
+    - No competition for the syntax
+    - All existing variables are handled correctly
+- Cons
+    - New idea of a null-escape sequence, with `\_` expanding into 
+      the empty sequence.
+    - Using a null-escape sequence to convertt the type of a token into an
+      identifier is quite sneaky.z
 
 ### Additional Notes
 
 The driving use-case for this decision was to permit variables such as
 `endoscopy`. This would normally be seen as a form-end matching `oscopy`. Option
-3 handles this as `_endoscopy_`. This is an identifier that starts _and
-finishes_ with an underbar. The underbars act as delimiting quotes,
-escape-syntax (`\`) is enabled but whitespace must be quoted. 
+4 handles this as `\_endoscopy`. This uses the null escape sequence to force the
+type of the token into a ordinary identifier.
 
-N.B. Starting with an underbar and not finishing on an underbar but using escape
-syntax is a token-error e.g. `_\s\n`.
 
 This supports:
 
-  - Form starts and ends as identifiers e.g. `_if_` and `_endif_`.
-  - Arbitrary names as identifiers e.g. `_\#123_` and `_\s_`.
+  - Form starts and ends as identifiers e.g. `\_if` and `\_endif`.
+  - Arbitrary names as identifiers e.g. `\#123` and `\s`.
   - Discard i.e. `_`
   - Ordinary variables that simply start with an underbar e.g. `_labrador`
-  - Raw string syntax with backslash e.g. \'This is a raw string'. Note the syntax combines with multi-line syntax.
 
-
+It does not compete with:
+  
+  - Raw string syntax with backslash e.g. \'This is a raw string'. 
+  - Note this raw string syntax combines with multi-line syntax.

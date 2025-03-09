@@ -244,7 +244,7 @@ Diagram(
     Choice(
         0,
         NonTerminal('BasicIdentifier'),
-        NonTerminal('QuotedIdentifier')
+        NonTerminal('ExtendedIdentifier')
     )
 )
 
@@ -252,57 +252,47 @@ Diagram(
 Diagram(
     Comment('BasicIdentifier'),
     Sequence(
-        Optional(Terminal('_')),
-        NonTerminal('CoreIdentifier'),
-        Optional(Terminal('_'))
-    )
-)
-
-// CoreIdentifier
-Diagram(
-    Comment('CoreIdentifier'),
-    Choice(
-        0, 
-        Terminal('letter'),
-        Sequence(
-            Terminal('letter'),
-            ZeroOrMore(
-                Choice(
-                    1,
-                    Terminal('digit 0-9'),
-                    Terminal('letter'),
-                    Terminal('_')
-                )
-            ),
+        Choice(
+            0, 
+            NonTerminal('letter'),
+            Terminal('_')
+        ),
+        ZeroOrMore(
             Choice(
-                0,
-                NonTerminal('letter'),
-                NonTerminal('digit')
+                1,
+                Terminal('digit 0-9'),
+                Terminal('letter'),
+                Terminal('_')
             )
         )
     )
 )
 
-// QuotedIdentifier
+// ExtendedIdentifier
 Diagram(
-    Comment('QuotedIdentifier'),
+    Comment('ExtendedIdentifier'),
     Sequence(
-        Terminal('_'),
-        ZeroOrMore(
-            Choice(
-                0,
-                Terminal('Any codepoint except _ or \\'),
-                NonTerminal('EscapeSequence')
+        Optional(NonTerminal('BasicIdentifier')),
+        NonTerminal('EscapeSequence'),
+        Optional(
+            Sequence(
+                NonTerminal('BasicIdentifier'),
+                ZeroOrMore(
+                    Sequence(
+                        NonTerminal('EscapeSequence'),
+                        NonTerminal('BasicIdentifier')
+                    )
+                ),
+                Optional(NonTerminal('EscapeSequence'))
             )
-        ),
-        Terminal('_')
+        )
     )
 )
 
 // FormStart
 Diagram(
     Comment('FormStart'),
-    NonTerminal('CoreIdentifier (with matching FormEnd)')
+    NonTerminal('BasicIdentifier (with matching FormEnd)')
 )
 
 // FormEnd
@@ -310,7 +300,7 @@ Diagram(
     Comment('FormEnd'),
     Sequence(
         Terminal('end'),
-        NonTerminal('CoreIdentifier')
+        NonTerminal('BasicIdentifier')
     )
 )
 

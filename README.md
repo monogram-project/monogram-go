@@ -153,9 +153,12 @@ few aspects that will be less familiar here:
     - All three are completely symmetrical in their design.
     - And support escape sequences, string interpolation, and raw and multiline
       versions.
+    - `\_` is an escape sequence that expands into no characters. This helps
+      with escaped identifiers and also inserting visual breaks into long
+      strings e.g. phone numbers `"0765\_432\_1098"`
 
-- **Symbols** include parentheses, brackets and braces as well as punctuation such
-  as `,` and `;` (but not `.`)
+- **Symbols** include parentheses, brackets and braces as well as punctuation
+  such as `,` and `;` (but not `.`)
     - The three different brackets are treated symmetrically
     - So these are all valid expressions, for instance: `m.f(x)`,  `m.f[x]`, `m.f{x}`.
 
@@ -171,8 +174,8 @@ few aspects that will be less familiar here:
       binds the expected way. 
 
 - **Identifiers** 
-  - Support string-like quotes using underscores e.g. `_hello, world_`
-  is a valid identifier. 
+  - Support arbitrary identifiers via escape sequences e.g. `hello\,\sworld`
+  - The empty-escape sequence is the neat way to handle reserved words e.g. `\_if`
   - Identifiers starting `end` are key to the way the grammar works as they
     mark reserved words.
 
