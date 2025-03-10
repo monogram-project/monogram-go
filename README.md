@@ -353,8 +353,8 @@ endif
 ```
 
 Breakers give their names to the parts they introduce. But anonymous breakers do
-not have a name. To handle this, any parts introduced by an anonymous breaker is
-treated as if it was named `_` (this can be overridden).
+not have a name. To handle this, any parts introduced by an anonymous breaker are
+treated as if they were named `_` (this can be overridden).
 
 Hence the above example would turn into this XML:
 
