@@ -49,10 +49,6 @@ func (p *Parser) readExpr(context Context) (*Node, error) {
 	return n, e
 }
 
-// define read_arguments( close_bracket );
-// lvars (sep, args) = read_expr_seq_to( close_bracket, semi_comma, false);
-// sep, consNode( "arguments", null_attrs, args )
-// enddefine;
 func (p *Parser) readArguments(subType uint8, context Context) (string, *Node, error) {
 	// fmt.Println(">>> READ ARGUMENTS")
 	c := context
