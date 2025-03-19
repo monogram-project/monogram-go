@@ -1,0 +1,11 @@
+[private]
+@default:
+    just --list
+
+# Build the go binary
+build:
+    go build
+
+# Run the functional tests
+test: build
+    (cd .. && python3 runtests.py --tests tests.yaml)
