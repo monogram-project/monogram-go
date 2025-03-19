@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-func translateYAML(input io.Reader, output io.Writer, src *string, indent int) {
+func translateYAML(input io.Reader, output io.Writer, src *string, indent int, limit bool) {
 	// fmt.Fprintln(output, "YAML Translation Output:")
-	translate(input, output, printASTYAML, src, indent)
+	translate(input, output, printASTYAML, src, indent, limit)
 }
 
 func printASTYAML(root *Node, indentDelta string, output io.Writer) {

@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func translateDOT(input io.Reader, output io.Writer, src *string, indent int) {
-	translate(input, output, printASTDOT, src, indent)
+func translateDOT(input io.Reader, output io.Writer, src *string, indent int, limit bool) {
+	translate(input, output, printASTDOT, src, indent, limit)
 }
 
 func printASTDOT(root *Node, indentDelta string, output io.Writer) {

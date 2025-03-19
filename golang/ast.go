@@ -485,7 +485,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	return nil, fmt.Errorf("unexpected token: %s", token.Text)
 }
 
-func parseTokensToNodes(tokens []*Token) []*Node {
+func parseTokensToNodes(tokens []*Token, limit bool) []*Node {
 	parser := &Parser{tokens: tokens, UnglueOption: &Token{Type: Identifier, SubType: IdentifierVariable, Text: "_"}}
 	nodes := []*Node{}
 	for parser.hasNext() {
@@ -497,23 +497,26 @@ func parseTokensToNodes(tokens []*Token) []*Node {
 		} else {
 			nodes = append(nodes, node)
 		}
+		if limit {
+			break
+		}
 	}
 	return nodes
 }
 
-func parseToASTArray(input string) []*Node {
+func parseToASTArray(input string, limit bool) []*Node {
 	// Step 1: Tokenize the input
 	tokens := tokenizeInput(input)
 
 	// Step 2: Parse the tokens into nodes
-	nodes := parseTokensToNodes(tokens)
+	nodes := parseTokensToNodes(tokens, limit)
 
 	return nodes
 }
 
-func parseToAST(input string, src *string) *Node {
+func parseToAST(input string, src *string, limit bool) *Node {
 	// Get the array of nodes
-	nodes := parseToASTArray(input)
+	nodes := parseToASTArray(input, limit)
 
 	var options map[string]string = map[string]string{}
 	if src != nil {
@@ -521,10 +524,15 @@ func parseToAST(input string, src *string) *Node {
 	}
 
 	// Wrap the array in a "unit" node
-	unitNode := &Node{
-		Name:     "unit",
-		Options:  options,
-		Children: nodes,
+	var unitNode *Node
+	if limit && len(nodes) == 1 {
+		unitNode = nodes[0]
+	} else {
+		unitNode = &Node{
+			Name:     "unit",
+			Options:  options,
+			Children: nodes,
+		}
 	}
 
 	return unitNode

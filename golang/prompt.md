@@ -5,134 +5,178 @@ notation and not a programming language, although it does have an opinionated
 grammar. Consequently it has no built-in variables, no built-in operators and
 even the reserved words are dynamically discovered during the parse.
 
-The program has several phases 
+The program has several phases, which we have completed:
 
-- an initial ingestion phase in which the input is tokenised, which is done.
-- a pass to discover and mark the identifiers that are used as keywords, which is done.
-- a parsing of the tokens to form an internal AST, which is our current focus.
-- walking the AST to generate output, which is done.
+- an initial ingestion phase in which the input is tokenised.
+- a pass to discover and mark the identifiers that are used as keywords.
+- a parsing of the tokens to form an internal AST.
+- walking the AST to generate output.
 
-I have already prototyped the parser as a recursive descent parser with 
-operator precedence in a programming language called Pop-11. Unfortunately 
-this is not a programming language you know well.
-
-We have already implemented the Node structure in Go. Here it is:
+We are now improving the solution and backfilling tests. Our first job is to
+add a new option `--one` that forces the tool to take one and only one monogram
+value from the input. In this mode it does not wrap the output in a `unit`
+node. This is the main.go part:
 
 ```go
 package main
 
-type Node struct {
-	Name     string            // The name of the node
-	Options  map[string]string // Attributes (name-value pairs)
-	Children []*Node           // Child nodes
+import (
+	"flag"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"strings"
+	"syscall"
+)
+
+// Define a type for the translation function
+type translationFunc func(io.Reader, io.Writer)
+
+// Global map for format-to-function associations
+// Updated formatHandlers map
+var formatHandlers = map[string]func(io.Reader, io.Writer, *string, int){
+	"xml":     translateXML,
+	"json":    translateJSON,
+	"yaml":    translateYAML,
+	"mermaid": translateMermaid,
+	"dot":     translateDOT,
 }
 
-func parseTokensToNodes(tokens []*Token) []*Node {
-	// Dummy implementation for now: creates a node array based on dummy tokens
-	return []*Node{
-		{
-			Name:    "node1",
-			Options: map[string]string{"key1": "value1"},
-			Children: []*Node{
-				{
-					Name:     "child1",
-					Options:  map[string]string{"attribute": "data"},
-					Children: nil,
-				},
-			},
-		},
-		{
-			Name:     "node2",
-			Options:  map[string]string{"key2": "value2"},
-			Children: nil,
-		},
+// main is the entry point of the program. It processes command-line arguments
+// and performs file format translation based on user-specified flags. The
+// program supports built-in formats (e.g., XML and JSON) as well as delegating
+// to external subprograms for custom formats.
+//
+// Flags:
+// - --help: Displays help information for the program and available flags.
+// - --format (-f): Specifies the output format. Required for both built-in and external formats.
+// - --input (-i): Specifies the input file. If omitted, standard input (stdin) is used.
+// - --output (-o): Specifies the output file. If omitted, standard output (stdout) is used.
+//
+// Built-in Formats:
+// - xml: The program processes input and outputs in XML format.
+// - json: The program processes input and outputs in JSON format.
+// Additional built-in formats can be added by updating the global formatHandlers map.
+//
+// For non-built-in formats, the program delegates processing to a subprogram named "monogram-to-{format}".
+//
+// Usage Example:
+// To translate a file to JSON format:
+//
+//	monogram --format json --input input.txt --output output.json
+//
+// To delegate to a custom subprogram:
+//
+//	monogram --format custom --input input.txt --output output.custom
+func main() {
+	// Define flags
+	helpFlag := flag.Bool("help", false, "Display help information")
+	formatFlag := flag.String("format", "", "Output format")
+	formatShortFlag := flag.String("f", "", "Output format (short)")
+	inputFlag := flag.String("input", "", "Input file (optional, defaults to stdin)")
+	inputShortFlag := flag.String("i", "", "Input file (short, defaults to stdin)")
+	outputFlag := flag.String("output", "", "Output file (optional, defaults to stdout)")
+	outputShortFlag := flag.String("o", "", "Output file (short, defaults to stdout)")
+	indentFlag := flag.Int("indent", 2, "Number of spaces for indentation (0 for no formatting)")
+    oneFlag := flag.Bool("one", false, "Process only one monogram value and do not wrap in a unit node")
+	flag.Parse()
+
+	// Determine the effective format and input/output
+	format := *formatFlag
+	if format == "" {
+		format = *formatShortFlag
+	}
+
+	input := *inputFlag
+	if input == "" {
+		input = *inputShortFlag
+	}
+
+	output := *outputFlag
+	if output == "" {
+		output = *outputShortFlag
+	}
+
+	// Check if the format is built-in
+	translator, isBuiltInFormat := formatHandlers[format]
+
+	// Handle --help option
+	if *helpFlag && isBuiltInFormat {
+		fmt.Println("Usage: monogram [OPTIONS] < stdin > stdout")
+		flag.PrintDefaults()
+	}
+
+	// Open input (default to stdin if input is not provided)
+	var inputReader io.Reader
+	var src *string
+	if input == "" {
+		// fmt.Println("No input file specified. Using standard input.")
+		inputReader = os.Stdin
+		src = nil
+	} else {
+		file, err := os.Open(input)
+		if err != nil {
+			log.Fatalf("Error: Cannot open input file '%s': %v", input, err)
+		}
+		defer file.Close()
+		inputReader = file
+		src = &input
+	}
+
+	// Open output (default to stdout if output is not provided)
+	var outputWriter io.Writer
+	if output == "" {
+		// fmt.Println("No output file specified. Using standard output.")
+		outputWriter = os.Stdout
+	} else {
+		file, err := os.Create(output)
+		if err != nil {
+			log.Fatalf("Error: Cannot create output file '%s': %v", output, err)
+		}
+		defer file.Close()
+		outputWriter = file
+	}
+
+	// Handle built-in formats
+	if isBuiltInFormat {
+		translator(inputReader, outputWriter, src, *indentFlag, oneFlag) // Pass the indent parameter
+		return
+	}
+
+	// For non-built-in formats, exec into a subprogram
+	if format == "" {
+		log.Fatalf("Error: Format was not specified.")
+	}
+
+	execName := "monogram-to-" + format
+	newArgs := make([]string, len(os.Args))
+	newArgs[0] = execName
+	copy(newArgs[1:], os.Args[1:])
+
+	err := syscall.Exec(execName, newArgs, os.Environ())
+	if err != nil {
+		log.Fatalf("Failed to execute %s: %v", execName, err)
 	}
 }
 
-func parseToASTArray(input string) []*Node {
-	// Step 1: Tokenize the input
-	tokens := tokenizeInput(input)
-
-	// Step 2: Parse the tokens into nodes
-	nodes := parseTokensToNodes(tokens)
-
-	return nodes
-}
-
-func parseToAST(input string, src string) *Node {
-	// Get the array of nodes
-	nodes := parseToASTArray(input)
-
-	// Wrap the array in a "unit" node
-	unitNode := &Node{
-		Name:     "unit",
-		Options:  map[string]string{"src": src},
-		Children: nodes,
+func translate(input io.Reader, output io.Writer, printAST func(*Node, string, io.Writer), src *string, indentSpaces int) {
+	// Read the entire input as a string
+	data, err := io.ReadAll(input)
+	if err != nil {
+		log.Fatalf("Error: Failed to read input: %v", err)
 	}
 
-	return unitNode
+	// Convert the input string into an AST
+	ast := parseToAST(string(data), src)
+
+	// Determine the indentation string (spaces or none)
+	indent := ""
+	if indentSpaces > 0 {
+		indent = strings.Repeat(" ", indentSpaces)
+	}
+
+	// Use the provided print function to recursively print the AST
+	printAST(ast, indent, output)
 }
-```
-
-The core function is `read_expr_prec`, which consumes the input (the list
-of tokens) and returns an tree of nodes. `read_expr_prec` reads a primary
-expression off the input and then enters a loop in which it checks the 
-precedence of the next symbol.
-
-Here is the code for `read_primary_expr` in Pop-11. Even though you do
-not know Pop-11 I think it is simple enough for you to use as a guide.
-
-```pop11
-define read_primary_expr();
-    lvars q = proglist;
-    lvars item = readitem();
-    lvars tokentype = classify_item( item, proglist );
-    returnunless( tokentype )( 
-        if item.isstring then 
-            lvars qm = string_quote( q );
-            consNode( "string", $(quote=qm, value=item), [] )
-        else
-            consNode( "number", $(value=item), [] )
-        endif 
-    );
-    false -> q;
-    if inside_form and tokentype == "breaker" and unglue_option then
-        lvars reclassified_tokentype = classify_item( item, [^unglue_option] );
-        if reclassified_tokentype == tt_id then
-            reclassified_tokentype -> tokentype;
-            unglue_option :: proglist -> proglist
-        endif
-    endif;
-    if tokentype == tt_open then
-		lvars (sep, seq) = read_expr_seq_to( item.is_open_bracket, semi_comma, true );
-        lvars dname = delimiter_name( item );
-        consNode( "delimited", $(kind=dname, separator=sep.sep_as_word), seq )
-    elseif tokentype == tt_start then
-        read_form_expr( item )
-    elseif tokentype == tt_id then
-        consNode( "identifier", $(name=item), [] )
-    elseif tokentype == tt_force then
-        mishap( 'Misplaced macro indicator (' >< macro_mark >< ')', [] )
-    elseif tokentype == tt_macro then
-        pop11_need_nextreaditem( macro_mark ) -> _;
-        if item.isword then
-            lvars e = read_opt_expr_prec(max_precedence, true);
-            if e then
-                consNode( "form", syntax_prefix, [% consNode( "part", $(keyword=item), [^e] ) %] )
-            else
-                consNode( "form", syntax_prefix, [% consNode( "part", $(keyword=item), [] ) %] )
-            endif
-        else
-            mishap( 'Identifier required following `' >< macro_mark >< '`', [^item] )
-        endif
-    else
-        lvars p = precedence( item );
-        if p then
-            lvars e = read_expr_prec( p, false );
-            consNode( "operator", $(name=item, syntax="prefix"), [ ^e ] )
-        else
-            mishap( 'Unexpected token at start of expression', [^item] )
-        endif
-    endif
-enddefine;
 ```

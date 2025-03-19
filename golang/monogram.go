@@ -15,7 +15,7 @@ type translationFunc func(io.Reader, io.Writer)
 
 // Global map for format-to-function associations
 // Updated formatHandlers map
-var formatHandlers = map[string]func(io.Reader, io.Writer, *string, int){
+var formatHandlers = map[string]func(io.Reader, io.Writer, *string, int, bool){
 	"xml":     translateXML,
 	"json":    translateJSON,
 	"yaml":    translateYAML,
@@ -58,7 +58,8 @@ func main() {
 	inputShortFlag := flag.String("i", "", "Input file (short, defaults to stdin)")
 	outputFlag := flag.String("output", "", "Output file (optional, defaults to stdout)")
 	outputShortFlag := flag.String("o", "", "Output file (short, defaults to stdout)")
-	indentFlag := flag.Int("indent", 2, "Number of spaces for indentation (0 for no formatting)") // New flag
+	indentFlag := flag.Int("indent", 2, "Number of spaces for indentation (0 for no formatting)")
+	oneFlag := flag.Bool("one", false, "Process only one monogram value and do not wrap in a unit node")
 	flag.Parse()
 
 	// Determine the effective format and input/output
@@ -119,7 +120,7 @@ func main() {
 
 	// Handle built-in formats
 	if isBuiltInFormat {
-		translator(inputReader, outputWriter, src, *indentFlag) // Pass the indent parameter
+		translator(inputReader, outputWriter, src, *indentFlag, *oneFlag == true) // Pass the indent parameter
 		return
 	}
 
@@ -139,7 +140,7 @@ func main() {
 	}
 }
 
-func translate(input io.Reader, output io.Writer, printAST func(*Node, string, io.Writer), src *string, indentSpaces int) {
+func translate(input io.Reader, output io.Writer, printAST func(*Node, string, io.Writer), src *string, indentSpaces int, limit bool) {
 	// Read the entire input as a string
 	data, err := io.ReadAll(input)
 	if err != nil {
@@ -147,7 +148,7 @@ func translate(input io.Reader, output io.Writer, printAST func(*Node, string, i
 	}
 
 	// Convert the input string into an AST
-	ast := parseToAST(string(data), src)
+	ast := parseToAST(string(data), src, limit)
 
 	// Determine the indentation string (spaces or none)
 	indent := ""

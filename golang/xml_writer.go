@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-func translateXML(input io.Reader, output io.Writer, src *string, indent int) {
+func translateXML(input io.Reader, output io.Writer, src *string, indent int, limit bool) {
 	// fmt.Fprintln(output, "XML Translation Output:")
-	translate(input, output, printASTXML, src, indent)
+	translate(input, output, printASTXML, src, indent, limit)
 }
 
 // func printASTXML(nodes []*Node, indentDelta string, output io.Writer) {
