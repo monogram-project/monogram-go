@@ -485,15 +485,13 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	return nil, fmt.Errorf("unexpected token: %s", token.Text)
 }
 
-func parseTokensToNodes(tokens []*Token, limit bool) []*Node {
-	parser := &Parser{tokens: tokens, UnglueOption: &Token{Type: Identifier, SubType: IdentifierVariable, Text: "_"}}
+func parseTokensToNodes(tokens []*Token, limit bool, breaker string) ([]*Node, error) {
+	parser := &Parser{tokens: tokens, UnglueOption: &Token{Type: Identifier, SubType: IdentifierVariable, Text: breaker}}
 	nodes := []*Node{}
 	for parser.hasNext() {
 		node, err := parser.readExpr(Context{})
 		if err != nil {
-			// TODO: For the moment we force continuation but we will need
-			// to come back nd fix this sooner or later
-			// fmt.Println("Error reading primary expression:", err)
+			return nil, err
 		} else {
 			nodes = append(nodes, node)
 		}
@@ -501,31 +499,37 @@ func parseTokensToNodes(tokens []*Token, limit bool) []*Node {
 			break
 		}
 	}
-	return nodes
+	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool) []*Node {
+func parseToASTArray(input string, limit bool, breaker string) ([]*Node, error) {
 	// Step 1: Tokenize the input
 	tokens := tokenizeInput(input)
 
 	// Step 2: Parse the tokens into nodes
-	nodes := parseTokensToNodes(tokens, limit)
+	nodes, err := parseTokensToNodes(tokens, limit, breaker)
+	if err != nil {
+		return nil, err
+	}
 
-	return nodes
+	return nodes, nil
 }
 
-func parseToAST(input string, src *string, limit bool) *Node {
+func parseToAST(input string, foptions *FormatOptions) (*Node, error) {
 	// Get the array of nodes
-	nodes := parseToASTArray(input, limit)
+	nodes, err := parseToASTArray(input, foptions.Limit, foptions.UnglueOption)
+	if err != nil {
+		return nil, err
+	}
 
 	var options map[string]string = map[string]string{}
-	if src != nil {
-		options["src"] = *src
+	if foptions.Input != "" {
+		options["src"] = foptions.Input
 	}
 
 	// Wrap the array in a "unit" node
 	var unitNode *Node
-	if limit && len(nodes) == 1 {
+	if foptions.Limit && len(nodes) == 1 {
 		unitNode = nodes[0]
 	} else {
 		unitNode = &Node{
@@ -535,5 +539,5 @@ func parseToAST(input string, src *string, limit bool) *Node {
 		}
 	}
 
-	return unitNode
+	return unitNode, nil
 }
