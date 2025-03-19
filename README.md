@@ -1,5 +1,7 @@
 # Monogram
 
+🚨 **Alpha Status**: This project is currently in alpha. Features and functionality may change, and breaking changes may occur as development continues. Use at your own risk. 🚨
+
 Monogram is a "no batteries" notation for writing domain-specific programs and
 configuration files. It is easy for humans to read and write. It is easy for
 machines to parse and generate. It deliberately borrows from many programming
