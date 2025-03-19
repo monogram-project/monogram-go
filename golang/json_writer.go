@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func translateJSON(input io.Reader, output io.Writer, src string, indent int) {
+func translateJSON(input io.Reader, output io.Writer, src *string, indent int) {
 	// fmt.Fprintln(output, "JSON Translation Output:")
 	translate(input, output, printASTJSON, src, indent)
 }

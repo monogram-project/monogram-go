@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func translateYAML(input io.Reader, output io.Writer, src string, indent int) {
+func translateYAML(input io.Reader, output io.Writer, src *string, indent int) {
 	// fmt.Fprintln(output, "YAML Translation Output:")
 	translate(input, output, printASTYAML, src, indent)
 }

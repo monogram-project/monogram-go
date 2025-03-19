@@ -511,14 +511,19 @@ func parseToASTArray(input string) []*Node {
 	return nodes
 }
 
-func parseToAST(input string, src string) *Node {
+func parseToAST(input string, src *string) *Node {
 	// Get the array of nodes
 	nodes := parseToASTArray(input)
+
+	var options map[string]string = map[string]string{}
+	if src != nil {
+		options["src"] = *src
+	}
 
 	// Wrap the array in a "unit" node
 	unitNode := &Node{
 		Name:     "unit",
-		Options:  map[string]string{"src": src},
+		Options:  options,
 		Children: nodes,
 	}
 

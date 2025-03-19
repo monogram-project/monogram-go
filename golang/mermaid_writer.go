@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func translateMermaid(input io.Reader, output io.Writer, src string, indent int) {
+func translateMermaid(input io.Reader, output io.Writer, src *string, indent int) {
 	translate(input, output, printASTMermaid, src, indent)
 }
 

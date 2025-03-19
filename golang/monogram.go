@@ -15,7 +15,7 @@ type translationFunc func(io.Reader, io.Writer)
 
 // Global map for format-to-function associations
 // Updated formatHandlers map
-var formatHandlers = map[string]func(io.Reader, io.Writer, string, int){
+var formatHandlers = map[string]func(io.Reader, io.Writer, *string, int){
 	"xml":     translateXML,
 	"json":    translateJSON,
 	"yaml":    translateYAML,
@@ -88,11 +88,11 @@ func main() {
 
 	// Open input (default to stdin if input is not provided)
 	var inputReader io.Reader
-	var src string
+	var src *string
 	if input == "" {
-		fmt.Println("No input file specified. Using standard input.")
+		// fmt.Println("No input file specified. Using standard input.")
 		inputReader = os.Stdin
-		src = "(stdin)"
+		src = nil
 	} else {
 		file, err := os.Open(input)
 		if err != nil {
@@ -100,7 +100,7 @@ func main() {
 		}
 		defer file.Close()
 		inputReader = file
-		src = input
+		src = &input
 	}
 
 	// Open output (default to stdout if output is not provided)
@@ -139,7 +139,7 @@ func main() {
 	}
 }
 
-func translate(input io.Reader, output io.Writer, printAST func(*Node, string, io.Writer), src string, indentSpaces int) {
+func translate(input io.Reader, output io.Writer, printAST func(*Node, string, io.Writer), src *string, indentSpaces int) {
 	// Read the entire input as a string
 	data, err := io.ReadAll(input)
 	if err != nil {
