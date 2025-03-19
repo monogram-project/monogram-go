@@ -1,0 +1,20 @@
+# The top-level normalization flag applies to all tests unless overridden.
+normalize: xml
+tests:
+
+  - name: "Convert number to XML"
+    command: "./golang/monogram --format xml"
+    input: |
+      99
+    expected_output: |
+      <unit><number value="99"/></unit>
+
+  - name: "Test with override (no normalization)"
+    command: "./golang/monogram --format xml  --indent 4"
+    input: |
+      123
+    expected_output: |
+      <unit>
+          <number value="123" />
+      </unit>
+    normalize: none
