@@ -41,113 +41,113 @@ And this is what it looks like:
 
 ```mermaid
 graph LR
-  127816185283824["delimited"]:::custom_delimited;
-  127816185283904["operator: :"]:::custom_operator;
-  127816185283824 --> 127816185283904;
-  127816185283984["string: person"]:::custom_string;
-  127816185283904 --> 127816185283984;
-  127816185284064["delimited"]:::custom_delimited;
-  127816185283904 --> 127816185284064;
-  127816185284144["operator: :"]:::custom_operator;
-  127816185284064 --> 127816185284144;
-  127816185284224["string: name"]:::custom_string;
-  127816185284144 --> 127816185284224;
-  127816185284304["string: Alice"]:::custom_string;
-  127816185284144 --> 127816185284304;
-  127816185284384["operator: :"]:::custom_operator;
-  127816185284064 --> 127816185284384;
-  127816185284464["string: age"]:::custom_string;
-  127816185284384 --> 127816185284464;
-  127816185284544["number: 25"]:::custom_number;
-  127816185284384 --> 127816185284544;
-  127816185284624["operator: :"]:::custom_operator;
-  127816185284064 --> 127816185284624;
-  127816185284704["string: isStudent"]:::custom_string;
-  127816185284624 --> 127816185284704;
-  127816185284784["identifier: true"]:::custom_identifier;
-  127816185284624 --> 127816185284784;
-  127816185284864["operator: :"]:::custom_operator;
-  127816185284064 --> 127816185284864;
-  127816185284944["string: skills"]:::custom_string;
-  127816185284864 --> 127816185284944;
-  127816185285024["delimited"]:::custom_delimited;
-  127816185284864 --> 127816185285024;
-  127816185285104["string: Python"]:::custom_string;
-  127816185285024 --> 127816185285104;
-  127816185285184["string: JavaScript"]:::custom_string;
-  127816185285024 --> 127816185285184;
-  127816185285264["string: SQL"]:::custom_string;
-  127816185285024 --> 127816185285264;
-  127816185285344["operator: :"]:::custom_operator;
-  127816185284064 --> 127816185285344;
-  127816185285424["string: address"]:::custom_string;
-  127816185285344 --> 127816185285424;
-  127816185285504["delimited"]:::custom_delimited;
-  127816185285344 --> 127816185285504;
-  127816185285584["operator: :"]:::custom_operator;
-  127816185285504 --> 127816185285584;
-  127816185285744["string: street"]:::custom_string;
-  127816185285584 --> 127816185285744;
-  127816185285904["string:<br/>123 Maple Street"]:::custom_string;
-  127816185285584 --> 127816185285904;
-  127816185285984["operator: :"]:::custom_operator;
-  127816185285504 --> 127816185285984;
-  127816185286144["string: city"]:::custom_string;
-  127816185285984 --> 127816185286144;
-  127816185286304["string: Exampleville"]:::custom_string;
-  127816185285984 --> 127816185286304;
-  127816185286384["operator: :"]:::custom_operator;
-  127816185285504 --> 127816185286384;
-  127816185286544["string: country"]:::custom_string;
-  127816185286384 --> 127816185286544;
-  127816185286704["string: Neverland"]:::custom_string;
-  127816185286384 --> 127816185286704;
-  127816185286784["operator: :"]:::custom_operator;
-  127816185284064 --> 127816185286784;
-  127816185286864["string:<br/>favoriteBooks"]:::custom_string;
-  127816185286784 --> 127816185286864;
-  127816185286944["delimited"]:::custom_delimited;
-  127816185286784 --> 127816185286944;
-  127816185287024["delimited"]:::custom_delimited;
-  127816185286944 --> 127816185287024;
-  127816185287184["operator: :"]:::custom_operator;
-  127816185287024 --> 127816185287184;
-  127816185287344["string: title"]:::custom_string;
-  127816185287184 --> 127816185287344;
-  127816185287504["string:<br/>To Kill a Mockingbird"]:::custom_string;
-  127816185287184 --> 127816185287504;
-  127816185287744["operator: :"]:::custom_operator;
-  127816185287024 --> 127816185287744;
-  127816185287904["string: author"]:::custom_string;
-  127816185287744 --> 127816185287904;
-  127816185288064["string: Harper Lee"]:::custom_string;
-  127816185287744 --> 127816185288064;
-  127816185288304["operator: :"]:::custom_operator;
-  127816185287024 --> 127816185288304;
-  127816185288464["string:<br/>yearPublished"]:::custom_string;
-  127816185288304 --> 127816185288464;
-  127816185288624["number: 1960"]:::custom_number;
-  127816185288304 --> 127816185288624;
-  127816185288784["delimited"]:::custom_delimited;
-  127816185286944 --> 127816185288784;
-  127816185288944["operator: :"]:::custom_operator;
-  127816185288784 --> 127816185288944;
-  127816185289104["string: title"]:::custom_string;
-  127816185288944 --> 127816185289104;
-  127816185289264["string: 1984"]:::custom_string;
-  127816185288944 --> 127816185289264;
-  127816185289504["operator: :"]:::custom_operator;
-  127816185288784 --> 127816185289504;
-  127816185289664["string: author"]:::custom_string;
-  127816185289504 --> 127816185289664;
-  127816185289824["string:<br/>George Orwell"]:::custom_string;
-  127816185289504 --> 127816185289824;
-  127816185290064["operator: :"]:::custom_operator;
-  127816185288784 --> 127816185290064;
-  127816185290224["string:<br/>yearPublished"]:::custom_string;
-  127816185290064 --> 127816185290224;
-  127816185290384["number: 1949"]:::custom_number;
-  127816185290064 --> 127816185290384;
+  132956878374208["delimited"]:::custom_delimited;
+  132956878374288["operator: :"]:::custom_operator;
+  132956878374208 --> 132956878374288;
+  132956878374368["string: person"]:::custom_string;
+  132956878374288 --> 132956878374368;
+  132956878374448["delimited"]:::custom_delimited;
+  132956878374288 --> 132956878374448;
+  132956878374528["operator: :"]:::custom_operator;
+  132956878374448 --> 132956878374528;
+  132956878374608["string: name"]:::custom_string;
+  132956878374528 --> 132956878374608;
+  132956878374688["string: Alice"]:::custom_string;
+  132956878374528 --> 132956878374688;
+  132956878374768["operator: :"]:::custom_operator;
+  132956878374448 --> 132956878374768;
+  132956878374848["string: age"]:::custom_string;
+  132956878374768 --> 132956878374848;
+  132956878374928["number: 25"]:::custom_number;
+  132956878374768 --> 132956878374928;
+  132956878375008["operator: :"]:::custom_operator;
+  132956878374448 --> 132956878375008;
+  132956878375088["string: isStudent"]:::custom_string;
+  132956878375008 --> 132956878375088;
+  132956878375168["identifier: true"]:::custom_identifier;
+  132956878375008 --> 132956878375168;
+  132956878375248["operator: :"]:::custom_operator;
+  132956878374448 --> 132956878375248;
+  132956878375328["string: skills"]:::custom_string;
+  132956878375248 --> 132956878375328;
+  132956878375408["delimited"]:::custom_delimited;
+  132956878375248 --> 132956878375408;
+  132956878375488["string: Python"]:::custom_string;
+  132956878375408 --> 132956878375488;
+  132956878375568["string: JavaScript"]:::custom_string;
+  132956878375408 --> 132956878375568;
+  132956878375648["string: SQL"]:::custom_string;
+  132956878375408 --> 132956878375648;
+  132956878375728["operator: :"]:::custom_operator;
+  132956878374448 --> 132956878375728;
+  132956878375808["string: address"]:::custom_string;
+  132956878375728 --> 132956878375808;
+  132956878375888["delimited"]:::custom_delimited;
+  132956878375728 --> 132956878375888;
+  132956878375968["operator: :"]:::custom_operator;
+  132956878375888 --> 132956878375968;
+  132956878376048["string: street"]:::custom_string;
+  132956878375968 --> 132956878376048;
+  132956878376128["string:<br/>123 Maple Street"]:::custom_string;
+  132956878375968 --> 132956878376128;
+  132956878376208["operator: :"]:::custom_operator;
+  132956878375888 --> 132956878376208;
+  132956878376288["string: city"]:::custom_string;
+  132956878376208 --> 132956878376288;
+  132956878376368["string: Exampleville"]:::custom_string;
+  132956878376208 --> 132956878376368;
+  132956878376448["operator: :"]:::custom_operator;
+  132956878375888 --> 132956878376448;
+  132956878376528["string: country"]:::custom_string;
+  132956878376448 --> 132956878376528;
+  132956878376608["string: Neverland"]:::custom_string;
+  132956878376448 --> 132956878376608;
+  132956878376688["operator: :"]:::custom_operator;
+  132956878374448 --> 132956878376688;
+  132956878376768["string:<br/>favoriteBooks"]:::custom_string;
+  132956878376688 --> 132956878376768;
+  132956878376848["delimited"]:::custom_delimited;
+  132956878376688 --> 132956878376848;
+  132956878376928["delimited"]:::custom_delimited;
+  132956878376848 --> 132956878376928;
+  132956878377008["operator: :"]:::custom_operator;
+  132956878376928 --> 132956878377008;
+  132956878377088["string: title"]:::custom_string;
+  132956878377008 --> 132956878377088;
+  132956878377168["string:<br/>To Kill a Mockingbird"]:::custom_string;
+  132956878377008 --> 132956878377168;
+  132956878377248["operator: :"]:::custom_operator;
+  132956878376928 --> 132956878377248;
+  132956878377328["string: author"]:::custom_string;
+  132956878377248 --> 132956878377328;
+  132956878377408["string: Harper Lee"]:::custom_string;
+  132956878377248 --> 132956878377408;
+  132956878377488["operator: :"]:::custom_operator;
+  132956878376928 --> 132956878377488;
+  132956878377568["string:<br/>yearPublished"]:::custom_string;
+  132956878377488 --> 132956878377568;
+  132956878377648["number: 1960"]:::custom_number;
+  132956878377488 --> 132956878377648;
+  132956878377728["delimited"]:::custom_delimited;
+  132956878376848 --> 132956878377728;
+  132956878377808["operator: :"]:::custom_operator;
+  132956878377728 --> 132956878377808;
+  132956878377888["string: title"]:::custom_string;
+  132956878377808 --> 132956878377888;
+  132956878377968["string: 1984"]:::custom_string;
+  132956878377808 --> 132956878377968;
+  132956878378048["operator: :"]:::custom_operator;
+  132956878377728 --> 132956878378048;
+  132956878378128["string: author"]:::custom_string;
+  132956878378048 --> 132956878378128;
+  132956878378208["string:<br/>George Orwell"]:::custom_string;
+  132956878378048 --> 132956878378208;
+  132956878378288["operator: :"]:::custom_operator;
+  132956878377728 --> 132956878378288;
+  132956878378368["string:<br/>yearPublished"]:::custom_string;
+  132956878378288 --> 132956878378368;
+  132956878378448["number: 1949"]:::custom_number;
+  132956878378288 --> 132956878378448;
 
 classDef custom_form fill:lightpink,stroke:#333,stroke-width:2px;
 classDef custom_part fill:#FFD8E1,stroke:#333,stroke-width:2px;
@@ -163,81 +163,81 @@ classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
 
 ```xml
 <delimited kind="braces" separator="undefined">
-    <operator name=":">
-        <string quote=":" value="person"/>
-        <delimited kind="braces" separator="comma">
-            <operator name=":">
-                <string quote=":" value="name"/>
-                <string quote="," value="Alice"/>
-            </operator>
-            <operator name=":">
-                <string quote=":" value="age"/>
-                <number value="25"/>
-            </operator>
-            <operator name=":">
-                <string quote=":" value="isStudent"/>
-                <identifier name="true"/>
-            </operator>
-            <operator name=":">
-                <string quote=":" value="skills"/>
-                <delimited kind="brackets" separator="comma">
-                    <string quote="," value="Python"/>
-                    <string quote="," value="JavaScript"/>
-                    <string quote="]" value="SQL"/>
-                </delimited>
-            </operator>
-            <operator name=":">
-                <string quote=":" value="address"/>
-                <delimited kind="braces" separator="comma">
-                    <operator name=":">
-                        <string quote=":" value="street"/>
-                        <string quote="," value="123 Maple Street"/>
-                    </operator>
-                    <operator name=":">
-                        <string quote=":" value="city"/>
-                        <string quote="," value="Exampleville"/>
-                    </operator>
-                    <operator name=":">
-                        <string quote=":" value="country"/>
-                        <string quote="&quot;" value="Neverland"/>
-                    </operator>
-                </delimited>
-            </operator>
-            <operator name=":">
-                <string quote=":" value="favoriteBooks"/>
-                <delimited kind="brackets" separator="comma">
-                    <delimited kind="braces" separator="comma">
-                        <operator name=":">
-                            <string quote=":" value="title"/>
-                            <string quote="," value="To Kill a Mockingbird"/>
-                        </operator>
-                        <operator name=":">
-                            <string quote=":" value="author"/>
-                            <string quote="," value="Harper Lee"/>
-                        </operator>
-                        <operator name=":">
-                            <string quote=":" value="yearPublished"/>
-                            <number value="1960"/>
-                        </operator>
-                    </delimited>
-                    <delimited kind="braces" separator="comma">
-                        <operator name=":">
-                            <string quote=":" value="title"/>
-                            <string quote="," value="1984"/>
-                        </operator>
-                        <operator name=":">
-                            <string quote=":" value="author"/>
-                            <string quote="," value="George Orwell"/>
-                        </operator>
-                        <operator name=":">
-                            <string quote=":" value="yearPublished"/>
-                            <number value="1949"/>
-                        </operator>
-                    </delimited>
-                </delimited>
-            </operator>
+  <operator name=":" syntax="infix">
+    <string quote="double" value="person" />
+    <delimited kind="braces" separator="comma">
+      <operator name=":" syntax="infix">
+        <string quote="double" value="name" />
+        <string quote="double" value="Alice" />
+      </operator>
+      <operator name=":" syntax="infix">
+        <string quote="double" value="age" />
+        <number value="25" />
+      </operator>
+      <operator name=":" syntax="infix">
+        <string quote="double" value="isStudent" />
+        <identifier name="true" />
+      </operator>
+      <operator name=":" syntax="infix">
+        <string quote="double" value="skills" />
+        <delimited kind="brackets" separator="comma">
+          <string quote="double" value="Python" />
+          <string quote="double" value="JavaScript" />
+          <string quote="double" value="SQL" />
         </delimited>
-    </operator>
+      </operator>
+      <operator name=":" syntax="infix">
+        <string quote="double" value="address" />
+        <delimited kind="braces" separator="comma">
+          <operator name=":" syntax="infix">
+            <string quote="double" value="street" />
+            <string quote="double" value="123 Maple Street" />
+          </operator>
+          <operator name=":" syntax="infix">
+            <string quote="double" value="city" />
+            <string quote="double" value="Exampleville" />
+          </operator>
+          <operator name=":" syntax="infix">
+            <string quote="double" value="country" />
+            <string quote="double" value="Neverland" />
+          </operator>
+        </delimited>
+      </operator>
+      <operator name=":" syntax="infix">
+        <string quote="double" value="favoriteBooks" />
+        <delimited kind="brackets" separator="comma">
+          <delimited kind="braces" separator="comma">
+            <operator name=":" syntax="infix">
+              <string quote="double" value="title" />
+              <string quote="double" value="To Kill a Mockingbird" />
+            </operator>
+            <operator name=":" syntax="infix">
+              <string quote="double" value="author" />
+              <string quote="double" value="Harper Lee" />
+            </operator>
+            <operator name=":" syntax="infix">
+              <string quote="double" value="yearPublished" />
+              <number value="1960" />
+            </operator>
+          </delimited>
+          <delimited kind="braces" separator="comma">
+            <operator name=":" syntax="infix">
+              <string quote="double" value="title" />
+              <string quote="double" value="1984" />
+            </operator>
+            <operator name=":" syntax="infix">
+              <string quote="double" value="author" />
+              <string quote="double" value="George Orwell" />
+            </operator>
+            <operator name=":" syntax="infix">
+              <string quote="double" value="yearPublished" />
+              <number value="1949" />
+            </operator>
+          </delimited>
+        </delimited>
+      </operator>
+    </delimited>
+  </operator>
 </delimited>
 ```
 
@@ -262,302 +262,317 @@ And this is what it expands into:
 
 ```json
 {
-    "role": "delimited",
-    "kind": "braces",
-    "separator": "undefined",
-    "children": [
+  "role": "delimited",
+  "kind": "braces",
+  "separator": "undefined",
+  "children": [
+    {
+      "role": "operator",
+      "name": ":",
+      "syntax": "infix",
+      "children": [
         {
-            "role": "operator",
-            "name": ":",
-            "children": [
+          "role": "string",
+          "quote": "double",
+          "value": "person"
+        },
+        {
+          "role": "delimited",
+          "kind": "braces",
+          "separator": "comma",
+          "children": [
+            {
+              "role": "operator",
+              "syntax": "infix",
+              "name": ":",
+              "children": [
                 {
-                    "role": "string",
-                    "quote": ":",
-                    "value": "person"
+                  "role": "string",
+                  "value": "name",
+                  "quote": "double"
                 },
                 {
-                    "role": "delimited",
-                    "kind": "braces",
-                    "separator": "comma",
-                    "children": [
-                        {
-                            "role": "operator",
-                            "name": ":",
-                            "children": [
-                                {
-                                    "role": "string",
-                                    "quote": ":",
-                                    "value": "name"
-                                },
-                                {
-                                    "role": "string",
-                                    "quote": ",",
-                                    "value": "Alice"
-                                }
-                            ]
-                        },
-                        {
-                            "role": "operator",
-                            "name": ":",
-                            "children": [
-                                {
-                                    "role": "string",
-                                    "quote": ":",
-                                    "value": "age"
-                                },
-                                {
-                                    "role": "number",
-                                    "value": 25
-                                }
-                            ]
-                        },
-                        {
-                            "role": "operator",
-                            "name": ":",
-                            "children": [
-                                {
-                                    "role": "string",
-                                    "quote": ":",
-                                    "value": "isStudent"
-                                },
-                                {
-                                    "role": "identifier",
-                                    "name": "true"
-                                }
-                            ]
-                        },
-                        {
-                            "role": "operator",
-                            "name": ":",
-                            "children": [
-                                {
-                                    "role": "string",
-                                    "quote": ":",
-                                    "value": "skills"
-                                },
-                                {
-                                    "role": "delimited",
-                                    "kind": "brackets",
-                                    "separator": "comma",
-                                    "children": [
-                                        {
-                                            "role": "string",
-                                            "quote": ",",
-                                            "value": "Python"
-                                        },
-                                        {
-                                            "role": "string",
-                                            "quote": ",",
-                                            "value": "JavaScript"
-                                        },
-                                        {
-                                            "role": "string",
-                                            "quote": "]",
-                                            "value": "SQL"
-                                        }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            "role": "operator",
-                            "name": ":",
-                            "children": [
-                                {
-                                    "role": "string",
-                                    "quote": ":",
-                                    "value": "address"
-                                },
-                                {
-                                    "role": "delimited",
-                                    "kind": "braces",
-                                    "separator": "comma",
-                                    "children": [
-                                        {
-                                            "role": "operator",
-                                            "name": ":",
-                                            "children": [
-                                                {
-                                                    "role": "string",
-                                                    "quote": ":",
-                                                    "value": "street"
-                                                },
-                                                {
-                                                    "role": "string",
-                                                    "quote": ",",
-                                                    "value": "123 Maple Street"
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "role": "operator",
-                                            "name": ":",
-                                            "children": [
-                                                {
-                                                    "role": "string",
-                                                    "quote": ":",
-                                                    "value": "city"
-                                                },
-                                                {
-                                                    "role": "string",
-                                                    "quote": ",",
-                                                    "value": "Exampleville"
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "role": "operator",
-                                            "name": ":",
-                                            "children": [
-                                                {
-                                                    "role": "string",
-                                                    "quote": ":",
-                                                    "value": "country"
-                                                },
-                                                {
-                                                    "role": "string",
-                                                    "quote": "\"",
-                                                    "value": "Neverland"
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            ]
-                        },
-                        {
-                            "role": "operator",
-                            "name": ":",
-                            "children": [
-                                {
-                                    "role": "string",
-                                    "quote": ":",
-                                    "value": "favoriteBooks"
-                                },
-                                {
-                                    "role": "delimited",
-                                    "kind": "brackets",
-                                    "separator": "comma",
-                                    "children": [
-                                        {
-                                            "role": "delimited",
-                                            "kind": "braces",
-                                            "separator": "comma",
-                                            "children": [
-                                                {
-                                                    "role": "operator",
-                                                    "name": ":",
-                                                    "children": [
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ":",
-                                                            "value": "title"
-                                                        },
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ",",
-                                                            "value": "To Kill a Mockingbird"
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "role": "operator",
-                                                    "name": ":",
-                                                    "children": [
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ":",
-                                                            "value": "author"
-                                                        },
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ",",
-                                                            "value": "Harper Lee"
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "role": "operator",
-                                                    "name": ":",
-                                                    "children": [
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ":",
-                                                            "value": "yearPublished"
-                                                        },
-                                                        {
-                                                            "role": "number",
-                                                            "value": 1960
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        },
-                                        {
-                                            "role": "delimited",
-                                            "kind": "braces",
-                                            "separator": "comma",
-                                            "children": [
-                                                {
-                                                    "role": "operator",
-                                                    "name": ":",
-                                                    "children": [
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ":",
-                                                            "value": "title"
-                                                        },
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ",",
-                                                            "value": "1984"
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "role": "operator",
-                                                    "name": ":",
-                                                    "children": [
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ":",
-                                                            "value": "author"
-                                                        },
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ",",
-                                                            "value": "George Orwell"
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "role": "operator",
-                                                    "name": ":",
-                                                    "children": [
-                                                        {
-                                                            "role": "string",
-                                                            "quote": ":",
-                                                            "value": "yearPublished"
-                                                        },
-                                                        {
-                                                            "role": "number",
-                                                            "value": 1949
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
+                  "role": "string",
+                  "quote": "double",
+                  "value": "Alice"
                 }
-            ]
+              ]
+            },
+            {
+              "role": "operator",
+              "syntax": "infix",
+              "name": ":",
+              "children": [
+                {
+                  "role": "string",
+                  "quote": "double",
+                  "value": "age"
+                },
+                {
+                  "role": "number",
+                  "value": "25"
+                }
+              ]
+            },
+            {
+              "role": "operator",
+              "syntax": "infix",
+              "name": ":",
+              "children": [
+                {
+                  "role": "string",
+                  "value": "isStudent",
+                  "quote": "double"
+                },
+                {
+                  "role": "identifier",
+                  "name": "true"
+                }
+              ]
+            },
+            {
+              "role": "operator",
+              "syntax": "infix",
+              "name": ":",
+              "children": [
+                {
+                  "role": "string",
+                  "quote": "double",
+                  "value": "skills"
+                },
+                {
+                  "role": "delimited",
+                  "kind": "brackets",
+                  "separator": "comma",
+                  "children": [
+                    {
+                      "role": "string",
+                      "quote": "double",
+                      "value": "Python"
+                    },
+                    {
+                      "role": "string",
+                      "quote": "double",
+                      "value": "JavaScript"
+                    },
+                    {
+                      "role": "string",
+                      "value": "SQL",
+                      "quote": "double"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "role": "operator",
+              "name": ":",
+              "syntax": "infix",
+              "children": [
+                {
+                  "role": "string",
+                  "quote": "double",
+                  "value": "address"
+                },
+                {
+                  "role": "delimited",
+                  "separator": "comma",
+                  "kind": "braces",
+                  "children": [
+                    {
+                      "role": "operator",
+                      "syntax": "infix",
+                      "name": ":",
+                      "children": [
+                        {
+                          "role": "string",
+                          "quote": "double",
+                          "value": "street"
+                        },
+                        {
+                          "role": "string",
+                          "quote": "double",
+                          "value": "123 Maple Street"
+                        }
+                      ]
+                    },
+                    {
+                      "role": "operator",
+                      "syntax": "infix",
+                      "name": ":",
+                      "children": [
+                        {
+                          "role": "string",
+                          "quote": "double",
+                          "value": "city"
+                        },
+                        {
+                          "role": "string",
+                          "value": "Exampleville",
+                          "quote": "double"
+                        }
+                      ]
+                    },
+                    {
+                      "role": "operator",
+                      "syntax": "infix",
+                      "name": ":",
+                      "children": [
+                        {
+                          "role": "string",
+                          "quote": "double",
+                          "value": "country"
+                        },
+                        {
+                          "role": "string",
+                          "quote": "double",
+                          "value": "Neverland"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "role": "operator",
+              "syntax": "infix",
+              "name": ":",
+              "children": [
+                {
+                  "role": "string",
+                  "value": "favoriteBooks",
+                  "quote": "double"
+                },
+                {
+                  "role": "delimited",
+                  "kind": "brackets",
+                  "separator": "comma",
+                  "children": [
+                    {
+                      "role": "delimited",
+                      "kind": "braces",
+                      "separator": "comma",
+                      "children": [
+                        {
+                          "role": "operator",
+                          "syntax": "infix",
+                          "name": ":",
+                          "children": [
+                            {
+                              "role": "string",
+                              "value": "title",
+                              "quote": "double"
+                            },
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "To Kill a Mockingbird"
+                            }
+                          ]
+                        },
+                        {
+                          "role": "operator",
+                          "name": ":",
+                          "syntax": "infix",
+                          "children": [
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "author"
+                            },
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "Harper Lee"
+                            }
+                          ]
+                        },
+                        {
+                          "role": "operator",
+                          "syntax": "infix",
+                          "name": ":",
+                          "children": [
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "yearPublished"
+                            },
+                            {
+                              "role": "number",
+                              "value": "1960"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "role": "delimited",
+                      "kind": "braces",
+                      "separator": "comma",
+                      "children": [
+                        {
+                          "role": "operator",
+                          "syntax": "infix",
+                          "name": ":",
+                          "children": [
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "title"
+                            },
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "1984"
+                            }
+                          ]
+                        },
+                        {
+                          "role": "operator",
+                          "syntax": "infix",
+                          "name": ":",
+                          "children": [
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "author"
+                            },
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "George Orwell"
+                            }
+                          ]
+                        },
+                        {
+                          "role": "operator",
+                          "syntax": "infix",
+                          "name": ":",
+                          "children": [
+                            {
+                              "role": "string",
+                              "quote": "double",
+                              "value": "yearPublished"
+                            },
+                            {
+                              "role": "number",
+                              "value": "1949"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
-    ]
-}
-```
+      ]
+    }
+  ]
+}```
 
 ## YAML
 
@@ -584,9 +599,10 @@ separator: undefined
 children:
 - role: operator
   name: ':'
+  syntax: infix
   children:
   - role: string
-    quote: ':'
+    quote: double
     value: person
   - role: delimited
     kind: braces
@@ -594,53 +610,58 @@ children:
     children:
     - role: operator
       name: ':'
+      syntax: infix
       children:
       - role: string
-        quote: ':'
+        quote: double
         value: name
       - role: string
-        quote: ','
+        quote: double
         value: Alice
     - role: operator
       name: ':'
+      syntax: infix
       children:
       - role: string
-        quote: ':'
+        quote: double
         value: age
       - role: number
         value: 25
     - role: operator
       name: ':'
+      syntax: infix
       children:
       - role: string
-        quote: ':'
+        quote: double
         value: isStudent
       - role: identifier
         name: 'true'
     - role: operator
       name: ':'
+      syntax: infix
       children:
       - role: string
-        quote: ':'
+        quote: double
         value: skills
       - role: delimited
         kind: brackets
         separator: comma
         children:
         - role: string
-          quote: ','
+          quote: double
           value: Python
         - role: string
-          quote: ','
+          quote: double
           value: JavaScript
         - role: string
-          quote: ']'
+          quote: double
           value: SQL
     - role: operator
       name: ':'
+      syntax: infix
       children:
       - role: string
-        quote: ':'
+        quote: double
         value: address
       - role: delimited
         kind: braces
@@ -648,36 +669,40 @@ children:
         children:
         - role: operator
           name: ':'
+          syntax: infix
           children:
           - role: string
-            quote: ':'
+            quote: double
             value: street
           - role: string
-            quote: ','
+            quote: double
             value: 123 Maple Street
         - role: operator
           name: ':'
+          syntax: infix
           children:
           - role: string
-            quote: ':'
+            quote: double
             value: city
           - role: string
-            quote: ','
+            quote: double
             value: Exampleville
         - role: operator
           name: ':'
+          syntax: infix
           children:
           - role: string
-            quote: ':'
+            quote: double
             value: country
           - role: string
-            quote: '"'
+            quote: double
             value: Neverland
     - role: operator
       name: ':'
+      syntax: infix
       children:
       - role: string
-        quote: ':'
+        quote: double
         value: favoriteBooks
       - role: delimited
         kind: brackets
@@ -689,27 +714,30 @@ children:
           children:
           - role: operator
             name: ':'
+            syntax: infix
             children:
             - role: string
-              quote: ':'
+              quote: double
               value: title
             - role: string
-              quote: ','
+              quote: double
               value: To Kill a Mockingbird
           - role: operator
             name: ':'
+            syntax: infix
             children:
             - role: string
-              quote: ':'
+              quote: double
               value: author
             - role: string
-              quote: ','
+              quote: double
               value: Harper Lee
           - role: operator
             name: ':'
+            syntax: infix
             children:
             - role: string
-              quote: ':'
+              quote: double
               value: yearPublished
             - role: number
               value: 1960
@@ -719,27 +747,30 @@ children:
           children:
           - role: operator
             name: ':'
+            syntax: infix
             children:
             - role: string
-              quote: ':'
+              quote: double
               value: title
             - role: string
-              quote: ','
+              quote: double
               value: '1984'
           - role: operator
             name: ':'
+            syntax: infix
             children:
             - role: string
-              quote: ':'
+              quote: double
               value: author
             - role: string
-              quote: ','
+              quote: double
               value: George Orwell
           - role: operator
             name: ':'
+            syntax: infix
             children:
             - role: string
-              quote: ':'
+              quote: double
               value: yearPublished
             - role: number
               value: 1949
@@ -752,113 +783,113 @@ children:
 digraph G {
   bgcolor="transparent";
   node [shape="box", style="filled", fontname="Ubuntu Mono"];
-  "128030047569216" [label="delimited", shape="box", fillcolor="lightgray"];
-  "128030047569296" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047569216" -> "128030047569296";
-  "128030047569376" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047569296" -> "128030047569376";
-  "128030047569456" [label="delimited", shape="box", fillcolor="lightgray"];
-  "128030047569296" -> "128030047569456";
-  "128030047569536" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047569456" -> "128030047569536";
-  "128030047569616" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047569536" -> "128030047569616";
-  "128030047569696" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047569536" -> "128030047569696";
-  "128030047569776" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047569456" -> "128030047569776";
-  "128030047569856" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047569776" -> "128030047569856";
-  "128030047569936" [label="number: 25", shape="box", fillcolor="lightgoldenrodyellow"];
-  "128030047569776" -> "128030047569936";
-  "128030047570016" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047569456" -> "128030047570016";
-  "128030047570096" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047570016" -> "128030047570096";
-  "128030047570176" [label="identifier: true", shape="box", fillcolor="Honeydew"];
-  "128030047570016" -> "128030047570176";
-  "128030047570256" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047569456" -> "128030047570256";
-  "128030047570336" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047570256" -> "128030047570336";
-  "128030047570416" [label="delimited", shape="box", fillcolor="lightgray"];
-  "128030047570256" -> "128030047570416";
-  "128030047570496" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047570416" -> "128030047570496";
-  "128030047570576" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047570416" -> "128030047570576";
-  "128030047570656" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047570416" -> "128030047570656";
-  "128030047570736" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047569456" -> "128030047570736";
-  "128030047570816" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047570736" -> "128030047570816";
-  "128030047570896" [label="delimited", shape="box", fillcolor="lightgray"];
-  "128030047570736" -> "128030047570896";
-  "128030047570976" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047570896" -> "128030047570976";
-  "128030047571136" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047570976" -> "128030047571136";
-  "128030047571296" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047570976" -> "128030047571296";
-  "128030047571376" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047570896" -> "128030047571376";
-  "128030047571536" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047571376" -> "128030047571536";
-  "128030047571696" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047571376" -> "128030047571696";
-  "128030047571776" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047570896" -> "128030047571776";
-  "128030047571936" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047571776" -> "128030047571936";
-  "128030047572096" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047571776" -> "128030047572096";
-  "128030047572176" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047569456" -> "128030047572176";
-  "128030047572256" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047572176" -> "128030047572256";
-  "128030047572336" [label="delimited", shape="box", fillcolor="lightgray"];
-  "128030047572176" -> "128030047572336";
-  "128030047572416" [label="delimited", shape="box", fillcolor="lightgray"];
-  "128030047572336" -> "128030047572416";
-  "128030047572576" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047572416" -> "128030047572576";
-  "128030047572736" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047572576" -> "128030047572736";
-  "128030047572896" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047572576" -> "128030047572896";
-  "128030047573136" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047572416" -> "128030047573136";
-  "128030047573296" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047573136" -> "128030047573296";
-  "128030047573456" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047573136" -> "128030047573456";
-  "128030047573696" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047572416" -> "128030047573696";
-  "128030047573856" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047573696" -> "128030047573856";
-  "128030047574016" [label="number: 1960", shape="box", fillcolor="lightgoldenrodyellow"];
-  "128030047573696" -> "128030047574016";
-  "128030047574176" [label="delimited", shape="box", fillcolor="lightgray"];
-  "128030047572336" -> "128030047574176";
-  "128030047574336" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047574176" -> "128030047574336";
-  "128030047574496" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047574336" -> "128030047574496";
-  "128030047574656" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047574336" -> "128030047574656";
-  "128030047574896" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047574176" -> "128030047574896";
-  "128030047575056" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047574896" -> "128030047575056";
-  "128030047575216" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047574896" -> "128030047575216";
-  "128030047575456" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "128030047574176" -> "128030047575456";
-  "128030047575616" [label="string", shape="box", fillcolor="lightgray"];
-  "128030047575456" -> "128030047575616";
-  "128030047575776" [label="number: 1949", shape="box", fillcolor="lightgoldenrodyellow"];
-  "128030047575456" -> "128030047575776";
+  "node_0xc00007d5f0" [label="delimited", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d590" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d5f0" -> "node_0xc00007d590";
+  "node_0xc00007c210" [label="string: person", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d590" -> "node_0xc00007c210";
+  "node_0xc00007d530" [label="delimited", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d590" -> "node_0xc00007d530";
+  "node_0xc00007c330" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d530" -> "node_0xc00007c330";
+  "node_0xc00007c270" [label="string: name", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c330" -> "node_0xc00007c270";
+  "node_0xc00007c2d0" [label="string: Alice", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c330" -> "node_0xc00007c2d0";
+  "node_0xc00007c450" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d530" -> "node_0xc00007c450";
+  "node_0xc00007c390" [label="string: age", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c450" -> "node_0xc00007c390";
+  "node_0xc00007c3f0" [label="number: 25", shape="box", fillcolor="lightgoldenrodyellow"];
+  "node_0xc00007c450" -> "node_0xc00007c3f0";
+  "node_0xc00007c570" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d530" -> "node_0xc00007c570";
+  "node_0xc00007c4b0" [label="string: isStudent", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c570" -> "node_0xc00007c4b0";
+  "node_0xc00007c510" [label="identifier: true", shape="box", fillcolor="Honeydew"];
+  "node_0xc00007c570" -> "node_0xc00007c510";
+  "node_0xc00007c7b0" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d530" -> "node_0xc00007c7b0";
+  "node_0xc00007c5d0" [label="string: skills", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c7b0" -> "node_0xc00007c5d0";
+  "node_0xc00007c750" [label="delimited", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c7b0" -> "node_0xc00007c750";
+  "node_0xc00007c630" [label="string: Python", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c750" -> "node_0xc00007c630";
+  "node_0xc00007c690" [label="string: JavaScript", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c750" -> "node_0xc00007c690";
+  "node_0xc00007c6f0" [label="string: SQL", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c750" -> "node_0xc00007c6f0";
+  "node_0xc00007cc30" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d530" -> "node_0xc00007cc30";
+  "node_0xc00007c810" [label="string: address", shape="box", fillcolor="lightgray"];
+  "node_0xc00007cc30" -> "node_0xc00007c810";
+  "node_0xc00007cbd0" [label="delimited", shape="box", fillcolor="lightgray"];
+  "node_0xc00007cc30" -> "node_0xc00007cbd0";
+  "node_0xc00007c930" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007cbd0" -> "node_0xc00007c930";
+  "node_0xc00007c870" [label="string: street", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c930" -> "node_0xc00007c870";
+  "node_0xc00007c8d0" [label="string: 123 Maple Street", shape="box", fillcolor="lightgray"];
+  "node_0xc00007c930" -> "node_0xc00007c8d0";
+  "node_0xc00007ca50" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007cbd0" -> "node_0xc00007ca50";
+  "node_0xc00007c990" [label="string: city", shape="box", fillcolor="lightgray"];
+  "node_0xc00007ca50" -> "node_0xc00007c990";
+  "node_0xc00007c9f0" [label="string: Exampleville", shape="box", fillcolor="lightgray"];
+  "node_0xc00007ca50" -> "node_0xc00007c9f0";
+  "node_0xc00007cb70" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007cbd0" -> "node_0xc00007cb70";
+  "node_0xc00007cab0" [label="string: country", shape="box", fillcolor="lightgray"];
+  "node_0xc00007cb70" -> "node_0xc00007cab0";
+  "node_0xc00007cb10" [label="string: Neverland", shape="box", fillcolor="lightgray"];
+  "node_0xc00007cb70" -> "node_0xc00007cb10";
+  "node_0xc00007d4d0" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d530" -> "node_0xc00007d4d0";
+  "node_0xc00007cc90" [label="string: favoriteBooks", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d4d0" -> "node_0xc00007cc90";
+  "node_0xc00007d470" [label="delimited", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d4d0" -> "node_0xc00007d470";
+  "node_0xc00007d050" [label="delimited", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d470" -> "node_0xc00007d050";
+  "node_0xc00007cdb0" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d050" -> "node_0xc00007cdb0";
+  "node_0xc00007ccf0" [label="string: title", shape="box", fillcolor="lightgray"];
+  "node_0xc00007cdb0" -> "node_0xc00007ccf0";
+  "node_0xc00007cd50" [label="string: To Kill a Mockingbird", shape="box", fillcolor="lightgray"];
+  "node_0xc00007cdb0" -> "node_0xc00007cd50";
+  "node_0xc00007ced0" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d050" -> "node_0xc00007ced0";
+  "node_0xc00007ce10" [label="string: author", shape="box", fillcolor="lightgray"];
+  "node_0xc00007ced0" -> "node_0xc00007ce10";
+  "node_0xc00007ce70" [label="string: Harper Lee", shape="box", fillcolor="lightgray"];
+  "node_0xc00007ced0" -> "node_0xc00007ce70";
+  "node_0xc00007cff0" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d050" -> "node_0xc00007cff0";
+  "node_0xc00007cf30" [label="string: yearPublished", shape="box", fillcolor="lightgray"];
+  "node_0xc00007cff0" -> "node_0xc00007cf30";
+  "node_0xc00007cf90" [label="number: 1960", shape="box", fillcolor="lightgoldenrodyellow"];
+  "node_0xc00007cff0" -> "node_0xc00007cf90";
+  "node_0xc00007d410" [label="delimited", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d470" -> "node_0xc00007d410";
+  "node_0xc00007d170" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d410" -> "node_0xc00007d170";
+  "node_0xc00007d0b0" [label="string: title", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d170" -> "node_0xc00007d0b0";
+  "node_0xc00007d110" [label="string: 1984", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d170" -> "node_0xc00007d110";
+  "node_0xc00007d290" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d410" -> "node_0xc00007d290";
+  "node_0xc00007d1d0" [label="string: author", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d290" -> "node_0xc00007d1d0";
+  "node_0xc00007d230" [label="string: George Orwell", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d290" -> "node_0xc00007d230";
+  "node_0xc00007d3b0" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc00007d410" -> "node_0xc00007d3b0";
+  "node_0xc00007d2f0" [label="string: yearPublished", shape="box", fillcolor="lightgray"];
+  "node_0xc00007d3b0" -> "node_0xc00007d2f0";
+  "node_0xc00007d350" [label="number: 1949", shape="box", fillcolor="lightgoldenrodyellow"];
+  "node_0xc00007d3b0" -> "node_0xc00007d350";
 }
 ```
 
