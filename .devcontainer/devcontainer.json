@@ -14,8 +14,7 @@
     },
     "postCreateCommand": "just --version",
     "features": {
-        "ghcr.io/devcontainers/features/common-utils:1": {},
-        "ghcr.io/devcontainers/features/just:1": {}
+        "ghcr.io/devcontainers/features/common-utils:1": {}
     },
     "ports": [
         "8080:8080"
