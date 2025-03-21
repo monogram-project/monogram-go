@@ -1,0 +1,26 @@
+{
+    "name": "Go Development Container",
+    "image": "mcr.microsoft.com/devcontainers/go:1.20",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "go.gopath": "/go",
+                "go.toolsGopath": "/go"
+            },
+            "extensions": [
+                "golang.go"
+            ]
+        }
+    },
+    "postCreateCommand": "just --version",
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:1": {},
+        "ghcr.io/devcontainers/features/just:1": {}
+    },
+    "ports": [
+        "8080:8080"
+    ],
+    "forwardPorts": [
+        8080
+    ]
+}
