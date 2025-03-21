@@ -1,6 +1,6 @@
 {
     "name": "Go Development Container",
-    "image": "mcr.microsoft.com/devcontainers/go:1.20",
+    "image": "mcr.microsoft.com/devcontainers/go:latest",
     "customizations": {
         "vscode": {
             "settings": {
