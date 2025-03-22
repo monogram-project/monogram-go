@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"fmt"
@@ -6,11 +6,7 @@ import (
 	"strings"
 )
 
-func translateMermaid(input io.Reader, output io.Writer, options *FormatOptions) {
-	translate(input, output, printASTMermaid, options)
-}
-
-func printASTMermaid(root *Node, indentDelta string, output io.Writer) {
+func PrintASTMermaid(root *Node, indentDelta string, output io.Writer) {
 	// Initialize the Mermaid graph
 	fmt.Fprintln(output, "graph LR")
 

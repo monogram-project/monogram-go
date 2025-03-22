@@ -1,15 +1,10 @@
-package main
+package lib
 
 import (
 	"fmt"
 	"io"
 	"strings"
 )
-
-func translateJSON(input io.Reader, output io.Writer, options *FormatOptions) {
-	// fmt.Fprintln(output, "JSON Translation Output:")
-	translate(input, output, printASTJSON, options)
-}
 
 // escapeJSONString ensures all strings in JSON are properly escaped.
 func escapeJSONString(value string) string {
@@ -43,7 +38,7 @@ func escapeJSONString(value string) string {
 	return sb.String()
 }
 
-func printASTJSON(root *Node, indentDelta string, output io.Writer) {
+func PrintASTJSON(root *Node, indentDelta string, output io.Writer) {
 	// Print the root node (which is the "unit" node)
 	printNodeJSON(root, "", indentDelta, output)
 }

@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"fmt"
@@ -7,12 +7,7 @@ import (
 	"strings"
 )
 
-func translateXML(input io.Reader, output io.Writer, options *FormatOptions) {
-	// fmt.Fprintln(output, "XML Translation Output:")
-	translate(input, output, printASTXML, options)
-}
-
-func printASTXML(root *Node, indentDelta string, output io.Writer) {
+func PrintASTXML(root *Node, indentDelta string, output io.Writer) {
 	// Print the root node (which is the "unit" node)
 	printNodeXML(root, "", indentDelta, output)
 }

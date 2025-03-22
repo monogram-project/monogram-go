@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"fmt"
@@ -7,12 +7,7 @@ import (
 	"strings"
 )
 
-func translateYAML(input io.Reader, output io.Writer, options *FormatOptions) {
-	// fmt.Fprintln(output, "YAML Translation Output:")
-	translate(input, output, printASTYAML, options)
-}
-
-func printASTYAML(root *Node, indentDelta string, output io.Writer) {
+func PrintASTYAML(root *Node, indentDelta string, output io.Writer) {
 	// Print the root node (which is the "unit" node)
 	printNodeYAML(root, 0, indentDelta, output)
 }

@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"fmt"
@@ -6,11 +6,7 @@ import (
 	"strings"
 )
 
-func translateDOT(input io.Reader, output io.Writer, options *FormatOptions) {
-	translate(input, output, printASTDOT, options)
-}
-
-func printASTDOT(root *Node, indentDelta string, output io.Writer) {
+func PrintASTDOT(root *Node, indentDelta string, output io.Writer) {
 	// Initialize the DOT graph
 	fmt.Fprintln(output, `digraph G {`)
 	fmt.Fprintln(output, `  bgcolor="transparent";`)
