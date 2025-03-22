@@ -1,4 +1,4 @@
-module github.com/sfkleach/monogram/golang
+module github.com/sfkleach/monogram/go/monogram
 
 go 1.24.1
 
