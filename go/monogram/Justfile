@@ -4,7 +4,7 @@
 
 # Build the go binary
 build:
-    go build
+    go build ./cmd/monogram
 
 # Run the functional tests
 test: build
