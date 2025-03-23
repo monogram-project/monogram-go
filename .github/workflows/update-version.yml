@@ -4,8 +4,6 @@ on:
     push:
       tags:
         - "v*"      # Matches tags starting with "v"
-      branches:
-        - main       # Restricts to tags pushed to the "main" branch
 
 jobs:
   update-version:
