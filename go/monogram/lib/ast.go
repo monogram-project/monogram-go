@@ -15,6 +15,7 @@ type Parser struct {
 	tokens       []*Token
 	pos          int
 	UnglueOption *Token
+	IncludeSpans bool
 }
 
 type Context struct {
@@ -34,6 +35,22 @@ func (p *Parser) next() *Token {
 	return tok
 }
 
+func (p *Parser) startSpan() (int, int) {
+	t := p.peek()
+	if t == nil {
+		return 0, 0
+	}
+	return t.StartLine, t.StartColumn
+}
+
+func (p *Parser) endSpan() (int, int) {
+	if p.pos > 0 {
+		t := p.tokens[p.pos-1]
+		return t.EndLine, t.EndColumn
+	}
+	return 0, 0
+}
+
 // peek returns the current token without advancing.
 func (p *Parser) peek() *Token {
 	if p.hasNext() {
@@ -51,6 +68,7 @@ func (p *Parser) readExpr(context Context) (*Node, error) {
 
 func (p *Parser) readArguments(subType uint8, context Context) (string, *Node, error) {
 	// fmt.Println(">>> READ ARGUMENTS")
+	span1, span2 := p.startSpan()
 	c := context
 	c.AcceptNewline = false
 	sep, seq, err := p.readExprSeqTo(subType, true, c)
@@ -60,6 +78,12 @@ func (p *Parser) readArguments(subType uint8, context Context) (string, *Node, e
 	node := &Node{
 		Name:     "arguments",
 		Children: seq,
+	}
+	if p.IncludeSpans {
+		span3, span4 := p.endSpan()
+		node.Options = map[string]string{
+			"span": fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4),
+		}
 	}
 	// fmt.Println("<<< READ ARGUMENTS")
 	return sep, node, nil
@@ -94,6 +118,7 @@ func (p *Parser) readOptExprPrec(formStart *Token, outer_prec int, context Conte
 
 func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 	// fmt.Println(">>> READ EXPR PREC")
+	span1, span2 := p.startSpan()
 	lhs, err := p.readPrimaryExpr(context)
 	if err != nil {
 		return nil, err
@@ -111,14 +136,12 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 		if !ok || prec > outer_prec {
 			break
 		}
+		ispan1, ispan2 := p.startSpan()
 		// fmt.Println("ok", ok, "Precedence", prec, "Outer precedence", outer_prec)
 		token2 := p.next()
 		c := context
 		c.AcceptNewline = false
 		if token2.Type == OpenBracket {
-			// lvars (sep, args) = read_arguments( close_bracket );
-			// lvars dname = delimiter_name( item1 );
-			// consNode( "apply", $(kind=dname, separator=sep.sep_as_word), [^lhs ^args] ) -> lhs;
 			sep_text, args, err := p.readArguments(token2.SubType, c)
 			if err != nil {
 				return nil, err
@@ -172,6 +195,14 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 				Children: []*Node{lhs, rhs}, // lhs and rhs are the children of the operator node
 			}
 		}
+		if p.IncludeSpans {
+			ispan3, ispan4 := p.endSpan()
+			lhs.Options["span"] = fmt.Sprintf("%d %d %d %d", ispan1, ispan2, ispan3, ispan4)
+		}
+	}
+	if p.IncludeSpans {
+		span3, span4 := p.endSpan()
+		lhs.Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
 	}
 	// fmt.Println("<<< READ EXPR PREC")
 	return lhs, nil
@@ -255,16 +286,19 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 	c.InsideForm = true
 	c.AcceptNewline = true
 	var currentPart []*Node
-	currentKeyword := formStart
 	content := []*Node{}
 	first_expr_in_part := true
 	prev_expr_terminated := true
+	currentKeyword := formStart
+	span1, span2 := p.startSpan()
+	span3, span4 := 0, 0
 	for {
 		if !p.hasNext() {
 			return nil, fmt.Errorf("unexpected end of tokens")
 		}
 		token := p.peek()
 		if token.Type == Identifier && token.SubType == IdentifierFormEnd && token.Text == closingTokenText {
+			span3, span4 = p.endSpan()
 			p.next()
 			break
 		}
@@ -281,6 +315,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			t := p.peek()
 			if t.IsLabel() {
 				// fmt.Println("::: Found label", t.Text)
+				span3, span4 := p.endSpan()
 				p.next()
 				currentPart = append(currentPart, n)
 				content = append(content, &Node{
@@ -291,6 +326,10 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 					Children: currentPart,
 				})
 				currentKeyword = p.UnglueOption
+				if p.IncludeSpans {
+					content[len(content)-1].Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+					span1, span2 = p.startSpan()
+				}
 				currentPart = []*Node{}
 				first_expr_in_part = false
 				prev_expr_terminated = true
@@ -299,6 +338,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 				first_expr_in_part = false
 			}
 		} else if token.IsSimpleBreaker() {
+			span3, span4 := p.endSpan()
 			// fmt.Println("::: Simple breaker")
 			p.next() // skip the breaker
 			p.next() // remove the ':'
@@ -313,10 +353,15 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			})
 
 			currentKeyword = new_currentKeyword
+			if p.IncludeSpans {
+				content[len(content)-1].Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+				span1, span2 = p.startSpan()
+			}
 			currentPart = []*Node{}
 			first_expr_in_part = false
 			prev_expr_terminated = true
 		} else if token.IsCompoundBreaker(formStart) {
+			span3, span4 := p.endSpan()
 			// fmt.Println("::: Compound breaker")
 			t1 := p.next() // skip the breaker
 			t2 := p.next() // remove the '-
@@ -331,6 +376,10 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			})
 
 			currentKeyword = &Token{Text: t1.Text + t2.Text + t3.Text}
+			if p.IncludeSpans {
+				content[len(content)-1].Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+				span1, span2 = p.startSpan()
+			}
 			currentPart = []*Node{}
 			first_expr_in_part = true
 			prev_expr_terminated = true
@@ -364,6 +413,9 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			},
 			Children: currentPart,
 		})
+		if p.IncludeSpans {
+			content[len(content)-1].Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+		}
 	}
 	// fmt.Println("<<< READ FORM EXPR")
 	return &Node{
@@ -389,8 +441,13 @@ func (p *Parser) readDelimitedExpr(open *Token, context Context) (*Node, error) 
 
 func (p *Parser) readPrimaryExpr(context Context) (*Node, error) {
 	// fmt.Println(">>> READ PRIMARY EXPR")
+	span1, span2 := p.startSpan()
 	n, e := p.doReadPrimaryExpr(context)
 	// fmt.Println("<<< READ PRIMARY EXPR", n)
+	if p.IncludeSpans {
+		span3, span4 := p.endSpan()
+		n.Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+	}
 	return n, e
 }
 
@@ -485,8 +542,12 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	return nil, fmt.Errorf("unexpected token: %s", token.Text)
 }
 
-func parseTokensToNodes(tokens []*Token, limit bool, breaker string) ([]*Node, error) {
-	parser := &Parser{tokens: tokens, UnglueOption: &Token{Type: Identifier, SubType: IdentifierVariable, Text: breaker}}
+func parseTokensToNodes(tokens []*Token, limit bool, breaker string, include_spans bool) ([]*Node, error) {
+	parser := &Parser{
+		tokens:       tokens,
+		UnglueOption: &Token{Type: Identifier, SubType: IdentifierVariable, Text: breaker},
+		IncludeSpans: include_spans,
+	}
 	nodes := []*Node{}
 	for parser.hasNext() {
 		node, err := parser.readExpr(Context{})
@@ -502,7 +563,7 @@ func parseTokensToNodes(tokens []*Token, limit bool, breaker string) ([]*Node, e
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, breaker string) ([]*Node, error) {
+func parseToASTArray(input string, limit bool, breaker string, include_spans bool) ([]*Node, error) {
 	// Step 1: Tokenize the input
 	tokens, terr := tokenizeInput(input)
 	if terr != nil {
@@ -510,7 +571,7 @@ func parseToASTArray(input string, limit bool, breaker string) ([]*Node, error) 
 	}
 
 	// Step 2: Parse the tokens into nodes
-	nodes, err := parseTokensToNodes(tokens, limit, breaker)
+	nodes, err := parseTokensToNodes(tokens, limit, breaker, include_spans)
 	if err != nil {
 		return nil, err
 	}
@@ -518,9 +579,9 @@ func parseToASTArray(input string, limit bool, breaker string) ([]*Node, error) 
 	return nodes, nil
 }
 
-func ParseToAST(input string, src string, limit bool, unglue string) (*Node, error) {
+func ParseToAST(input string, src string, limit bool, unglue string, include_spans bool) (*Node, error) {
 	// Get the array of nodes
-	nodes, err := parseToASTArray(input, limit, unglue)
+	nodes, err := parseToASTArray(input, limit, unglue, include_spans)
 	if err != nil {
 		return nil, err
 	}

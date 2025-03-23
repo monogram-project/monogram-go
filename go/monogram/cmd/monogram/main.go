@@ -46,6 +46,7 @@ type FormatOptions struct {
 	Indent       int
 	Limit        bool
 	UnglueOption string
+	IncludeSpans bool
 }
 
 // setupFlags initializes a flag set with the common flag definitions.
@@ -56,6 +57,7 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 	fs.IntVar(&options.Indent, "indent", options.Indent, "Number of spaces for indentation (0 for no formatting)")
 	fs.BoolVar(&options.Limit, "one", options.Limit, "Process only one monogram value and do not wrap in a unit node")
 	fs.StringVarP(&options.UnglueOption, "default-breaker", "b", options.UnglueOption, "Default breakers")
+	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include span information in the output")
 	if optionsFile != nil {
 		fs.StringVar(optionsFile, "options-file", "", "File containing additional options")
 	}
@@ -103,18 +105,20 @@ func TranslateDOT(input io.Reader, output io.Writer, options *FormatOptions) {
 }
 
 func parseToAST(input string, foptions *FormatOptions) (*lib.Node, error) {
-	return lib.ParseToAST(input, foptions.Input, foptions.Limit, foptions.UnglueOption)
+	return lib.ParseToAST(input, foptions.Input, foptions.Limit, foptions.UnglueOption, foptions.IncludeSpans)
 }
 
 func main() {
 
 	// Initialize the options struct
 	options := FormatOptions{
-		Format: "",
-		Input:  "",
-		Output: "",
-		Indent: 2,
-		Limit:  false,
+		Format:       "",
+		Input:        "",
+		Output:       "",
+		Indent:       2,
+		Limit:        false,
+		UnglueOption: "_",
+		IncludeSpans: false,
 	}
 
 	var optionsFile string
