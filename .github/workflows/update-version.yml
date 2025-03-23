@@ -17,6 +17,11 @@ jobs:
         with:
           fetch-depth: 0 # Ensure full history is available, including tags
 
+      - name: Check Out Main Branch
+        run: |
+          git fetch origin main
+          git checkout main
+
       - name: Extract Git Tag
         id: get_tag
         run: |
