@@ -50,7 +50,7 @@ type FormatOptions struct {
 }
 
 // setupFlags initializes a flag set with the common flag definitions.
-func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, showHelp *bool, classifyTokens *bool) {
+func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool) {
 	fs.StringVarP(&options.Format, "format", "f", options.Format, "Output format xml|json|yaml|mermaid|dot")
 	fs.StringVarP(&options.Input, "input", "i", options.Input, "Input file (optional, defaults to stdin)")
 	fs.StringVarP(&options.Output, "output", "o", options.Output, "Output file (optional, defaults to stdout)")
@@ -62,10 +62,13 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 		fs.StringVar(optionsFile, "options-file", "", "File containing additional options")
 	}
 	if showHelp != nil {
-		pflag.BoolVarP(showHelp, "help", "h", false, "Display help information")
+		fs.BoolVarP(showHelp, "help", "h", false, "Display help information")
 	}
 	if classifyTokens != nil {
 		fs.BoolVar(classifyTokens, "classify-tokens", false, "Classify tokens")
+	}
+	if showVersion != nil {
+		fs.BoolVar(showVersion, "version", false, "Display the version information")
 	}
 }
 
@@ -124,12 +127,19 @@ func main() {
 	var optionsFile string
 	var showHelp bool
 	var classifyTokens bool
+	var showVersion bool // New variable for the --version flag
 
 	// Set up the main command-line flag set
-	setupFlags(pflag.CommandLine, &options, &optionsFile, &showHelp, &classifyTokens)
+	setupFlags(pflag.CommandLine, &options, &optionsFile, &showHelp, &classifyTokens, &showVersion)
 
 	// Parse command-line flags first to check for `--options-file`
 	pflag.Parse()
+
+	// Check for the version flag
+	if showVersion {
+		fmt.Printf("Monogram version: %s\n", lib.Version)
+		os.Exit(0) // Exit after printing the version
+	}
 
 	// Process options file if specified
 	if optionsFile != "" {
@@ -140,7 +150,7 @@ func main() {
 
 		// Create a temporary FlagSet for file-based options
 		fileFlagSet := pflag.NewFlagSet("file-flags", pflag.ContinueOnError)
-		setupFlags(fileFlagSet, &options, nil, nil, nil) // Reuse the same setup logic
+		setupFlags(fileFlagSet, &options, nil, nil, nil, nil) // Reuse the same setup logic
 		if err := fileFlagSet.Parse(fileArgs); err != nil {
 			log.Fatalf("Error parsing options from file: %v", err)
 		}
