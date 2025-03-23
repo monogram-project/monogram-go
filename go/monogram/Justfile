@@ -8,4 +8,4 @@ build:
 
 # Run the functional tests
 test: build
-    (cd .. && python3 runtests.py --tests tests.yaml)
+    (cd ../.. && python3 runtests.py --tests tests.yaml)

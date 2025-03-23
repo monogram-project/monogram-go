@@ -11,5 +11,5 @@ add-decision TOPIC:
     python3 scripts/decisions.py --add "{{TOPIC}}"
 
 test:
-    just -f golang/Justfile build
+    just -f go/monogram/Justfile build
     python3 runtests.py --tests tests.yaml
