@@ -151,8 +151,8 @@ func (t *Token) SetSeen(tokenizer *Tokenizer, seen bool) {
 	t.EndColumn = tokenizer.colNo
 }
 
-const signChars = ".*/%+-<~!&|?:="
-const precCharacters = ".({[*/%+-<~!&|?:="
+const signChars = ".*/%+-<>~!&|?:="
+const precCharacters = ".({[*/%+-<>~!&|?:="
 
 func (t *Token) DelimiterName() string {
 	switch t.Type {
@@ -171,7 +171,7 @@ func (t *Token) DelimiterName() string {
 
 const (
 	maxPrecedence    int = 999
-	prefixPrecedence     = 1
+	prefixPrecedence int = 1
 )
 
 func (t *Token) Precedence() (int, bool) {
