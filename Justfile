@@ -10,6 +10,8 @@ init-decisions:
 add-decision TOPIC:
     python3 scripts/decisions.py --add "{{TOPIC}}"
 
-test:
+build:
     just -f go/monogram/Justfile build
+
+test:
     python3 runtests.py --tests tests.yaml

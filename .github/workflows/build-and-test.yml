@@ -1,0 +1,34 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main  # Trigger only on pushes to the 'main' branch
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set Up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20" # Specify the required Go version
+
+      - name: Install Just
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+
+      - name: Run Justfile Recipe (Optional)
+        run: just --list  # Use this step to debug or inspect available recipes
+
+      - name: Build Application
+        run: |
+          just build
+
+      - name: Run Tests
+        run: |
+          just test
