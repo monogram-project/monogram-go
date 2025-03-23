@@ -19,7 +19,9 @@ jobs:
 
       - name: Extract Git Tag
         id: get_tag
-        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: |
+          echo "TAG=${GITHUB_REF#refs/tags/}"
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
       - name: Update version.go
         run: |
