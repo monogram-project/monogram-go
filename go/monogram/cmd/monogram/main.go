@@ -57,7 +57,7 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 	fs.IntVar(&options.Indent, "indent", options.Indent, "Number of spaces for indentation (0 for no formatting)")
 	fs.BoolVar(&options.Limit, "one", options.Limit, "Process only one monogram value and do not wrap in a unit node")
 	fs.StringVarP(&options.UnglueOption, "default-breaker", "b", options.UnglueOption, "Default breakers")
-	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include span information in the output")
+	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include start/end of expressions in the output")
 	if optionsFile != nil {
 		fs.StringVar(optionsFile, "options-file", "", "File containing additional options")
 	}
