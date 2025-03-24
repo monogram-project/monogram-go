@@ -93,13 +93,13 @@ graph LR
   node_0xc000122ea0 --> node_0xc000122de0;
   node_0xc000122e40["identifier: true"]:::custom_identifier;
   node_0xc000122ea0 --> node_0xc000122e40;
+classDef custom_part fill:#FFD8E1,stroke:#333,stroke-width:2px;
 classDef custom_apply fill:lightgreen,stroke:#333,stroke-width:2px;
 classDef custom_identifier fill:Honeydew,stroke:#333,stroke-width:2px;
 classDef custom_arguments fill:PaleTurquoise,stroke:#333,stroke-width:2px;
 classDef custom_operator fill:#C0FFC0,stroke:#333,stroke-width:2px;
 classDef custom_number fill:lightgoldenrodyellow,stroke:#333,stroke-width:2px;
 classDef custom_form fill:lightpink,stroke:#333,stroke-width:2px;
-classDef custom_part fill:#FFD8E1,stroke:#333,stroke-width:2px;
 ```
 
 ## XML
@@ -189,8 +189,8 @@ And this is what it expands into:
         },
         {
           "role": "operator",
-          "name": "=",
           "syntax": "infix",
+          "name": "=",
           "children": [
             {
               "role": "identifier",
@@ -198,15 +198,15 @@ And this is what it expands into:
             },
             {
               "role": "string",
-              "value": "db.example.com",
-              "quote": "double"
+              "quote": "double",
+              "value": "db.example.com"
             }
           ]
         },
         {
           "role": "operator",
-          "name": "=",
           "syntax": "infix",
+          "name": "=",
           "children": [
             {
               "role": "identifier",
@@ -261,8 +261,8 @@ And this is what it expands into:
             },
             {
               "role": "string",
-              "value": "example_db",
-              "quote": "double"
+              "quote": "double",
+              "value": "example_db"
             }
           ]
         },
@@ -380,54 +380,54 @@ children:
 digraph G {
   bgcolor="transparent";
   node [shape="box", style="filled", fontname="Ubuntu Mono"];
-  "node_0xc0000aef30" [label="apply", shape="box", fillcolor="lightgreen"];
-  "node_0xc0000ae6c0" [label="identifier: database", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000aef30" -> "node_0xc0000ae6c0";
-  "node_0xc0000aeed0" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
-  "node_0xc0000aef30" -> "node_0xc0000aeed0";
-  "node_0xc0000ae7e0" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
-  "node_0xc0000aeed0" -> "node_0xc0000ae7e0";
-  "node_0xc0000ae720" [label="identifier: type", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000ae7e0" -> "node_0xc0000ae720";
-  "node_0xc0000ae780" [label="identifier: postgres", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000ae7e0" -> "node_0xc0000ae780";
-  "node_0xc0000ae900" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
-  "node_0xc0000aeed0" -> "node_0xc0000ae900";
-  "node_0xc0000ae840" [label="identifier: host", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000ae900" -> "node_0xc0000ae840";
-  "node_0xc0000ae8a0" [label="string: db.example.com", shape="box", fillcolor="lightgray"];
-  "node_0xc0000ae900" -> "node_0xc0000ae8a0";
-  "node_0xc0000aea20" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
-  "node_0xc0000aeed0" -> "node_0xc0000aea20";
-  "node_0xc0000ae960" [label="identifier: port", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000aea20" -> "node_0xc0000ae960";
-  "node_0xc0000ae9c0" [label="number: 5432", shape="box", fillcolor="lightgoldenrodyellow"];
-  "node_0xc0000aea20" -> "node_0xc0000ae9c0";
-  "node_0xc0000aeb40" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
-  "node_0xc0000aeed0" -> "node_0xc0000aeb40";
-  "node_0xc0000aea80" [label="identifier: username", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000aeb40" -> "node_0xc0000aea80";
-  "node_0xc0000aeae0" [label="string: admin", shape="box", fillcolor="lightgray"];
-  "node_0xc0000aeb40" -> "node_0xc0000aeae0";
-  "node_0xc0000aec60" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
-  "node_0xc0000aeed0" -> "node_0xc0000aec60";
-  "node_0xc0000aeba0" [label="identifier: secret", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000aec60" -> "node_0xc0000aeba0";
-  "node_0xc0000aec00" [label="string: s3cret", shape="box", fillcolor="lightgray"];
-  "node_0xc0000aec60" -> "node_0xc0000aec00";
-  "node_0xc0000aed80" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
-  "node_0xc0000aeed0" -> "node_0xc0000aed80";
-  "node_0xc0000aecc0" [label="identifier: database", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000aed80" -> "node_0xc0000aecc0";
-  "node_0xc0000aed20" [label="string: example_db", shape="box", fillcolor="lightgray"];
-  "node_0xc0000aed80" -> "node_0xc0000aed20";
-  "node_0xc0000aeea0" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
-  "node_0xc0000aeed0" -> "node_0xc0000aeea0";
-  "node_0xc0000aede0" [label="identifier: ssl", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000aeea0" -> "node_0xc0000aede0";
-  "node_0xc0000aee40" [label="identifier: true", shape="box", fillcolor="Honeydew"];
-  "node_0xc0000aeea0" -> "node_0xc0000aee40";
+  "node_0xc000122f30" [label="apply", shape="box", fillcolor="lightgreen"];
+  "node_0xc0001226c0" [label="identifier: database", shape="box", fillcolor="Honeydew"];
+  "node_0xc000122f30" -> "node_0xc0001226c0";
+  "node_0xc000122ed0" [label="arguments", shape="box", fillcolor="PaleTurquoise"];
+  "node_0xc000122f30" -> "node_0xc000122ed0";
+  "node_0xc0001227e0" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc000122ed0" -> "node_0xc0001227e0";
+  "node_0xc000122720" [label="identifier: type", shape="box", fillcolor="Honeydew"];
+  "node_0xc0001227e0" -> "node_0xc000122720";
+  "node_0xc000122780" [label="identifier: postgres", shape="box", fillcolor="Honeydew"];
+  "node_0xc0001227e0" -> "node_0xc000122780";
+  "node_0xc000122900" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc000122ed0" -> "node_0xc000122900";
+  "node_0xc000122840" [label="identifier: host", shape="box", fillcolor="Honeydew"];
+  "node_0xc000122900" -> "node_0xc000122840";
+  "node_0xc0001228a0" [label="string: db.example.com", shape="box", fillcolor="lightgray"];
+  "node_0xc000122900" -> "node_0xc0001228a0";
+  "node_0xc000122a20" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc000122ed0" -> "node_0xc000122a20";
+  "node_0xc000122960" [label="identifier: port", shape="box", fillcolor="Honeydew"];
+  "node_0xc000122a20" -> "node_0xc000122960";
+  "node_0xc0001229c0" [label="number: 5432", shape="box", fillcolor="lightgoldenrodyellow"];
+  "node_0xc000122a20" -> "node_0xc0001229c0";
+  "node_0xc000122b40" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc000122ed0" -> "node_0xc000122b40";
+  "node_0xc000122a80" [label="identifier: username", shape="box", fillcolor="Honeydew"];
+  "node_0xc000122b40" -> "node_0xc000122a80";
+  "node_0xc000122ae0" [label="string: admin", shape="box", fillcolor="lightgray"];
+  "node_0xc000122b40" -> "node_0xc000122ae0";
+  "node_0xc000122c60" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc000122ed0" -> "node_0xc000122c60";
+  "node_0xc000122ba0" [label="identifier: secret", shape="box", fillcolor="Honeydew"];
+  "node_0xc000122c60" -> "node_0xc000122ba0";
+  "node_0xc000122c00" [label="string: s3cret", shape="box", fillcolor="lightgray"];
+  "node_0xc000122c60" -> "node_0xc000122c00";
+  "node_0xc000122d80" [label="operator: :", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc000122ed0" -> "node_0xc000122d80";
+  "node_0xc000122cc0" [label="identifier: database", shape="box", fillcolor="Honeydew"];
+  "node_0xc000122d80" -> "node_0xc000122cc0";
+  "node_0xc000122d20" [label="string: example_db", shape="box", fillcolor="lightgray"];
+  "node_0xc000122d80" -> "node_0xc000122d20";
+  "node_0xc000122ea0" [label="operator: =", shape="box", fillcolor="#C0FFC0"];
+  "node_0xc000122ed0" -> "node_0xc000122ea0";
+  "node_0xc000122de0" [label="identifier: ssl", shape="box", fillcolor="Honeydew"];
+  "node_0xc000122ea0" -> "node_0xc000122de0";
+  "node_0xc000122e40" [label="identifier: true", shape="box", fillcolor="Honeydew"];
+  "node_0xc000122ea0" -> "node_0xc000122e40";
 }
 ```
 
-![Image generated for example](images/json_blob.png)
+![Image generated for example](images/config.png)
