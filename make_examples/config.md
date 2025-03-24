@@ -76,4 +76,4 @@ And this is what it expands into:
 #include dot
 ```
 
-![Image generated for example](images/json_blob.png)
+![Image generated for example](images/config.png)
