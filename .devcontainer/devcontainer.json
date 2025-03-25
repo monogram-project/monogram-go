@@ -12,7 +12,7 @@
             ]
         }
     },
-    "postCreateCommand": "just --version",
+    "postCreateCommand": "just install && . .devcontainer/init.sh",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:1": {},
         "ghcr.io/guiyomh/features/just:0": {}

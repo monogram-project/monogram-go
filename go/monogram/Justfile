@@ -2,6 +2,10 @@
 @default:
     just --list
 
+# Install the monogram binary
+install:
+    go install ./cmd/monogram
+
 # Build the go binary
 build:
     go build ./cmd/monogram

@@ -10,6 +10,9 @@ init-decisions:
 add-decision TOPIC:
     python3 scripts/decisions.py --add "{{TOPIC}}"
 
+install: build
+    just -f go/monogram/Justfile install
+
 build:
     just -f go/monogram/Justfile build
 
