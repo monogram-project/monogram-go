@@ -18,3 +18,53 @@ tests:
           <number value="123" />
       </unit>
     normalize: none
+
+  - name: "Factorial example"
+    command: "{command} --format xml --one --default-breaker more"
+    input: |
+      # The factorial function in monogram.
+      def f(n):
+          if n <= 1:
+              1
+          else:
+              n * f(n - 1)
+          endif
+      enddef
+    expected_output: |
+      <form syntax="surround">
+        <part keyword="def">
+          <apply kind="parentheses" separator="undefined">
+            <identifier name="f"/>
+            <arguments>
+              <identifier name="n"/>
+            </arguments>
+          </apply>
+        </part>
+        <part keyword="more">
+          <form syntax="surround">
+            <part keyword="if">
+              <operator name="&lt;=" syntax="infix">
+                <identifier name="n"/>
+                <number value="1"/>
+              </operator>
+            </part>
+            <part keyword="more">
+              <number value="1"/>
+            </part>
+            <part keyword="else">
+              <operator name="*" syntax="infix">
+                <identifier name="n"/>
+                <apply kind="parentheses" separator="undefined">
+                  <identifier name="f"/>
+                  <arguments>
+                    <operator name="-" syntax="infix">
+                      <identifier name="n"/>
+                      <number value="1"/>
+                    </operator>
+                  </arguments>
+                </apply>
+              </operator>
+            </part>
+          </form>
+        </part>
+      </form>
