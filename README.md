@@ -9,6 +9,12 @@ configuration files. It is easy for humans to read and write. It is easy for
 machines to parse and generate. It deliberately borrows from many programming
 languages but feels familiar to Python and Ruby programmers.
 
+If you just want to try it out, follow [this link](docs/get_started.md) to
+install the reference implementation of the `monogram` tool and also the API
+library. There is also a complete example program showing how you can
+use the library to read in and process complex expressions.
+
+
 ## _"It's source code, Jim. But not as we know it!"_
 
 Here's an initial example to help explain what we mean by 'batteries not included'.
@@ -434,3 +440,10 @@ Here's the grammar for Monogram as a railroad diagram; also available in
 [PNG](docs/images/grammar.png).
 
 ![Monogram Grammar PDF](docs/images/grammar.png) 
+
+
+## Contributing
+
+Contributions, bug reports, and feature requests are welcome. If you’d like to
+help improve Monogram, feel free to fork this repository and submit a pull
+request.
