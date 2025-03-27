@@ -1,2 +1,2 @@
 package lib
-const Version = "refs/heads/main"
+const Version = "v0.1.1-alpha"
