@@ -1,31 +1,6 @@
 package main
 
-// This is the entry point of the program. It processes command-line arguments
-// and performs file format translation based on user-specified flags. The
-// program supports built-in formats (e.g., XML and JSON) as well as delegating
-// to external subprograms for custom formats.
-//
-// Flags:
-// - --help: Displays help information for the program and available flags.
-// - --format (-f): Specifies the output format. Required for both built-in and external formats.
-// - --input (-i): Specifies the input file. If omitted, standard input (stdin) is used.
-// - --output (-o): Specifies the output file. If omitted, standard output (stdout) is used.
-//
-// Built-in Formats:
-// - xml: The program processes input and outputs in XML format.
-// - json: The program processes input and outputs in JSON format.
-// Additional built-in formats can be added by updating the global formatHandlers map.
-//
-// For non-built-in formats, the program delegates processing to a subprogram named "monogram-to-{format}".
-//
-// Usage Example:
-// To translate a file to JSON format:
-//
-//	monogram --format json --input input.txt --output output.json
-//
-// To delegate to a custom subprogram:
-//
-//	monogram --format custom --input input.txt --output output.custom
+// Demonstrates the use of the mono-typed abstract syntax tree.
 
 import (
 	"bufio"
@@ -116,7 +91,6 @@ func (s *State) Evaluate(node *lib.Node) error {
 				return fmt.Errorf("unknown infix operator %s", name)
 			}
 		} else if name == "-" {
-			fmt.Println("Unary minus")
 			err := s.Evaluate(node.Children[0])
 			if err != nil {
 				s.stack[len(s.stack)-1] = -s.stack[len(s.stack)-1]
