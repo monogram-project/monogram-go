@@ -31,6 +31,8 @@ const OptionSeparator = "separator"
 const OptionKeyword = "keyword"
 const OptionSpan = "span"
 const OptionSyntax = "syntax"
+const OptionQuote = "quote"
+const OptionSrc = "src"
 
 // Parser holds the list of tokens and our current reading position.
 type Parser struct {
@@ -95,13 +97,13 @@ func (p *Parser) readArguments(subType uint8, context Context) (string, *Node, e
 		return "", nil, err
 	}
 	node := &Node{
-		Name:     "arguments",
+		Name:     NameArguments,
 		Children: seq,
 	}
 	if p.IncludeSpans {
 		span3, span4 := p.endSpan()
 		node.Options = map[string]string{
-			"span": fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4),
+			OptionSpan: fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4),
 		}
 	}
 	return sep, node, nil
@@ -179,16 +181,16 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 			lhs = &Node{
 				Name: NameOperator,
 				Options: map[string]string{
-					"name":   fake_minus_token.Text,
-					"syntax": "infix",
+					OptionName:   fake_minus_token.Text,
+					OptionSyntax: "infix",
 				},
 				Children: []*Node{lhs, rhs}, // lhs and rhs are the children of the operator node
 			}
 			if p.IncludeSpans {
-				curr_lhs_span := strings.Split(curr_lhs.Options["span"], " ")
+				curr_lhs_span := strings.Split(curr_lhs.Options[OptionSpan], " ")
 				if len(curr_lhs_span) >= 2 {
 					span3, span4 := p.endSpan()
-					lhs.Options["span"] = fmt.Sprintf("%s %s %d %d", curr_lhs_span[0], curr_lhs_span[1], span3, span4)
+					lhs.Options[OptionSpan] = fmt.Sprintf("%s %s %d %d", curr_lhs_span[0], curr_lhs_span[1], span3, span4)
 				}
 			}
 			continue
@@ -207,10 +209,10 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 			}
 			dname := token2.DelimiterName()
 			lhs = &Node{
-				Name: "apply",
+				Name: NameApply,
 				Options: map[string]string{
-					"kind":      dname,
-					"separator": sep_text,
+					OptionKind:      dname,
+					OptionSeparator: sep_text,
 				},
 				Children: []*Node{lhs, args},
 			}
@@ -223,19 +225,19 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 					return nil, err
 				}
 				lhs = &Node{
-					Name: "invoke",
+					Name: NameInvoke,
 					Options: map[string]string{
-						"kind":      token3.DelimiterName(),
-						"separator": sep_text,
-						"name":      property.Text,
+						OptionKind:      token3.DelimiterName(),
+						OptionSeparator: sep_text,
+						OptionName:      property.Text,
 					},
 					Children: []*Node{lhs, rhs},
 				}
 			} else {
 				lhs = &Node{
-					Name: "get",
+					Name: NameGet,
 					Options: map[string]string{
-						"name": property.Text,
+						OptionName: property.Text,
 					},
 					Children: []*Node{lhs},
 				}
@@ -247,25 +249,25 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 			}
 			curr_lhs := lhs
 			lhs = &Node{
-				Name: "operator",
+				Name: NameOperator,
 				Options: map[string]string{
-					"name":   token1.Text,
-					"syntax": "infix",
+					OptionName:   token1.Text,
+					OptionSyntax: "infix",
 				},
 				Children: []*Node{lhs, rhs}, // lhs and rhs are the children of the operator node
 			}
 			if p.IncludeSpans {
-				curr_lhs_span := strings.Split(curr_lhs.Options["span"], " ")
+				curr_lhs_span := strings.Split(curr_lhs.Options[OptionSpan], " ")
 				if len(curr_lhs_span) >= 2 {
 					span3, span4 := p.endSpan()
-					lhs.Options["span"] = fmt.Sprintf("%s %s %d %d", curr_lhs_span[0], curr_lhs_span[1], span3, span4)
+					lhs.Options[OptionSpan] = fmt.Sprintf("%s %s %d %d", curr_lhs_span[0], curr_lhs_span[1], span3, span4)
 				}
 			}
 		}
 	}
 	if p.IncludeSpans {
 		span3, span4 := p.endSpan()
-		lhs.Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+		lhs.Options[OptionSpan] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
 	}
 	return lhs, nil
 }
@@ -368,20 +370,19 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			}
 			t := p.peek()
 			if t.IsLabel() {
-				// fmt.Println("::: Found label", t.Text)
 				span3, span4 := p.endSpan()
 				p.next()
 				currentPart = append(currentPart, n)
 				content = append(content, &Node{
-					Name: "part",
+					Name: NamePart,
 					Options: map[string]string{
-						"keyword": currentKeyword.Text,
+						OptionKeyword: currentKeyword.Text,
 					},
 					Children: currentPart,
 				})
 				currentKeyword = p.UnglueOption
 				if p.IncludeSpans {
-					content[len(content)-1].Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+					content[len(content)-1].Options[OptionSpan] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
 					span1, span2 = p.startSpan()
 				}
 				currentPart = []*Node{}
@@ -398,16 +399,16 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			new_currentKeyword := token
 
 			content = append(content, &Node{
-				Name: "part",
+				Name: NamePart,
 				Options: map[string]string{
-					"keyword": currentKeyword.Text,
+					OptionKeyword: currentKeyword.Text,
 				},
 				Children: currentPart,
 			})
 
 			currentKeyword = new_currentKeyword
 			if p.IncludeSpans {
-				content[len(content)-1].Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+				content[len(content)-1].Options[OptionSpan] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
 				span1, span2 = p.startSpan()
 			}
 			currentPart = []*Node{}
@@ -420,16 +421,16 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			t3 := p.next() // remove the form-start
 
 			content = append(content, &Node{
-				Name: "part",
+				Name: NamePart,
 				Options: map[string]string{
-					"keyword": currentKeyword.Text,
+					OptionKeyword: currentKeyword.Text,
 				},
 				Children: currentPart,
 			})
 
 			currentKeyword = &Token{Text: t1.Text + t2.Text + t3.Text}
 			if p.IncludeSpans {
-				content[len(content)-1].Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+				content[len(content)-1].Options[OptionSpan] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
 				span1, span2 = p.startSpan()
 			}
 			currentPart = []*Node{}
@@ -458,19 +459,19 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 	}
 	if len(currentPart) > 0 {
 		content = append(content, &Node{
-			Name: "part",
+			Name: NamePart,
 			Options: map[string]string{
-				"keyword": currentKeyword.Text,
+				OptionKeyword: currentKeyword.Text,
 			},
 			Children: currentPart,
 		})
 		if p.IncludeSpans {
-			content[len(content)-1].Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+			content[len(content)-1].Options[OptionSpan] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
 		}
 	}
 	return &Node{
-		Name:     "form",
-		Options:  map[string]string{"syntax": "surround"},
+		Name:     NameForm,
+		Options:  map[string]string{OptionSyntax: "surround"},
 		Children: content,
 	}, nil
 }
@@ -483,8 +484,8 @@ func (p *Parser) readDelimitedExpr(open *Token, context Context) (*Node, error) 
 	}
 	dname := open.DelimiterName()
 	return &Node{
-		Name:     "delimited",
-		Options:  map[string]string{"kind": dname, "separator": sep},
+		Name:     NameDelimited,
+		Options:  map[string]string{OptionKind: dname, OptionSeparator: sep},
 		Children: seq,
 	}, nil
 }
@@ -494,7 +495,7 @@ func (p *Parser) readPrimaryExpr(context Context) (*Node, error) {
 	n, e := p.doReadPrimaryExpr(context)
 	if p.IncludeSpans {
 		span3, span4 := p.endSpan()
-		n.Options["span"] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
+		n.Options[OptionSpan] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
 	}
 	return n, e
 }
@@ -510,17 +511,16 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 		switch token.SubType {
 		case LiteralString:
 			return &Node{
-				Name:    "string",
-				Options: map[string]string{"quote": token.QuoteWord(), "value": token.Text},
+				Name:    NameString,
+				Options: map[string]string{OptionQuote: token.QuoteWord(), OptionValue: token.Text},
 			}, nil
 		case LiteralNumber:
 			return &Node{
-				Name:    "number",
-				Options: map[string]string{"value": token.Text},
+				Name:    NameNumber,
+				Options: map[string]string{OptionValue: token.Text},
 			}, nil
 		}
 	case Identifier:
-		// fmt.Println("Identifier", token.Text, token.SubType, token.IsMacro())
 		if token.IsMacro() {
 			p.next()
 			// fmt.Println("Label", label.Text, label.SubType)
@@ -530,15 +530,15 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 			}
 
 			outer_node := &Node{
-				Name: "form",
+				Name: NameForm,
 				Options: map[string]string{
-					"syntax": "prefix",
+					OptionSyntax: "prefix",
 				},
 				Children: []*Node{
 					{
-						Name: "part",
+						Name: NamePart,
 						Options: map[string]string{
-							"keyword": token.Text,
+							OptionKeyword: token.Text,
 						},
 					},
 				},
@@ -551,8 +551,8 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 			switch token.SubType {
 			case IdentifierVariable:
 				return &Node{
-					Name:    "identifier",
-					Options: map[string]string{"name": token.Text},
+					Name:    NameIdentifier,
+					Options: map[string]string{OptionName: token.Text},
 				}, nil
 			case IdentifierFormStart:
 				return p.readFormExpr(token, context)
@@ -573,10 +573,10 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 					return nil, err
 				}
 				return &Node{
-					Name: "operator",
+					Name: NameOperator,
 					Options: map[string]string{
-						"name":   token.Text,
-						"syntax": "prefix",
+						OptionName:   token.Text,
+						OptionSyntax: "prefix",
 					},
 					Children: []*Node{expr},
 				}, nil
@@ -636,7 +636,7 @@ func ParseToAST(input string, src string, limit bool, unglue string, include_spa
 
 	var options map[string]string = map[string]string{}
 	if src != "" {
-		options["src"] = src
+		options[OptionSrc] = src
 	}
 
 	// Wrap the array in a "unit" node
@@ -645,7 +645,7 @@ func ParseToAST(input string, src string, limit bool, unglue string, include_spa
 		unitNode = nodes[0]
 	} else {
 		unitNode = &Node{
-			Name:     "unit",
+			Name:     NameUnit,
 			Options:  options,
 			Children: nodes,
 		}
