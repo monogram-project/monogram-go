@@ -34,6 +34,10 @@ const OptionSyntax = "syntax"
 const OptionQuote = "quote"
 const OptionSrc = "src"
 
+const ValueInfix = "infix"
+const ValuePrefix = "prefix"
+const ValueSurround = "surround"
+
 // Parser holds the list of tokens and our current reading position.
 type Parser struct {
 	tokens       []*Token
@@ -652,4 +656,13 @@ func ParseToAST(input string, src string, limit bool, unglue string, include_spa
 	}
 
 	return unitNode, nil
+}
+
+func ParseToElement(input string, src string, limit bool, unglue string, include_spans bool) (Element, error) {
+	node, err := ParseToAST(input, src, limit, unglue, include_spans)
+	if err != nil {
+		return nil, err
+	}
+	e := node.ToElement()
+	return e, nil
 }
