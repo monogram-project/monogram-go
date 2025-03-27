@@ -20,7 +20,7 @@ build:
     just -f go/monogram/Justfile build
 
 test:
-    python3 runtests.py --tests tests.yaml
+    python3 runtests.py --tests tests.yaml --command "./go/monogram/monogram"
 
 test-coverage:
     just -f go/monogram/Justfile test-coverage
