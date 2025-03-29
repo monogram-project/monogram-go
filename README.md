@@ -1,6 +1,8 @@
 # Monogram
 
 [![Build](https://github.com/sfkleach/monogram/actions/workflows/build-and-test.yml/badge.svg?branch=main)](https://github.com/sfkleach/monogram/actions/workflows/build-and-test.yml)
+![License](https://img.shields.io/github/license/sfkleach/monogram)
+
 
 🚨 **Alpha Status**: This project is currently in alpha. Features and functionality may change, and breaking changes may occur as development continues. Use at your own risk. 🚨
 
