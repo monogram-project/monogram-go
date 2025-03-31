@@ -21,8 +21,8 @@ type TestFile struct {
 	Tests     []TestCase `yaml:"tests"`
 }
 
-// Foo is the function to be tested
-func Foo(input string) error {
+// CheckTranslationToAST is the function to be tested
+func CheckTranslationToAST(input string) error {
 	node, err := ParseToAST(input, "", false, "_", false)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func TestAST(t *testing.T) {
 	for _, testCase := range testFile.Tests {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// Call Foo with the input section
-			err := Foo(testCase.Input)
+			err := CheckTranslationToAST(testCase.Input)
 			if err != nil {
 				t.Errorf("Foo returned an error for input '%s': %v", testCase.Input, err)
 			}
