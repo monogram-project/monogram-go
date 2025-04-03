@@ -24,7 +24,8 @@ const NameNumber = "number"
 const NameOperator = "operator"
 const NameString = "string"
 const NameJoin = "join"
-const NameInterpolate = "interpolate"
+const NameJoinLines = "joinlines"
+const NameInterpolate = "interpolation"
 
 const OptionValue = "value"
 const OptionName = "name"
@@ -70,13 +71,13 @@ func (p *Parser) startSpan() (int, int) {
 	if t == nil {
 		return 0, 0
 	}
-	return t.StartLine, t.StartColumn
+	return t.Span.StartLine, t.Span.StartColumn
 }
 
 func (p *Parser) endSpan() (int, int) {
 	if p.pos > 0 {
 		t := p.tokens[p.pos-1]
-		return t.EndLine, t.EndColumn
+		return t.Span.EndLine, t.Span.EndColumn
 	}
 	return 0, 0
 }
@@ -162,10 +163,7 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 				Type:                 Sign,
 				SubType:              SignMinus,
 				Text:                 "-",
-				StartLine:            token1.StartLine,
-				StartColumn:          token1.StartColumn,
-				EndLine:              token1.StartLine,
-				EndColumn:            token1.StartColumn + 1,
+				Span:                 Span{StartLine: token1.Span.StartLine, StartColumn: token1.Span.StartColumn, EndLine: token1.Span.StartLine, EndColumn: token1.Span.StartColumn + 1},
 				PrecededByNewline:    token1.PrecededByNewline,
 				FollowedByWhitespace: false,
 				NextToken:            token1,
@@ -175,7 +173,7 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 				break
 			}
 			token1.Text = token1.Text[1:]
-			token1.StartColumn++
+			token1.Span.StartColumn++
 			token1.PrecededByNewline = false
 			c := context
 			c.AcceptNewline = false
@@ -320,10 +318,8 @@ func (p *Parser) readExprSeqTo(closingSubtype uint8, allowComma bool, context Co
 				p.next()
 				break
 			}
-			// fmt.Println("Unexpected closing bracket", t.SubType, closingSubtype)
 			return "", nil, fmt.Errorf("unexpected closing bracket")
 		} else {
-			// fmt.Println("Unexpected token", t.Text, t.Type, t.SubType)
 			return "", nil, fmt.Errorf("unexpected token: %s", t.Text)
 		}
 	}
@@ -499,6 +495,9 @@ func (p *Parser) readDelimitedExpr(open *Token, context Context) (*Node, error) 
 func (p *Parser) readPrimaryExpr(context Context) (*Node, error) {
 	span1, span2 := p.startSpan()
 	n, e := p.doReadPrimaryExpr(context)
+	if e != nil {
+		return nil, e
+	}
 	if p.IncludeSpans {
 		span3, span4 := p.endSpan()
 		n.Options[OptionSpan] = fmt.Sprintf("%d %d %d %d", span1, span2, span3, span4)
@@ -511,7 +510,6 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 		return nil, fmt.Errorf("unexpected end of tokens")
 	}
 	token := p.next()
-	// fmt.Println("Token", token.Text, token.Type, token.SubType)
 
 	switch token.Type {
 	case Literal:
@@ -528,44 +526,14 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 			}, nil
 
 		case LiteralInterpolatedString: // Handling interpolated strings
-			// fmt.Println("LiteralInterpolatedString", token.Text)
-			interpolationNode := &Node{
-				Name: NameJoin,
-				Options: map[string]string{
-					OptionQuote: token.QuoteWord(),
-				},
-				Children: []*Node{},
-			}
+			return p.convertInterpolatedStringSubToken(token)
 
-			// Process sub-tokens
-			for _, subToken := range token.SubTokens {
-				if subToken.SubType == LiteralExpressionString {
-					// Recursively parse the expression string
-					// fmt.Println("Parsing expression string:", subToken.Text)
-					expressionNode, err := ParseToAST(subToken.Text, "", true, p.UnglueOption.Text, p.IncludeSpans)
-					expressionNode.Name = NameInterpolate
-					delete(expressionNode.Options, OptionSeparator)
-					if err != nil {
-						return nil, fmt.Errorf("error parsing expression string: %v", err)
-					}
-					interpolationNode.Children = append(interpolationNode.Children, expressionNode)
-				} else if subToken.SubType == LiteralString {
-					// Handle plain string parts
-					interpolationNode.Children = append(interpolationNode.Children, &Node{
-						Name:    NameString,
-						Options: map[string]string{OptionQuote: subToken.QuoteWord(), OptionValue: subToken.Text},
-					})
-				} else {
-					return nil, fmt.Errorf("unexpected sub-token subtype: %v", subToken.SubType)
-				}
-			}
-			return interpolationNode, nil
+		case LiteralMultilineString:
+			return p.convertMultilineStringSubToken(token)
 		}
-		// fmt.Println("Unexpected literal token", token.Text, token.SubType, LiteralInterpolatedString)
 	case Identifier:
 		if token.IsMacro() {
 			p.next()
-			// fmt.Println("Label", label.Text, label.SubType)
 			n, e := p.readOptExprPrec(token, maxPrecedence, context)
 			if e != nil {
 				return nil, e
@@ -632,6 +600,96 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	return nil, fmt.Errorf("unexpected token (2): %s, %d, %d", token.Text, token.Type, token.SubType)
 }
 
+func (p *Parser) convertMultilineStringSubToken(token *Token) (*Node, error) {
+	multilineNode := &Node{
+		Name: NameJoinLines,
+		Options: map[string]string{
+			OptionQuote: token.QuoteWord(),
+		},
+		Children: []*Node{},
+	}
+
+	// Process sub-tokens
+	for _, subToken := range token.SubTokens {
+		err := p.insertConvertedSubToken(subToken, multilineNode)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return multilineNode, nil
+}
+
+func (p *Parser) insertConvertedSubToken(subToken *Token, interpolationNode *Node) error {
+	node, err := p.convertSubToken(subToken)
+	if err != nil {
+		return err
+	}
+
+	interpolationNode.Children = append(interpolationNode.Children, node)
+	return nil
+}
+
+func (p *Parser) convertSubToken(subToken *Token) (*Node, error) {
+	if subToken.SubType == LiteralExpressionString {
+		// Recursively parse the expression string
+		node, err := p.convertLiteralExpressionStringSubToken(subToken)
+		return node, err
+	} else if subToken.SubType == LiteralString {
+		// Handle plain string parts
+		n := &Node{
+			Name:    NameString,
+			Options: map[string]string{OptionQuote: subToken.QuoteWord(), OptionValue: subToken.Text},
+		}
+		if p.IncludeSpans {
+			n.Options[OptionSpan] = subToken.SpanString()
+		}
+		return n, nil
+	} else if subToken.SubType == LiteralInterpolatedString {
+		node, err := p.convertInterpolatedStringSubToken(subToken)
+		return node, err
+	} else {
+		return nil, fmt.Errorf("unexpected sub-token subtype: %v", subToken.SubType)
+	}
+}
+
+func (p *Parser) convertInterpolatedStringSubToken(token *Token) (*Node, error) {
+	interpolationNode := &Node{
+		Name: NameJoin,
+		Options: map[string]string{
+			OptionQuote: token.QuoteWord(),
+		},
+		Children: []*Node{},
+	}
+	if p.IncludeSpans {
+		interpolationNode.Options[OptionSpan] = token.SpanString()
+	}
+
+	// Process sub-tokens
+	for _, subToken := range token.SubTokens {
+		err := p.insertConvertedSubToken(subToken, interpolationNode)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return interpolationNode, nil
+}
+
+func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node, error) {
+	columnOffset := subToken.Span.StartColumn - 1
+	expressionNode, err := ParseToAST(subToken.Text, "", true, p.UnglueOption.Text, p.IncludeSpans, columnOffset)
+	expressionNode.Name = NameInterpolate // The outer brackets can be repurposed!
+	if p.IncludeSpans {
+		span := subToken.Span
+		span.StartColumn-- // Now ensure we include the backslash.
+		expressionNode.Options[OptionSpan] = span.SpanString()
+	}
+	delete(expressionNode.Options, OptionSeparator)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing expression string: %v", err)
+	}
+	return expressionNode, nil
+}
+
 func parseTokensToNodes(tokens []*Token, limit bool, breaker string, include_spans bool) ([]*Node, error) {
 	parser := &Parser{
 		tokens:       tokens,
@@ -640,7 +698,6 @@ func parseTokensToNodes(tokens []*Token, limit bool, breaker string, include_spa
 	}
 	nodes := []*Node{}
 	for parser.hasNext() {
-		// fmt.Println("Parsing token", parser.peek().Text)
 		node, err := parser.readExpr(Context{})
 		if err != nil {
 			return nil, err
@@ -654,9 +711,9 @@ func parseTokensToNodes(tokens []*Token, limit bool, breaker string, include_spa
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, breaker string, include_spans bool) ([]*Node, error) {
+func parseToASTArray(input string, limit bool, breaker string, include_spans bool, colOffset int) ([]*Node, error) {
 	// Step 1: Tokenize the input
-	tokens, terr := tokenizeInput(input)
+	tokens, terr := tokenizeInput(input, colOffset)
 	if terr != nil {
 		return nil, fmt.Errorf(terr.Message + " (line" + fmt.Sprint(terr.Line) + ", column" + fmt.Sprint(terr.Column) + ")")
 	}
@@ -670,10 +727,9 @@ func parseToASTArray(input string, limit bool, breaker string, include_spans boo
 	return nodes, nil
 }
 
-func ParseToAST(input string, src string, limit bool, unglue string, include_spans bool) (*Node, error) {
-	// fmt.Println("Parsing input:", input)
+func ParseToAST(input string, src string, limit bool, unglue string, include_spans bool, colOffset int) (*Node, error) {
 	// Get the array of nodes
-	nodes, err := parseToASTArray(input, limit, unglue, include_spans)
+	nodes, err := parseToASTArray(input, limit, unglue, include_spans, colOffset)
 	if err != nil {
 		return nil, err
 	}
@@ -699,7 +755,7 @@ func ParseToAST(input string, src string, limit bool, unglue string, include_spa
 }
 
 func ParseToElement(input string, src string, limit bool, unglue string, include_spans bool) (Element, error) {
-	node, err := ParseToAST(input, src, limit, unglue, include_spans)
+	node, err := ParseToAST(input, src, limit, unglue, include_spans, 0)
 	if err != nil {
 		return nil, err
 	}
