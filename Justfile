@@ -20,7 +20,7 @@ build:
     just -f go/monogram/Justfile build
 
 functest:
-    python3 runtests.py --tests tests.yaml --command "./go/monogram/monogram"
+    python3 functest.py --tests functests/tests.yaml --command "./go/monogram/monogram"
 
 functest-coverage:
     just -f go/monogram/Justfile functest-coverage
