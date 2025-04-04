@@ -1,19 +1,19 @@
-name: Update version.go on Tag Push
+name: Build and Release Monogram Binaries on Tag Push
 
 on:
-    push:
-      tags:
-        - "v*"      # Matches tags starting with "v"
+  push:
+    tags:
+      - "v*"  # Matches tags starting with "v"
 
 jobs:
-  update-version:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Ensure full history is available, including tags
+          fetch-depth: 0  # Ensure full history is available, including tags
 
       - name: Check Out Main Branch
         run: |
@@ -31,17 +31,59 @@ jobs:
           echo "package lib" > go/monogram/lib/version.go
           echo "const Version = \"${TAG}\"" >> go/monogram/lib/version.go
 
-      - name: Commit Changes
+      - name: Commit Version Update
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "actions@github.com"
           git add go/monogram/lib/version.go
           git commit -m "Update version.go to ${TAG}"
-          git push origin main
+          git push origin HEAD
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+
+      - name: Set Up Go Environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: "latest"
+
+      - name: Build Binary for Linux x86_64
+        run: |
+          mkdir -p dist/linux/x86_64
+          cd go/monogram/cmd/monogram
+          GOOS=linux GOARCH=amd64 go build -o ../../../../dist/linux/x86_64/monogram
+        shell: bash
+
+      - name: Build Binary for Linux arm64
+        run: |
+          mkdir -p dist/linux/arm64
+          cd go/monogram/cmd/monogram
+          GOOS=linux GOARCH=arm64 go build -o ../../../../dist/linux/arm64/monogram
+        shell: bash
+
+      - name: Build Binary for Windows
+        run: |
+          mkdir -p dist/windows
+          cd go/monogram/cmd/monogram
+          GOOS=windows GOARCH=amd64 go build -o ../../../../dist/windows/monogram.exe
+        shell: bash
+
+      - name: Build Binary for macOS (Intel)
+        run: |
+          mkdir -p dist/macos/intel
+          cd go/monogram/cmd/monogram
+          GOOS=darwin GOARCH=amd64 go build -o ../../../../dist/macos/intel/monogram
+        shell: bash
+
+      - name: Build Binary for macOS (ARM)
+        run: |
+          mkdir -p dist/macos/arm64
+          cd go/monogram/cmd/monogram
+          GOOS=darwin GOARCH=arm64 go build -o ../../../../dist/macos/arm64/monogram
+        shell: bash
 
       - name: Create GitHub Release
+        id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,3 +93,53 @@ jobs:
           body: "Automatically generated release for version ${{ env.TAG }}."
           draft: false
           prerelease: false
+
+      - name: Upload Linux x86_64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/linux/x86_64/monogram
+          asset_name: monogram-linux-x86_64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Linux arm64 Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/linux/arm64/monogram
+          asset_name: monogram-linux-arm64
+          asset_content_type: application/octet-stream
+
+      - name: Upload Windows Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/windows/monogram.exe
+          asset_name: monogram-windows.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS Intel Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/macos/intel/monogram
+          asset_name: monogram-macos-intel
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS ARM Binary
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist/macos/arm64/monogram
+          asset_name: monogram-macos-arm64
+          asset_content_type: application/octet-stream
