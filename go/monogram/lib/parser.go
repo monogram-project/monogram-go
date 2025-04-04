@@ -206,6 +206,7 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 		token2 := p.next()
 		c := context
 		c.AcceptNewline = false
+		curr_lhs := lhs
 		if token2.Type == OpenBracket {
 			sep_text, args, err := p.readArguments(token2.SubType, c)
 			if err != nil {
@@ -237,6 +238,9 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 					},
 					Children: []*Node{lhs, rhs},
 				}
+				if p.IncludeSpans {
+
+				}
 			} else {
 				lhs = &Node{
 					Name: NameGet,
@@ -251,7 +255,6 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 			if err != nil {
 				return nil, err
 			}
-			curr_lhs := lhs
 			lhs = &Node{
 				Name: NameOperator,
 				Options: map[string]string{
@@ -260,12 +263,12 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 				},
 				Children: []*Node{lhs, rhs}, // lhs and rhs are the children of the operator node
 			}
-			if p.IncludeSpans {
-				curr_lhs_span := strings.Split(curr_lhs.Options[OptionSpan], " ")
-				if len(curr_lhs_span) >= 2 {
-					span3, span4 := p.endSpan()
-					lhs.Options[OptionSpan] = fmt.Sprintf("%s %s %d %d", curr_lhs_span[0], curr_lhs_span[1], span3, span4)
-				}
+		}
+		if p.IncludeSpans {
+			curr_lhs_span := strings.Split(curr_lhs.Options[OptionSpan], " ")
+			if len(curr_lhs_span) >= 2 {
+				span3, span4 := p.endSpan()
+				lhs.Options[OptionSpan] = fmt.Sprintf("%s %s %d %d", curr_lhs_span[0], curr_lhs_span[1], span3, span4)
 			}
 		}
 	}
@@ -711,25 +714,25 @@ func parseTokensToNodes(tokens []*Token, limit bool, breaker string, include_spa
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, breaker string, include_spans bool, colOffset int) ([]*Node, error) {
+func parseToASTArray(input string, limit bool, breaker string, include_spans bool, colOffset int) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
-	tokens, terr := tokenizeInput(input, colOffset)
+	tokens, span, terr := tokenizeInput(input, colOffset)
 	if terr != nil {
-		return nil, fmt.Errorf(terr.Message + " (line" + fmt.Sprint(terr.Line) + ", column" + fmt.Sprint(terr.Column) + ")")
+		return nil, Span{}, fmt.Errorf(terr.Message + " (line" + fmt.Sprint(terr.Line) + ", column" + fmt.Sprint(terr.Column) + ")")
 	}
 
 	// Step 2: Parse the tokens into nodes
 	nodes, err := parseTokensToNodes(tokens, limit, breaker, include_spans)
 	if err != nil {
-		return nil, err
+		return nil, Span{}, err
 	}
 
-	return nodes, nil
+	return nodes, span, nil
 }
 
 func ParseToAST(input string, src string, limit bool, unglue string, include_spans bool, colOffset int) (*Node, error) {
 	// Get the array of nodes
-	nodes, err := parseToASTArray(input, limit, unglue, include_spans, colOffset)
+	nodes, span, err := parseToASTArray(input, limit, unglue, include_spans, colOffset)
 	if err != nil {
 		return nil, err
 	}
@@ -743,11 +746,17 @@ func ParseToAST(input string, src string, limit bool, unglue string, include_spa
 	var unitNode *Node
 	if limit && len(nodes) == 1 {
 		unitNode = nodes[0]
+		if include_spans {
+			unitNode.Options[OptionSpan] = nodes[0].Options[OptionSpan]
+		}
 	} else {
 		unitNode = &Node{
 			Name:     NameUnit,
 			Options:  options,
 			Children: nodes,
+		}
+		if include_spans {
+			unitNode.Options[OptionSpan] = span.SpanString()
 		}
 	}
 
