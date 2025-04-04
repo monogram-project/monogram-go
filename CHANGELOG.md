@@ -2,7 +2,7 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
-## [0.2.3] Fixes span info
+## [0.2.4] Fixes span info
 
 ### Added 
 
