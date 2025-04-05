@@ -74,13 +74,15 @@ jobs:
 
           The Windows binary is a self-contained executable. However, we are
           seeing some false positives from Windows Defender. If you encounter
-          a warning, please let us know.
+          a warning, please let us know
           
           ### macOS Binary Notice
           
           **Important:** The macOS binaries in this release are not notarized. macOS security settings (Gatekeeper) will prevent them from running immediately.
+          **Workarounds for newer macs:**
+          See https://support.apple.com/en-gb/guide/mac-help/mh40616/mac
           
-          **Workarounds:**
+          **Workarounds for older macs:**
           - **Using Finder:** Right-click (or Control-click) the downloaded binary and select **Open**, then confirm.
           - **Using Terminal:** Run \`xattr -rd com.apple.quarantine /path/to/monogram\`
           EOF
