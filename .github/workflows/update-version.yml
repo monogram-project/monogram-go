@@ -45,7 +45,7 @@ jobs:
       - name: Set Up Go Environment
         uses: actions/setup-go@v4
         with:
-          go-version: "latest"
+          go-version: "1.23"
 
       - name: Build Binary for Linux x86_64
         run: |
