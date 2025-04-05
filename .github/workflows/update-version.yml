@@ -65,10 +65,26 @@ jobs:
           zip -j dist/macos/intel/monogram-macos-intel.zip dist/macos/intel/monogram
           zip -j dist/macos/arm64/monogram-macos-arm64.zip dist/macos/arm64/monogram
 
+      - name: Create Release Notes File
+        run: |
+          cat > release_notes.txt <<'EOF'
+          Automatically generated release for version '"$TAG"'.
+          
+          ### macOS Binary Notice
+          
+          **Important:** The macOS binaries in this release are not notarized. macOS security settings (Gatekeeper) will prevent them from running immediately.
+          
+          **Workarounds:**
+          - **Using Finder:** Right-click (or Control-click) the downloaded binary and select **Open**, then confirm.
+          - **Using Terminal:** Execute:
+            `xattr -rd com.apple.quarantine /path/to/monogram`
+          EOF
+
       - name: Create Release and Upload Binaries with gh
         run: |
           gh release create "$TAG" \
             -t "Release $TAG" \
+            -F release_notes.txt \
             -n "Automatically generated release for version $TAG." \
             dist/linux/x86_64/monogram-linux-x86_64.tar.gz \
             dist/linux/arm64/monogram-linux-arm64.tar.gz \
