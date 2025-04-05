@@ -69,6 +69,12 @@ jobs:
         run: |
           cat > release_notes.txt <<EOF
           Automatically generated release for version $TAG.
+
+          ### Windows Binary
+
+          The Windows binary is a self-contained executable. However, we are
+          seeing some false positives from Windows Defender. If you encounter
+          a warning, please let us know.
           
           ### macOS Binary Notice
           
