@@ -76,8 +76,7 @@ jobs:
           
           **Workarounds:**
           - **Using Finder:** Right-click (or Control-click) the downloaded binary and select **Open**, then confirm.
-          - **Using Terminal:** Execute:
-            `xattr -rd com.apple.quarantine /path/to/monogram`
+          - **Using Terminal:** Run \`xattr -rd com.apple.quarantine /path/to/monogram\`
           EOF
 
       - name: Create Release and Upload Binaries with gh
