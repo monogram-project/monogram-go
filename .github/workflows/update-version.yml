@@ -144,9 +144,14 @@ jobs:
       #     asset_name: monogram-macos-arm64
       #     asset_content_type: application/octet-stream
 
-      - name: Upload macOS ARM Binary via GitHub CLI
+      - name: Compress macOS ARM Binary
         run: |
-          gh release upload "${{ env.TAG }}" dist/macos/arm64/monogram --clobber --repo ${{ github.repository }} --name monogram-macos-arm64 --content-type application/octet-stream
+          zip -j dist/macos/arm64/monogram-macos-arm64.zip dist/macos/arm64/monogram
+        shell: bash
+
+      - name: Upload macOS ARM Archive with gh
+        run: |
+          gh release upload "$TAG" dist/macos/arm64/monogram-macos-arm64.zip --clobber --repo ${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
