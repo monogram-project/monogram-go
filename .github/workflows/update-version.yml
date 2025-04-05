@@ -67,7 +67,7 @@ jobs:
 
       - name: Create Release Notes File
         run: |
-          cat > release_notes.txt <<'EOF'
+          cat > release_notes.txt <<EOF
           Automatically generated release for version '"$TAG"'.
           
           ### macOS Binary Notice
