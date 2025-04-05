@@ -47,117 +47,34 @@ jobs:
         with:
           go-version: "1.23"
 
-      - name: Build Binary for Linux x86_64
+      - name: Build Binaries
         run: |
-          mkdir -p dist/linux/x86_64
+          mkdir -p dist/linux/x86_64 dist/linux/arm64 dist/windows dist/macos/intel dist/macos/arm64
           cd go/monogram/cmd/monogram
           GOOS=linux GOARCH=amd64 go build -o ../../../../dist/linux/x86_64/monogram
-        shell: bash
-
-      - name: Build Binary for Linux arm64
-        run: |
-          mkdir -p dist/linux/arm64
-          cd go/monogram/cmd/monogram
           GOOS=linux GOARCH=arm64 go build -o ../../../../dist/linux/arm64/monogram
-        shell: bash
-
-      - name: Build Binary for Windows
-        run: |
-          mkdir -p dist/windows
-          cd go/monogram/cmd/monogram
           GOOS=windows GOARCH=amd64 go build -o ../../../../dist/windows/monogram.exe
-        shell: bash
-
-      - name: Build Binary for macOS (Intel)
-        run: |
-          mkdir -p dist/macos/intel
-          cd go/monogram/cmd/monogram
           GOOS=darwin GOARCH=amd64 go build -o ../../../../dist/macos/intel/monogram
-        shell: bash
-
-      - name: Build Binary for macOS (ARM)
-        run: |
-          mkdir -p dist/macos/arm64
-          cd go/monogram/cmd/monogram
           GOOS=darwin GOARCH=arm64 go build -o ../../../../dist/macos/arm64/monogram
-        shell: bash
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.TAG }}
-          release_name: "Release ${{ env.TAG }}"
-          body: "Automatically generated release for version ${{ env.TAG }}."
-          draft: true
-          prerelease: false
-
-      # Compression steps that also rename the files to the desired names
-      - name: Compress Linux x86_64 Binary
+      - name: Compress Binaries
         run: |
           tar -czvf dist/linux/x86_64/monogram-linux-x86_64.tar.gz -C dist/linux/x86_64 monogram
-        shell: bash
-
-      - name: Compress Linux arm64 Binary
-        run: |
           tar -czvf dist/linux/arm64/monogram-linux-arm64.tar.gz -C dist/linux/arm64 monogram
-        shell: bash
-
-      - name: Compress Windows Binary
-        run: |
           zip -j dist/windows/monogram-windows.zip dist/windows/monogram.exe
-        shell: bash
-
-      - name: Compress macOS Intel Binary
-        run: |
           zip -j dist/macos/intel/monogram-macos-intel.zip dist/macos/intel/monogram
-        shell: bash
-
-      - name: Compress macOS ARM Binary
-        run: |
           zip -j dist/macos/arm64/monogram-macos-arm64.zip dist/macos/arm64/monogram
-        shell: bash
 
-      # Create the GitHub release with gh CLI
-      - name: Create GitHub Release
+      - name: Create Release and Upload Binaries with gh
         run: |
           gh release create "$TAG" \
             -t "Release $TAG" \
             -n "Automatically generated release for version $TAG." \
+            dist/linux/x86_64/monogram-linux-x86_64.tar.gz \
+            dist/linux/arm64/monogram-linux-arm64.tar.gz \
+            dist/windows/monogram-windows.zip \
+            dist/macos/intel/monogram-macos-intel.zip \
+            dist/macos/arm64/monogram-macos-arm64.zip \
             --repo ${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Upload each compressed archive using the gh CLI. The file names are already set by the compression step!
-      - name: Upload Linux x86_64 Archive with gh
-        run: |
-          gh release upload "$TAG" dist/linux/x86_64/monogram-linux-x86_64.tar.gz --clobber --repo ${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Linux arm64 Archive with gh
-        run: |
-          gh release upload "$TAG" dist/linux/arm64/monogram-linux-arm64.tar.gz --clobber --repo ${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Windows Archive with gh
-        run: |
-          gh release upload "$TAG" dist/windows/monogram-windows.zip --clobber --repo ${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload macOS Intel Archive with gh
-        run: |
-          gh release upload "$TAG" dist/macos/intel/monogram-macos-intel.zip --clobber --repo ${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload macOS ARM Archive with gh
-        run: |
-          gh release upload "$TAG" dist/macos/arm64/monogram-macos-arm64.zip --clobber --repo ${{ github.repository }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        
