@@ -91,7 +91,7 @@ jobs:
           tag_name: ${{ env.TAG }}
           release_name: "Release ${{ env.TAG }}"
           body: "Automatically generated release for version ${{ env.TAG }}."
-          draft: false
+          draft: true
           prerelease: false
 
       - name: Upload Linux x86_64 Binary
@@ -134,12 +134,19 @@ jobs:
           asset_name: monogram-macos-intel
           asset_content_type: application/octet-stream
 
-      - name: Upload macOS ARM Binary
-        uses: actions/upload-release-asset@v1
+      # - name: Upload macOS ARM Binary
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: dist/macos/arm64/monogram
+      #     asset_name: monogram-macos-arm64
+      #     asset_content_type: application/octet-stream
+
+      - name: Upload macOS ARM Binary via GitHub CLI
+        run: |
+          gh release upload "${{ env.TAG }}" dist/macos/arm64/monogram --clobber --repo ${{ github.repository }} --name monogram-macos-arm64 --content-type application/octet-stream
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/macos/arm64/monogram
-          asset_name: monogram-macos-arm64
-          asset_content_type: application/octet-stream
+        
