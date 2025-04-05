@@ -1,19 +1,19 @@
-name: Update version.go on Tag Push
+name: Build and Release Monogram Binaries on Tag Push
 
 on:
-    push:
-      tags:
-        - "v*"      # Matches tags starting with "v"
+  push:
+    tags:
+      - "v*"  # Matches tags starting with "v"
 
 jobs:
-  update-version:
+  build-and-release:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Ensure full history is available, including tags
+          fetch-depth: 0  # Ensure full history is available, including tags
 
       - name: Check Out Main Branch
         run: |
@@ -31,23 +31,50 @@ jobs:
           echo "package lib" > go/monogram/lib/version.go
           echo "const Version = \"${TAG}\"" >> go/monogram/lib/version.go
 
-      - name: Commit Changes
+      - name: Commit Version Update
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "actions@github.com"
           git add go/monogram/lib/version.go
           git commit -m "Update version.go to ${TAG}"
-          git push origin main
+          git push origin HEAD
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
+      - name: Set Up Go Environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.23"
+
+      - name: Build Binaries
+        run: |
+          mkdir -p dist/linux/x86_64 dist/linux/arm64 dist/windows dist/macos/intel dist/macos/arm64
+          cd go/monogram/cmd/monogram
+          GOOS=linux GOARCH=amd64 go build -o ../../../../dist/linux/x86_64/monogram
+          GOOS=linux GOARCH=arm64 go build -o ../../../../dist/linux/arm64/monogram
+          GOOS=windows GOARCH=amd64 go build -o ../../../../dist/windows/monogram.exe
+          GOOS=darwin GOARCH=amd64 go build -o ../../../../dist/macos/intel/monogram
+          GOOS=darwin GOARCH=arm64 go build -o ../../../../dist/macos/arm64/monogram
+
+      - name: Compress Binaries
+        run: |
+          tar -czvf dist/linux/x86_64/monogram-linux-x86_64.tar.gz -C dist/linux/x86_64 monogram
+          tar -czvf dist/linux/arm64/monogram-linux-arm64.tar.gz -C dist/linux/arm64 monogram
+          zip -j dist/windows/monogram-windows.zip dist/windows/monogram.exe
+          zip -j dist/macos/intel/monogram-macos-intel.zip dist/macos/intel/monogram
+          zip -j dist/macos/arm64/monogram-macos-arm64.zip dist/macos/arm64/monogram
+
+      - name: Create Release and Upload Binaries with gh
+        run: |
+          gh release create "$TAG" \
+            -t "Release $TAG" \
+            -n "Automatically generated release for version $TAG." \
+            dist/linux/x86_64/monogram-linux-x86_64.tar.gz \
+            dist/linux/arm64/monogram-linux-arm64.tar.gz \
+            dist/windows/monogram-windows.zip \
+            dist/macos/intel/monogram-macos-intel.zip \
+            dist/macos/arm64/monogram-macos-arm64.zip \
+            --repo ${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.TAG }}
-          release_name: "Release ${{ env.TAG }}"
-          body: "Automatically generated release for version ${{ env.TAG }}."
-          draft: false
-          prerelease: false
