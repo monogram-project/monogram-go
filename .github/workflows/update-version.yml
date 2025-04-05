@@ -94,60 +94,66 @@ jobs:
           draft: true
           prerelease: false
 
-      - name: Upload Linux x86_64 Binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/linux/x86_64/monogram
-          asset_name: monogram-linux-x86_64
-          asset_content_type: application/octet-stream
+      # Compression steps that also rename the files to the desired names
+      - name: Compress Linux x86_64 Binary
+        run: |
+          tar -czvf dist/linux/x86_64/monogram-linux-x86_64.tar.gz -C dist/linux/x86_64 monogram
+        shell: bash
 
-      - name: Upload Linux arm64 Binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/linux/arm64/monogram
-          asset_name: monogram-linux-arm64
-          asset_content_type: application/octet-stream
+      - name: Compress Linux arm64 Binary
+        run: |
+          tar -czvf dist/linux/arm64/monogram-linux-arm64.tar.gz -C dist/linux/arm64 monogram
+        shell: bash
 
-      - name: Upload Windows Binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/windows/monogram.exe
-          asset_name: monogram-windows.exe
-          asset_content_type: application/octet-stream
+      - name: Compress Windows Binary
+        run: |
+          zip -j dist/windows/monogram-windows.zip dist/windows/monogram.exe
+        shell: bash
 
-      - name: Upload macOS Intel Binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/macos/intel/monogram
-          asset_name: monogram-macos-intel
-          asset_content_type: application/octet-stream
-
-      # - name: Upload macOS ARM Binary
-      #   uses: actions/upload-release-asset@v1
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
-      #     asset_path: dist/macos/arm64/monogram
-      #     asset_name: monogram-macos-arm64
-      #     asset_content_type: application/octet-stream
+      - name: Compress macOS Intel Binary
+        run: |
+          zip -j dist/macos/intel/monogram-macos-intel.zip dist/macos/intel/monogram
+        shell: bash
 
       - name: Compress macOS ARM Binary
         run: |
           zip -j dist/macos/arm64/monogram-macos-arm64.zip dist/macos/arm64/monogram
         shell: bash
+
+      # Create the GitHub release with gh CLI
+      - name: Create GitHub Release
+        run: |
+          gh release create "$TAG" \
+            -t "Release $TAG" \
+            -n "Automatically generated release for version $TAG." \
+            --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Upload each compressed archive using the gh CLI. The file names are already set by the compression step!
+      - name: Upload Linux x86_64 Archive with gh
+        run: |
+          gh release upload "$TAG" dist/linux/x86_64/monogram-linux-x86_64.tar.gz --clobber --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux arm64 Archive with gh
+        run: |
+          gh release upload "$TAG" dist/linux/arm64/monogram-linux-arm64.tar.gz --clobber --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows Archive with gh
+        run: |
+          gh release upload "$TAG" dist/windows/monogram-windows.zip --clobber --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS Intel Archive with gh
+        run: |
+          gh release upload "$TAG" dist/macos/intel/monogram-macos-intel.zip --clobber --repo ${{ github.repository }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload macOS ARM Archive with gh
         run: |
