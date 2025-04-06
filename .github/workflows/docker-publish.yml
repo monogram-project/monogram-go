@@ -41,5 +41,5 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            your-username/monogram:latest
-            your-username/monogram:${{ env.VERSION }}
+            sfkleach/monogram:latest
+            sfkleach/monogram:${{ env.VERSION }}
