@@ -2,7 +2,7 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
-## Unreleased Changes
+## [0.2.6] Docker image and Underscores in Numbers
 
 ### Added
 
