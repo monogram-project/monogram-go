@@ -1,10 +1,8 @@
-name: Build and Push Multi-Arch Monogram Image with Version Tags
+name: Docker Hub Publish Multi-Arch Monogram Image with Version Tags
 
 on:
-  workflow_dispatch:
-  release:
-    types: [created, published]  # Triggers when a GitHub release is published
-
+  workflow_dispatch:    # Enables execution manually
+  
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
