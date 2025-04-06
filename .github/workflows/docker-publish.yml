@@ -3,7 +3,7 @@ name: Build and Push Multi-Arch Monogram Image with Version Tags
 on:
   workflow_dispatch:
   release:
-    types: [published]  # Triggers when a GitHub release is published
+    types: [created, published]  # Triggers when a GitHub release is published
 
 jobs:
   build-and-push:
