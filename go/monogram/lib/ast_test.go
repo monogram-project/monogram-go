@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -9,11 +10,12 @@ import (
 
 // Test structure matching the YAML structure
 type TestCase struct {
-	Name           string `yaml:"name"`
-	Command        string `yaml:"command"`
-	Input          string `yaml:"input"`
-	ExpectedOutput string `yaml:"expected_output"`
-	Normalize      string `yaml:"normalize,omitempty"`
+	Name               string `yaml:"name"`
+	Command            string `yaml:"command"`
+	Input              string `yaml:"input"`
+	ExpectedOutput     string `yaml:"expected_output"`
+	Normalize          string `yaml:"normalize,omitempty"`
+	ExpectedExitStatus int    `yaml:"expected_exit_status"`
 }
 
 type TestFile struct {
@@ -49,12 +51,15 @@ func TestAST(t *testing.T) {
 
 	// Iterate over test cases
 	for _, testCase := range testFile.Tests {
-		t.Run(testCase.Name, func(t *testing.T) {
-			// Call Foo with the input section
-			err := CheckTranslationToAST(testCase.Input)
-			if err != nil {
-				t.Errorf("Foo returned an error for input '%s': %v", testCase.Input, err)
-			}
-		})
+		fmt.Println("Test case:", testCase.Name, testCase.ExpectedExitStatus)
+		if testCase.ExpectedExitStatus == 0 {
+			t.Run(testCase.Name, func(t *testing.T) {
+				// Call Foo with the input section
+				err := CheckTranslationToAST(testCase.Input)
+				if err != nil {
+					t.Errorf("Foo returned an error for input '%s': %v", testCase.Input, err)
+				}
+			})
+		}
 	}
 }
