@@ -4,7 +4,11 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 ### Unreleased
 
+## [0.2.8.2] More Bug Fixes
 
+### Internal 
+
+- Improved process for bumping version numbers
 
 ## [0.2.8] More Bug Fixes
 
