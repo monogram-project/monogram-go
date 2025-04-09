@@ -1,2 +1,4 @@
 package lib
-const Version = "v0.2.8"
+
+// 'v' is prepended for versioning when printing out.
+const Version = "0.2.8"

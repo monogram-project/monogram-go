@@ -26,10 +26,10 @@ jobs:
           echo "TAG=${GITHUB_REF#refs/tags/}"
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Update version.go
-        run: |
-          echo "package lib" > go/monogram/lib/version.go
-          echo "const Version = \"${TAG}\"" >> go/monogram/lib/version.go
+      # - name: Update version.go
+      #   run: |
+      #     echo "package lib" > go/monogram/lib/version.go
+      #     echo "const Version = \"${TAG}\"" >> go/monogram/lib/version.go
 
       - name: Commit Version Update
         run: |

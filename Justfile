@@ -39,3 +39,7 @@ unittest:
 unittest-coverage:
     just -f go/monogram/Justfile unittest-coverage
 
+
+get-version:
+    (cd go/monogram && go run ./cmd/monogram --version)
+    

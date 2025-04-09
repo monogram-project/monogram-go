@@ -137,7 +137,7 @@ func main() {
 
 	// Check for the version flag
 	if showVersion {
-		fmt.Printf("Monogram version: %s\n", lib.Version)
+		fmt.Printf("Monogram version: v%s\n", lib.Version)
 		os.Exit(0) // Exit after printing the version
 	}
 
