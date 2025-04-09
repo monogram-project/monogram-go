@@ -39,7 +39,10 @@ unittest:
 unittest-coverage:
     just -f go/monogram/Justfile unittest-coverage
 
-
+# Run the latest version of monogram and print the version
 get-version:
     (cd go/monogram && go run ./cmd/monogram --version)
-    
+
+# Bump the version of monogram and optionally commit and push
+bump BUMP:
+    python3 ./scripts/bump.py --bump={{BUMP}} --save --publish
