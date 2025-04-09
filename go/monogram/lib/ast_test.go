@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
@@ -51,13 +50,12 @@ func TestAST(t *testing.T) {
 
 	// Iterate over test cases
 	for _, testCase := range testFile.Tests {
-		fmt.Println("Test case:", testCase.Name, testCase.ExpectedExitStatus)
+		// Only run tests with expected exit status 0
 		if testCase.ExpectedExitStatus == 0 {
 			t.Run(testCase.Name, func(t *testing.T) {
-				// Call Foo with the input section
 				err := CheckTranslationToAST(testCase.Input)
 				if err != nil {
-					t.Errorf("Foo returned an error for input '%s': %v", testCase.Input, err)
+					t.Errorf("Cannot parse test-case '%s': %v", testCase.Name, err)
 				}
 			})
 		}
