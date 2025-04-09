@@ -13,6 +13,17 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Change to functests directory
+        run: cd functests
+
+      - name: Run Poetry Update
+        run: poetry update
+
       - name: Set Up Go
         uses: actions/setup-go@v5
         with:
