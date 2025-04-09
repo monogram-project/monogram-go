@@ -39,7 +39,6 @@ unittest:
 unittest-coverage:
     just -f go/monogram/Justfile unittest-coverage
 
-
+# Run the latest version of monogram and print the version
 get-version:
     (cd go/monogram && go run ./cmd/monogram --version)
-    
