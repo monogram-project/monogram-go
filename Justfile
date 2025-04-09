@@ -45,4 +45,8 @@ get-version:
 
 # Bump the version of monogram and optionally commit and push
 bump BUMP:
-    python3 ./scripts/bump.py --bump={{BUMP}} --save --publish
+    python3 ./scripts/bump.py --bump={{BUMP}} --save 
+
+# Publish a new release
+publish:
+    python3 ./scripts/bump.py --publish
