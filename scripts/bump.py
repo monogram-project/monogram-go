@@ -64,7 +64,10 @@ def bump_version(current_version, bump_type):
 
 
 def save_version(new_version):
-    """Writes the new version to version.txt and commits the change (without pushing)."""
+    """Writes the new version to version.txt and commits the change (without pushing).
+    Also updates ./go/monogram/lib/version.go with the new version constant.
+    """
+    # Write the new version to version.txt
     try:
         VERSION_FILE.parent.mkdir(parents=True, exist_ok=True)
         VERSION_FILE.write_text(new_version)
@@ -72,12 +75,25 @@ def save_version(new_version):
     except Exception as e:
         raise BumpError(f"Error writing version file: {e}") from e
 
+    # Update the Go version file at ./go/monogram/lib/version.go
+    version_go_path = Path("go/monogram/lib/version.go")
     try:
-        subprocess.run(["git", "add", str(VERSION_FILE)], check=True)
+        version_go_path.parent.mkdir(parents=True, exist_ok=True)
+        version_go_content = f"""package lib\nconst Version = "{new_version}"\n"""
+        version_go_path.write_text(version_go_content)
+        print(f"Updated version in {version_go_path}")
+    except Exception as e:
+        raise BumpError(f"Error writing Go version file: {e}") from e
+
+    # Stage both files and make a Git commit.
+    try:
+        subprocess.run(["git", "add", str(VERSION_FILE), str(version_go_path)], check=True)
         subprocess.run(["git", "commit", "-m", f"Bump version to {new_version}"], check=True)
-        print("Version file committed (but not pushed).")
+        print("Version file and Go version file committed (but not pushed).")
     except subprocess.CalledProcessError as e:
         raise BumpError(f"Error during Git commit: {e}") from e
+    
+    return version_go_content
 
 
 def tag_and_push():
