@@ -2,6 +2,17 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
+## [0.3.0] Local Test Server
+
+### Added 
+
+- The new `--test` option runs `monogram` in an exploratory mode, 
+  opens a web browser window with a test page.
+- New executable `monogram-mini` that is built without the web server 
+  for a reduced executable size (12MB -> 3MB).
+
+![Screenshot of test server page](docs/images/test-option-screenshot.png)
+
 ## [0.2.8.5] More Bug Fixes
 
 ### Internal 
