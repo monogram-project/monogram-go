@@ -1,2 +1,2 @@
 package lib
-const Version = "0.2.8.5"
+const Version = "0.3.0"
