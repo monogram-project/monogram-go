@@ -8,6 +8,6 @@ func withWeb() bool {
 }
 
 // startTestServer starts an HTTP listener on the specified port and opens the browser.
-func startTestServer(port string, options *FormatOptions) {
+func startTestServer(port string, _ bool, options *FormatOptions) {
 	// A stub
 }
