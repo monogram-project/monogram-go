@@ -16,11 +16,21 @@ install:
       cp monogram-mini "$(go env GOPATH)/bin/monogram-mini"; \
     fi
 
+# This is a recipe to build all the binaries that we can in order to
+# test the build process. It is not intended to be run in production.
+build-all: build-full build-mini build-for-docker build-calc
+
+build-calc:
+    # Build the calculator executable
+    go build -o calculator ./cmd/calc
+    # Build the typed calculator executable
+    go build -o calculator-typed ./cmd/typecalc
+
 # Alias: build both full and mini executables
 build: build-full build-mini
 
+# Build the full executable with the web server enabled but flagged for docker
 build-for-docker:
-    # Build the full executable with the web server enabled but flagged for docker
     go build -tags withweb -ldflags="-X 'main.IsBuiltForDocker=true'" -o monogram ./cmd/monogram
 
 # Build the full executable with the web server enabled

@@ -14,3 +14,5 @@
 /go/monogram/_build/
 /go/monogram/monogram-test-coverage
 /go/monogram/monogram-mini
+/go/monogram/calculator
+/go/monogram/calculator-typed

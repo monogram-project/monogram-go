@@ -37,7 +37,7 @@ jobs:
 
       - name: Build Application
         run: |
-          just build
+          just build-all
 
       - name: Run Tests
         run: |

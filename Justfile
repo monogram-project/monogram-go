@@ -22,6 +22,11 @@ jumpstart:
 install: build
     just -f go/monogram/Justfile install
 
+# This is a recipe to build all the binaries that we can in order to
+# test the build process. It is not intended to be run in production.
+build-all:
+    just -f go/monogram/Justfile build-all
+
 build:
     just -f go/monogram/Justfile build
 
