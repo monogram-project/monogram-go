@@ -2,6 +2,14 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
+## [0.4.2] Fixed Docker image
+
+### Fixed
+
+- The Docker image now works correctly with --test. Now the test server 
+  permits incoming connections from the host machine. This means that you can
+  run the test server in a Docker container and access it from your host machine.
+
 ## [0.4.0] Asciitree Format
 
 ### Added
