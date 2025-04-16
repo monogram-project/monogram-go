@@ -14,10 +14,11 @@ configuration files. It is easy for humans to read and write. It is easy for
 machines to parse and generate. It deliberately borrows from many programming
 languages but feels familiar to Python and Ruby programmers.
 
-If you just want to try it out, follow [this link](docs/get_started.md) to
-install the reference implementation of the `monogram` tool and also the API
-library. There is also a complete example program showing how you can
-use the library to read in and process complex expressions.
+If you just want to try it out, follow this link [**to get
+started**](docs/get_started.md). This covers installing both the reference
+implementation of the `monogram` tool and the API library. There is also a
+[complete example program](go/monogram/cmd/calc) showing how you can use the
+library to read in and process complex expressions.
 
 
 ## _"It's source code, Jim. But not as we know it!"_

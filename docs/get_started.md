@@ -13,9 +13,9 @@ to write a Go application that uses `Monogram` notation, or both!
 
 ## Using the Monogram CLI tool
 
-The Monogram CLI tool allows you to process and analyze monogram notation
-directly from the command line. Below are some common use cases and examples to
-help you get started.
+Once you have installed the `monogram` tool, you can use it to process and
+analyze monogram notation directly from the command line. Listed below are some
+common use cases and examples to help you get started.
 
 ### Basic Usage
 
