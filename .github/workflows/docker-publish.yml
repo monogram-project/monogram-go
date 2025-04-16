@@ -1,4 +1,7 @@
 name: Docker Hub Publish Multi-Arch Monogram Image with Version Tags
+permissions:
+  contents: read  # Required to read the repository contents
+  packages: write  # Required to publish Docker images
 
 on:
   workflow_dispatch:    # Enables execution manually
