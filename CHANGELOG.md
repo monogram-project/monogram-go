@@ -2,6 +2,14 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
+
+## [0.4.3] Fixed CodeQL Warnings
+
+### Fixed
+
+- [Internal] CodeQL warnings were being generated for GitHub workflows without explicit
+  permissions. These have been added.
+
 ## [0.4.2] Fixed Docker image
 
 ### Fixed
