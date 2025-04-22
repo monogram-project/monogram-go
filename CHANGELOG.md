@@ -36,6 +36,10 @@ of putting new-lines inside brackets.
 
 - Exponential notation for numbers now added e.g. 1.23e+8
 
+### Fixed
+
+- Fixed abrupt exit from local web server when parse errors were encountered.
+
 ## [0.4.3] Fixed CodeQL Warnings
 
 ### Fixed
