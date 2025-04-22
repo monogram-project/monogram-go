@@ -7,7 +7,6 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 ### Changed
 
-
 - Extended prefix-forms for C-style syntax
   - To accommodate this we had to remove `f{x, y}`, which is a breaking change.
   - N.B. The major version is not bumped as we have not reached our first release.
@@ -30,6 +29,9 @@ if! predicate(x) {
 Note that prefix-forms keep reading expressions until they find one that 
 finishes on a line-break. So you need to follow the Python-like convention
 of putting new-lines inside brackets.
+
+- The Go module is renamed from `lib` to `mg` to provide a short and distinctive
+  import name.
 
 
 ### Added
