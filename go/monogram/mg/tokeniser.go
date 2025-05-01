@@ -490,6 +490,27 @@ func (t *Tokenizer) ensureRestOfLineIsWhitespace() *TokenizerError {
 	return nil
 }
 
+// Method to read the specifier of a multi-line string / code-fence.
+func (t *Tokenizer) readSpecifier() (string, *TokenizerError) {
+	// Read all the characters until a newline or end of input.
+	var text strings.Builder
+	for t.hasMoreInput() {
+		r := t.consume()
+		if r == '\n' || r == '\r' {
+			if r == '\r' {
+				t.tryConsumeRune('\n') // Consume \n if it follows
+			}
+			break // End of line
+		}
+		text.WriteRune(r)
+	}
+	strtext := strings.Trim(text.String(), " ")
+	if strings.Index(strtext, " ") > 0 {
+		return "", &TokenizerError{Message: "Spaces inside code-fence specifier", Line: t.lineNo, Column: t.colNo}
+	}
+	return strtext, nil
+}
+
 // Calculates the closing indent if we are on the last line of a multiline string.
 func textIsWhitespaceFollowedBy3Quotes(text string, quote rune) (bool, string) {
 	// Check if the text is whitespace followed by three quotes
@@ -524,19 +545,19 @@ func textIsWhitespaceFollowedBy3Quotes(text string, quote rune) (bool, string) {
 	return false, ""
 }
 
-func (t *Tokenizer) findClosingIndent() (rune, string, int, *TokenizerError) {
+func (t *Tokenizer) findClosingIndent() (rune, string, string, int, *TokenizerError) {
 	t.markPosition()
 
 	// Validate and consume the opening triple quotes
 	quote, ok := t.tryReadTripleQuotes()
 	if !ok {
-		return 0, "", 0, &TokenizerError{Message: "Malformed opening triple quotes", Line: t.lineNo, Column: t.colNo}
+		return 0, "", "", 0, &TokenizerError{Message: "Malformed opening triple quotes", Line: t.lineNo, Column: t.colNo}
 	}
 
 	// Ensure no other non-space characters appear on the opening line
-	terr := t.ensureRestOfLineIsWhitespace()
+	specifier, terr := t.readSpecifier()
 	if terr != nil {
-		return 0, "", 0, terr
+		return 0, "", "", 0, terr
 	}
 
 	// Now read each line in order until we find the closing line.
@@ -554,7 +575,7 @@ func (t *Tokenizer) findClosingIndent() (rune, string, int, *TokenizerError) {
 	}
 
 	if !match {
-		return 0, "", 0, &TokenizerError{Message: "Closing triple quote not found", Line: t.lineNo, Column: t.colNo}
+		return 0, "", "", 0, &TokenizerError{Message: "Closing triple quote not found", Line: t.lineNo, Column: t.colNo}
 	}
 
 	for i, line := range lines {
@@ -564,7 +585,7 @@ func (t *Tokenizer) findClosingIndent() (rune, string, int, *TokenizerError) {
 		}
 		// Check if the line starts with the closing indent
 		if !strings.HasPrefix(line, closingIndent) {
-			return 0, "", 0, &TokenizerError{
+			return 0, "", "", 0, &TokenizerError{
 				Message: "not indented consistently with the closing triple quote",
 				Line:    startLine + i,
 				Column:  startCol,
@@ -573,7 +594,7 @@ func (t *Tokenizer) findClosingIndent() (rune, string, int, *TokenizerError) {
 	}
 
 	t.resetPosition()
-	return quote, closingIndent, len(lines), nil
+	return quote, closingIndent, specifier, len(lines), nil
 }
 
 func (t *Tokenizer) readRestOfLine() string {
@@ -595,7 +616,7 @@ func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) 
 	startLine, startCol := t.lineNo, t.colNo
 	var subTokens []*Token
 
-	openingQuote, closingIndent, nlines, terr := t.findClosingIndent()
+	openingQuote, closingIndent, specifier, nlines, terr := t.findClosingIndent()
 	if terr != nil {
 		return nil, terr
 	}
@@ -626,6 +647,7 @@ func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) 
 	// Add the multiline string token
 	token := t.addToken(Literal, LiteralMultilineString, "", startLine, startCol)
 	token.IsMultiLine = true
+	token.Specifier = specifier
 	token.QuoteRune = openingQuote
 	token.SubTokens = subTokens
 
