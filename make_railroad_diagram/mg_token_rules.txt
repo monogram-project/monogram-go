@@ -277,7 +277,7 @@ Diagram(
 // Specifier
 Diagram(
     Comment('Specifier'),
-    ZeroOrMore(Terminal('/[^\S]/'))
+    ZeroOrMore(Terminal('/[a-zA-Z_]\w*/'))
 )
 
 

@@ -511,9 +511,11 @@ func (t *Tokenizer) readSpecifier() (string, *TokenizerError) {
 	}
 	//  Check the specifier matches the regex ^\w*$. This reserves wriggle room
 	//  for future expansion.
-	m, e := regexp.MatchString(`^\w*$`, strtext)
-	if !m || e != nil {
-		return "", &TokenizerError{Message: "Invalid code-fence specifier", Line: t.lineNo, Column: t.colNo}
+	if len(strtext) > 0 {
+		m, e := regexp.MatchString(`^[a-zA-Z_]\w*$`, strtext)
+		if !m || e != nil {
+			return "", &TokenizerError{Message: "Invalid code-fence specifier", Line: t.lineNo, Column: t.colNo}
+		}
 	}
 	return strtext, nil
 }
