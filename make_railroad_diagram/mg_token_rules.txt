@@ -180,6 +180,8 @@ Diagram(
     Comment('SingleQuotedLongString'),
     Sequence(
         Terminal('\'\'\''),
+        Optional(NonTerminal('Specifier')),
+        Terminal('\n'),
         ZeroOrMore(
             Choice(
                 0,
@@ -188,6 +190,7 @@ Diagram(
                 NonTerminal('Interpolation')
             )
         ),
+        Terminal('\n'),
         Terminal('\'\'\'')
     )
 )
@@ -197,6 +200,8 @@ Diagram(
     Comment('DoubleQuotedLongString'),
     Sequence(
         Terminal('"""'),
+        Optional(NonTerminal('Specifier')),
+        Terminal('\n'),
         ZeroOrMore(
             Choice(
                 0,
@@ -205,6 +210,7 @@ Diagram(
                 NonTerminal('Interpolation')
             )
         ),
+        Terminal('\n'),
         Terminal('"""')
     )
 )
@@ -214,6 +220,8 @@ Diagram(
     Comment('BackQuotedLongString'),
     Sequence(
         Terminal('```'),
+        Optional(NonTerminal('Specifier')),
+        Terminal('\n'),
         ZeroOrMore(
             Choice(
                 0,
@@ -222,6 +230,7 @@ Diagram(
                 NonTerminal('Interpolation')
             )
         ),
+        Terminal('\n'),
         Terminal('```')
     )
 )
@@ -231,7 +240,10 @@ Diagram(
     Comment('SingleQuotedLongRawString'),
     Sequence(
         Terminal('\\\'\'\''),
+        Optional(NonTerminal('Specifier')),
+        Terminal('\n'),
         ZeroOrMore(Terminal('Any codepoint (but not 3x\')')),
+        Terminal('\n'),
         Terminal('\'\'\'')
     )
 )
@@ -241,7 +253,10 @@ Diagram(
     Comment('DoubleQuotedLongRawString'),
     Sequence(
         Terminal('\\"""'),
+        Optional(NonTerminal('Specifier')),
+        Terminal('\n'),
         ZeroOrMore(Terminal('Any codepoint (but not 3x\")')),
+        Terminal('\n'),
         Terminal('"""')
     )
 )
@@ -251,9 +266,18 @@ Diagram(
     Comment('BackQuotedLongRawString'),
     Sequence(
         Terminal('\```'),
+        Optional(NonTerminal('Specifier')),
+        Terminal('\n'),
         ZeroOrMore(Terminal('Any codepoint (but not 3x\`)')),
+        Terminal('\n'),
         Terminal('```')
     )
+)
+
+// Specifier
+Diagram(
+    Comment('Specifier'),
+    ZeroOrMore(Terminal('/[^\S]/'))
 )
 
 
