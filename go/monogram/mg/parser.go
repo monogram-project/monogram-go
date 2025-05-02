@@ -683,7 +683,8 @@ func (p *Parser) convertMultilineStringSubToken(token *Token) (*Node, error) {
 	multilineNode := &Node{
 		Name: NameJoinLines,
 		Options: map[string]string{
-			OptionQuote: token.QuoteWord(),
+			OptionQuote:     token.QuoteWord(),
+			OptionSpecifier: token.Specifier,
 		},
 		Children: []*Node{},
 	}
