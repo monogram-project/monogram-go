@@ -58,6 +58,6 @@ Implement this feature:
 
 
 ## Outcome and Consequences
-The impact of the decision...
 
-## Additional Notes
+**Option 2** - the opportunity is good and the risk to futuree expansion
+real but modest.
