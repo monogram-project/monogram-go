@@ -42,6 +42,14 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 - **Exponential notation for numbers** now added e.g. 1.23e+8
 
+- Non-finite numeric literals added, supporting integer and floating-point domains.
+  - Includes representations for positive infinity (`∞`, `0n1`), negative infinity (`-∞`, `-0n1`), and nullity (`⦰`, `0n0`).
+  - Integer and floating point non-finite values distinguished by decimal point (`-∞.0`, `-0n1.0)`
+  - Under `--decimal`, outputs conform to the IEEE 754 standard with:
+    - `inf` for positive infinity
+    - `-inf` for negative infinity
+    - `nan` for nullity.
+
 - Support for **non-decimal literal integers**, using upper case-letters A-Z as
   digits for bases higher than 10.
   - The usual hex literals are supported e.g. 0xFF = 255
@@ -83,6 +91,10 @@ Following the style in https://keepachangelog.com/en/1.0.0/
   As one might hope, this works nicely for all three types of quotes, not
   just backticks.
 
+
+- Balanced ternary literals supported, with the `0t` prefix. Includes integers
+  (`0t101T` for decimal 28), floating-point values (`0t1.T`), and exponent
+  notation (`0tT11e3`).
 
 ### Fixed
 

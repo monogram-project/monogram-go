@@ -38,6 +38,10 @@ func NewTokenizer(input string) *Tokenizer {
 	}
 }
 
+func (t *Tokenizer) StartLineCol() LineCol {
+	return LineCol{t.lineNo, t.colNo}
+}
+
 func (t *Tokenizer) markPosition() {
 	// Mark the current position in the input
 	t.markStack = append(t.markStack, t.pos)
@@ -186,7 +190,15 @@ func (t *Tokenizer) consumeN(n int) {
 
 // Add a token to the token list
 func (t *Tokenizer) addToken(tokenType TokenType, subType uint8, text string, startLine int, startCol int) *Token {
-	span := Span{startLine, startCol, -1, -1}
+	lc := LineCol{startLine, startCol}
+	token := t.newTokenLineCol(tokenType, subType, text, lc)
+	t.appendToken(token)
+	return token
+}
+
+// Add a token to the token list
+func (t *Tokenizer) addTokenLineCol(tokenType TokenType, subType uint8, text string, start LineCol) *Token {
+	span := start.Span(LineCol{})
 	token := t.newToken(tokenType, subType, text, span)
 	t.appendToken(token)
 	return token
@@ -216,6 +228,16 @@ func (t *Tokenizer) newToken(tokenType TokenType, subType uint8, text string, sp
 		SubType: subType,
 		Text:    text,
 		Span:    span,
+	}
+}
+
+func (t *Tokenizer) newTokenLineCol(tokenType TokenType, subType uint8, text string, start LineCol) *Token {
+	// Create a new token with the current line and column numbers
+	return &Token{
+		Type:    tokenType,
+		SubType: subType,
+		Text:    text,
+		Span:    start.Span(LineCol{t.lineNo, t.colNo}),
 	}
 }
 
@@ -263,13 +285,35 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 		}
 
 		// Match numbers
-		if unicode.IsDigit(r) || (r == '-' && t.IsNegativeNumber()) {
+		if unicode.IsDigit(r) || ((r == '-' || r == '+') && t.IsNumberFollowing()) {
 			token, terr := t.readNumber()
 			if terr != nil {
 				return terr
 			}
 			token.SetSeen(t, seen)
 			continue
+		}
+
+		// Match non-finite number symbols.
+		if r == '∞' || r == '⦰' {
+			lc := t.StartLineCol()
+			t.consume()
+			t.addTokenLineCol(Literal, LiteralNumber, string(r), lc).SetSeen(t, seen)
+			continue
+		}
+
+		if r == '-' || r == '+' {
+			r1, ok := t.peekN(2)
+			if ok && (r1 == '∞' || r1 == '⦰') {
+				lc := t.StartLineCol()
+				t.consume()
+				t.consume()
+				var text strings.Builder
+				text.WriteRune(r)
+				text.WriteRune(r1)
+				t.addTokenLineCol(Literal, LiteralNumber, text.String(), lc).SetSeen(t, seen)
+				continue
+			}
 		}
 
 		// Match identifiers
@@ -328,7 +372,7 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 	return nil
 }
 
-func (t *Tokenizer) IsNegativeNumber() bool {
+func (t *Tokenizer) IsNumberFollowing() bool {
 	r, b := t.peekN(2)
 	return b && unicode.IsDigit(r)
 }
@@ -478,6 +522,9 @@ func (t *Tokenizer) ensureRestOfLineIsWhitespace() *TokenizerError {
 		}
 		if r == '\r' { // Handle \r\n line endings
 			t.consume() // Consume \r
+			// IMPORTANT: This direct indexing is only safe because we know
+			// that the next character is a \n i.e. between 0-127. In this range
+			// the UTF-8 encoding is identical to the ASCII encoding.
 			if t.hasMoreInput() && t.input[t.pos] == '\n' {
 				t.consume() // Consume \n
 			}
@@ -677,7 +724,9 @@ func (t *Tokenizer) tryConsumeRune(char rune) bool {
 }
 
 func (t *Tokenizer) tryConsumeNewline() bool {
-	// Consume '\r' and optionally '\n' to handle both '\n' and '\r\n' line endings
+	// Consume '\r' and optionally '\n' to handle both '\n' and '\r\n' line endings.
+	// IMPORTANT: This direct indexing is only safe because we are testing against
+	// the ASCII range. In this range, the UTF-8 encoding is identical to the ASCII.
 	if t.hasMoreInput() && t.input[t.pos] == '\r' {
 		t.consume() // Consume '\r'
 		if t.hasMoreInput() && t.input[t.pos] == '\n' {
@@ -892,17 +941,7 @@ func handleEscapeSequence(t *Tokenizer) string {
 	case '\\', '/', '"', '\'', '`': // Escaped backslash, slash, or matching quote
 		text.WriteRune(r)
 	case 'u': // Unicode escape sequence
-		if t.pos+4 <= len(t.input) { // Ensure there are enough characters
-			code := t.input[t.pos : t.pos+4]
-			t.pos += 4 // Consume 4 characters
-			if decoded, err := decodeUnicodeEscape(code); err == nil {
-				text.WriteRune(decoded)
-			} else {
-				text.WriteString(`\u` + code) // Keep invalid escape sequences intact
-			}
-		} else {
-			text.WriteString(`\u`) // Handle incomplete Unicode sequence
-		}
+		text.WriteString(t.readUnicodeEscape())
 	case '_': // Non-standard escape sequence: \_
 		// Expand into no characters (do nothing)
 		// This has a couple of use-cases. 1. It helps break up a dense sequence
@@ -914,6 +953,28 @@ func handleEscapeSequence(t *Tokenizer) string {
 	}
 
 	return text.String()
+}
+
+func (t *Tokenizer) readUnicodeEscape() string {
+	var code strings.Builder
+	for range 4 {
+		if t.hasMoreInput() {
+			r, size := utf8.DecodeRuneInString(t.input[t.pos:])
+			if r == utf8.RuneError {
+				break // Handle invalid UTF-8
+			}
+			code.WriteRune(r)
+			t.pos += size // Advance by the size of the rune
+		} else {
+			break // Stop if there are fewer than 4 runes remaining
+		}
+	}
+	if code.Len() == 4 {
+		if decoded, err := decodeUnicodeEscape(code.String()); err == nil {
+			return string(decoded)
+		}
+	}
+	return "\\u" + code.String()
 }
 
 // Decode a Unicode escape sequence (\uXXXX) into a rune
@@ -928,14 +989,27 @@ func decodeUnicodeEscape(code string) (rune, error) {
 const hexRune = 'x'
 const binRune = 'b'
 const octRune = 'o'
+const nonFiniteRune = 'n'
+const balancedTernaryRune = 't'
 const radixRune = 'r'
 
 const hexPrefix = "0" + string(hexRune)
 const binPrefix = "0" + string(binRune)
 const octPrefix = "0" + string(octRune)
+const nonFinitePrefix = "0" + string(nonFiniteRune)
+const balancedTernaryPrefix = "0" + string(balancedTernaryRune)
 
-func (t *Tokenizer) readBase(startLine int, startCol int) (int, *TokenizerError) {
+type NumericCategory int
+
+const (
+	NumericBase NumericCategory = iota
+	NumericBalancedTernary
+	NumericNonFinite
+)
+
+func (t *Tokenizer) readBase(startLine int, startCol int) (NumericCategory, int, *TokenizerError) {
 	var base int = 10
+	var category NumericCategory = NumericBase
 	n, r1, r2, r3 := t.peek3()
 	if n >= 2 {
 		if r1 == '0' {
@@ -948,48 +1022,68 @@ func (t *Tokenizer) readBase(startLine int, startCol int) (int, *TokenizerError)
 			} else if r2 == octRune {
 				base = 8
 				t.discard2() // Consume the '0o' prefix.
+			} else if r2 == nonFiniteRune {
+				base = 2
+				category = NumericNonFinite
+				t.discard2() // Consume the '0n' prefix.
+			} else if r2 == balancedTernaryRune {
+				base = 3
+				category = NumericBalancedTernary
+				t.discard2() // Consume the '0t' prefix.
 			}
 		} else if unicode.IsDigit(r1) {
 			if r2 == radixRune {
 				// One digit radix.
 				base = int(r1 - '0')
 				if base <= 1 || base > 9 {
-					return 0, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
+					return category, 0, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
 				}
 				t.discard2() // Consume the '\dr'
 			} else if n >= 3 && r3 == radixRune && unicode.IsDigit(r2) {
 				base = int(r1-'0')*10 + int(r2-'0')
 				if base <= 1 || base > 36 {
-					return 0, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
+					return category, 0, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
 				}
 				t.discard2() // Consume the '\d\d'
 				t.consume()  // Consume the 'r'
 			}
 		}
 	}
-	return base, nil
+	return category, base, nil
 }
 
-func XDigitValue(r rune, base int) int {
+func XDigitValue(r rune, category NumericCategory, base int) (int, error) {
+	if category == NumericBalancedTernary {
+		switch r {
+		case '0':
+			return 0, nil
+		case '1':
+			return 1, nil
+		case 'T':
+			return -1, nil
+		}
+		return 0, fmt.Errorf("invalid character for balanced ternary: %c", r)
+	}
 	d0 := int(r - '0')
 	if 0 <= d0 && d0 <= 9 {
 		if d0 < base {
-			return d0
+			return d0, nil
 		}
-		return -1
+		return 0, fmt.Errorf("invalid character for base %d: %c", base, r)
 	}
 	dA := int(r-'A') + 10
 	if 10 <= dA && dA <= 35 {
 		if dA < base {
-			return dA
+			return dA, nil
 		}
-		return -1
+		return 0, fmt.Errorf("invalid character for base %d: %c", base, r)
 	}
-	return -1
+	return 0, fmt.Errorf("invalid character for base %d: %c", base, r)
 }
 
-func IsXDigit(r rune, base int) bool {
-	return XDigitValue(r, base) >= 0
+func IsXDigit(r rune, category NumericCategory, base int) bool {
+	_, err := XDigitValue(r, category, base)
+	return err == nil
 }
 
 func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
@@ -1000,13 +1094,33 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 	var prev rune = 0
 
 	// Handle an optional leading '-' sign.
-	if t.hasMoreInput() && t.tryConsumeRune('-') {
+	if t.tryConsumeRune('-') {
 		prev = '-' // Assign immediately since this affects later parsing.
+	} else if t.tryConsumeRune('+') {
+		prev = '+' // Assign immediately since this affects later parsing.
 	}
 
-	base, terr := t.readBase(startLine, startCol)
+	category, base, terr := t.readBase(startLine, startCol)
 	if terr != nil {
 		return nil, terr
+	}
+
+	if category == NumericNonFinite {
+		if t.tryConsumeRune('1') || t.tryConsumeRune('0') {
+			if t.tryConsumeRune('.') {
+				if t.consume() != '0' {
+					return nil, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
+				}
+			}
+			r, b := t.peek()
+			if b && unicode.IsDigit(r) {
+				return nil, &TokenizerError{Message: "Invalid non-finite number", Line: startLine, Column: startCol}
+			}
+			text := t.input[start:t.pos]
+			token := t.addToken(Literal, LiteralNumber, text, startLine, startCol)
+			return token, nil
+		}
+		return nil, &TokenizerError{Message: "Invalid non-finite number", Line: startLine, Column: startCol}
 	}
 
 	hasDot := false
@@ -1021,17 +1135,17 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 			}
 			hasDot = true
 			t.consume()
-		} else if IsXDigit(r, base) {
+		} else if IsXDigit(r, category, base) {
 			t.consume()
 		} else if r == '_' {
 			// Allow underscores only if the previous character was a digit.
-			if !IsXDigit(prev, base) {
+			if !IsXDigit(prev, category, base) {
 				// Invalid underscore placement
 				break
 			}
 			// Use peekIf to verify that the following character is a digit.
 			r2, b := t.peekN(2)
-			if !b || !IsXDigit(r2, base) {
+			if !b || !IsXDigit(r2, category, base) {
 				// Invalid underscore placement
 				break
 			}
@@ -1042,6 +1156,9 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 
 		// Update prev at the end of each iteration.
 		prev = r
+	}
+	if prev == '.' {
+		return nil, &TokenizerError{Message: "Floating point not followed by valid digit", Line: startLine, Column: startCol}
 	}
 
 	// Now for any exponential notation.
@@ -1084,13 +1201,19 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 		return nil, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
 	}
 
+	r, b := t.peek()
+	if b && unicode.IsDigit(r) {
+		return nil, &TokenizerError{Message: "Invalid number with extra trailing digits", Line: startLine, Column: startCol}
+	}
+
 	text := t.input[start:t.pos]
 	token := t.addToken(Literal, LiteralNumber, text, startLine, startCol)
+
 	return token, nil
 }
 
 func (t *Tokenizer) readIdentifier() *Token {
-	startLine, startCol := t.lineNo, t.colNo
+	startLineCol := t.StartLineCol()
 	var text strings.Builder
 	var escSeen bool = false
 
@@ -1118,7 +1241,7 @@ func (t *Tokenizer) readIdentifier() *Token {
 	followedByWhitespace := ok && unicode.IsSpace(r)
 
 	// Add the identifier token with the new field
-	token := t.addToken(Identifier, IdentifierVariable, text.String(), startLine, startCol)
+	token := t.addTokenLineCol(Identifier, IdentifierVariable, text.String(), startLineCol)
 	token.FollowedByWhitespace = followedByWhitespace
 	token.EscapeSeen = escSeen
 	return token
