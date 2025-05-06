@@ -16,11 +16,7 @@ jobs:
       - name: Extract version from GitHub tag
         id: get_version
         run: |
-            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-              VERSION=${GITHUB_REF#refs/tags/}
-            else
-              VERSION="dev-$(git rev-parse --short HEAD)"  # Use short commit hash for non-tag builds
-            fi
+            VERSION=$(git describe --tags --abbrev=0 || echo "dev-$(git rev-parse --short HEAD)")
             echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Log in to Docker Hub
