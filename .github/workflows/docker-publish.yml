@@ -12,12 +12,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure full history is available, including tags
 
       - name: Extract version from GitHub tag
         id: get_version
         run: |
-            VERSION=$(git describe --tags --abbrev=0 || echo "dev-$(git rev-parse --short HEAD)")
-            echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          VERSION=$(git describe --tags --abbrev=0 || echo "dev-$(git rev-parse --short HEAD)")
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
