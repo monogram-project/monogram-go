@@ -1,11 +1,13 @@
 name: Docker Hub Publish Multi-Arch Monogram Image with Version Tags
 permissions:
   contents: read  # Required to read the repository contents
-  actions: write  # Required to write to the repository (e.g., for creating releases)
 
 on:
   workflow_dispatch:    # Enables execution manually
-  
+  push:
+    tags:
+      - "v*"  # Matches tags starting with "v"
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest

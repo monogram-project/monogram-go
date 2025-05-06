@@ -94,9 +94,3 @@ jobs:
             --repo ${{ github.repository }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Trigger Docker Publish Workflow
-        run: |
-          gh workflow run docker-publish.yml --ref "${{ github.ref_name }}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
