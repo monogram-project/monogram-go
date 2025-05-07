@@ -60,7 +60,7 @@ type Token struct {
 	Type                 TokenType // The type of token (Sign, Bracket, etc.)
 	SubType              uint8     // The specific subtype of the token (if any)
 	Text                 string    // The raw text of the token
-	Specifier            string    // The specifier for the token (if any)
+	Specifier            string    // The specifier for the token (if any) for multiline strings
 	Span                 Span      // The span of the token in the source code
 	PrecededByNewline    bool      // New field to indicate if the token is preceded by a newline
 	FollowedByWhitespace bool      // New field to indicate if the token is followed by whitespace
