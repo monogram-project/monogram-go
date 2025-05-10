@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION_FILE = Path("go/monogram/version.txt")
+VERSION_FILE = Path("version.txt")
 
 
 class BumpError(Exception):
