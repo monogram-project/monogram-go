@@ -39,6 +39,13 @@ install:
       cp monogram-mini "$(go env GOPATH)/bin/monogram-mini"; \
     fi
 
+clean:
+    # Remove the binaries
+    rm -f monogram monogram-mini calculator calculator-typed monogram-test-coverage
+    # Remove the test coverage reports
+    rm -rf _build
+
+
 # This is a recipe to build all the binaries that we can in order to
 # test the build process. It is not intended to be run in production.
 build-all: build-full build-mini build-for-docker build-calc
@@ -81,7 +88,7 @@ unittest-coverage:
 
 # Run the functional tests
 functest: build-mini
-    (cd ../../functests && poetry run python3 functest.py --quiet --tests *-tests.yaml --command='../go/monogram/monogram-mini')
+    (cd functests && poetry run python3 functest.py --quiet --tests *-tests.yaml --command='../monogram-mini')
 
 test: unittest functest
 
@@ -94,7 +101,7 @@ functest-coverage: build-mini
     rm -rf _build
     mkdir -p _build/functest
     mkdir -p _build/merged_functest
-    (cd ../../functests && env GOCOVERDIR=../go/monogram/_build/functest poetry run python3 functest.py --tests *-tests.yaml --command='../go/monogram/monogram-test-coverage')
+    (cd functests && env GOCOVERDIR=../_build/functest poetry run python3 functest.py --tests *-tests.yaml --command='../monogram-test-coverage')
     go tool covdata merge -i=_build/functest -o=_build/merged_functest
     go tool covdata textfmt -i=_build/functest -o=_build/functest.out
     go tool cover -func=_build/functest.out > _build/functest.txt
