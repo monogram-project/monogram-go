@@ -85,10 +85,12 @@ unittest-coverage:
     go tool cover -html=_build/unittest.out -o _build/unittest.html
     #open _build/unittest.html
 
-
 # Run the functional tests
-functest: build-mini
+functest: build-mini poetry-update-if-needed
     (cd functests && poetry run python3 functest.py --quiet --tests *-tests.yaml --command='../monogram-mini')
+
+poetry-update-if-needed:
+    cd functests && (poetry env info > /dev/null 2>&1 || poetry update)
 
 test: unittest functest
 

@@ -76,7 +76,7 @@ def save_version(new_version):
         raise BumpError(f"Error writing version file: {e}") from e
 
     # Update the Go version file at ./go/monogram/lib/version.go
-    version_go_path = Path("go/monogram/lib/version.go")
+    version_go_path = Path("mg/version.go")
     try:
         version_go_path.parent.mkdir(parents=True, exist_ok=True)
         version_go_content = f"""package lib\nconst Version = "{new_version}"\n"""
