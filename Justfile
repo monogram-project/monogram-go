@@ -31,7 +31,7 @@ install:
     just build-full
     just build-mini
     # Install to GOBIN if set, otherwise fallback to $(go env GOPATH)/bin
-    if [ -n "`go env GOBIN`" ]; then \
+    if [ -n "$(go env GOBIN)" ]; then \
       cp monogram "$(go env GOBIN)/monogram"; \
       cp monogram-mini "$(go env GOBIN)/monogram-mini"; \
     else \
