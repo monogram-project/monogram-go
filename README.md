@@ -10,30 +10,53 @@ diagrams, and more. Its architecture is split into two main parts:
 
 ## Project Structure
 
-The source of this tool is kept in the go/monogram subfolder of the repository
-and is organized as follows:
+The source of this tool is organized as follows:
 
 ```
-go/monogram/ 
+❯ tree monogram-go/
+monogram-go/
+├── CHANGELOG.md
 ├── cmd
 │   ├── calc
-│   │   └── main.go # Example application using lib monogram
+│   │   └── main.go
 │   ├── monogram
-│   │   └── main.go # Entry point for the CLI executable (package main)
+│   │   ├── main.go
+│   │   ├── noserver.go
+│   │   └── server.go
 │   └── typecalc
-│       └── main.go # Duplicate application using strongly typed AST
-├── lib/ 
-│   ├── ast.go 
-│   ├── dot_writer.go 
-│   ├── json_writer.go 
-│   ├── mermaid_writer.go 
-│   ├── token.go 
-│   ├── tokeniser.go 
-│   ├── vscodeClassifyTokens.go
-│   ├── xml_writer.go 
-│   └── yaml_writer.go # Core library code (package lib) 
+│       └── main.go
+├── CODE_OF_CONDUCT.md
+├── Dockerfile
+├── docs
+│   └── decisions
+│       └── decision-template.md
+├── example.mg
+├── functests
+│   ├── functest.py
+│   ├── json-tests.yaml
+│   ├── poetry.lock
+│   ├── pyproject.toml
+│   ├── xml-tests.yaml
+│   └── yaml-tests.yaml
+├── go
+│   └── monogram
 ├── go.mod
-├── go.sum 
-└── Justfile # Optional build/run scripts
+├── go.sum
+├── install.sh
+├── jumpstart.sh
+├── Justfile
+├── lib
+│   └── version.go
+├── LICENSE.txt
+├── mg
+│   ├── asciitree_writer.go
+│   ├── ... many go files here ...
+│   └── yaml_writer.go
+├── prompt.md
+├── README.md
+├── scripts
+│   ├── bump.py
+│   └── decisions.py
+└── version.txt
 ```
 
