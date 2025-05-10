@@ -3,6 +3,7 @@ permissions:
   contents: read
 
 on:
+  workflow_dispatch:  # Allows manual triggering of the workflow
   push:
     branches:
       - main  # Trigger only on pushes to the 'main' branch
