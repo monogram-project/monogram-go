@@ -35,7 +35,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sfkleach/monogram/go/monogram/mg"
+	"github.com/monogram-project/monogram-go/mg"
 	"github.com/spf13/pflag"
 )
 

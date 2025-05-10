@@ -36,19 +36,19 @@ jobs:
       - name: Build Binaries
         run: |
           mkdir -p dist/linux/x86_64 dist/linux/arm64 dist/windows dist/macos/intel dist/macos/arm64
-          cd go/monogram/cmd/monogram
+          cd ./cmd/monogram
           #
-          GOOS=linux GOARCH=amd64 go build -tags withweb -o ../../../../dist/linux/x86_64/monogram
-          GOOS=linux GOARCH=arm64 go build -tags withweb -o ../../../../dist/linux/arm64/monogram
-          GOOS=windows GOARCH=amd64 go build -tags withweb -ldflags="-s -w" -o ../../../../dist/windows/monogram.exe
-          GOOS=darwin GOARCH=amd64 go build -tags withweb -o ../../../../dist/macos/intel/monogram
-          GOOS=darwin GOARCH=arm64 go build -tags withweb -o ../../../../dist/macos/arm64/monogram
+          GOOS=linux GOARCH=amd64 go build -tags withweb -o ../../dist/linux/x86_64/monogram
+          GOOS=linux GOARCH=arm64 go build -tags withweb -o ../../dist/linux/arm64/monogram
+          GOOS=windows GOARCH=amd64 go build -tags withweb -ldflags="-s -w" -o ../../dist/windows/monogram.exe
+          GOOS=darwin GOARCH=amd64 go build -tags withweb -o ../../dist/macos/intel/monogram
+          GOOS=darwin GOARCH=arm64 go build -tags withweb -o ../../dist/macos/arm64/monogram
           #
-          GOOS=linux GOARCH=amd64 go build -o ../../../../dist/linux/x86_64/monogram-mini
-          GOOS=linux GOARCH=arm64 go build -o ../../../../dist/linux/arm64/monogram-mini
-          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o ../../../../dist/windows/monogram-mini.exe
-          GOOS=darwin GOARCH=amd64 go build -o ../../../../dist/macos/intel/monogram-mini
-          GOOS=darwin GOARCH=arm64 go build -o ../../../../dist/macos/arm64/monogram-mini
+          GOOS=linux GOARCH=amd64 go build -o ../../dist/linux/x86_64/monogram-mini
+          GOOS=linux GOARCH=arm64 go build -o ../../dist/linux/arm64/monogram-mini
+          GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o ../../dist/windows/monogram-mini.exe
+          GOOS=darwin GOARCH=amd64 go build -o ../../dist/macos/intel/monogram-mini
+          GOOS=darwin GOARCH=arm64 go build -o ../../dist/macos/arm64/monogram-mini
 
       - name: Compress Binaries
         run: |

@@ -65,7 +65,7 @@ def bump_version(current_version, bump_type):
 
 def save_version(new_version):
     """Writes the new version to version.txt and commits the change (without pushing).
-    Also updates ./go/monogram/lib/version.go with the new version constant.
+    Also updates ./mg/version.go with the new version constant.
     """
     # Write the new version to version.txt
     try:
@@ -75,7 +75,7 @@ def save_version(new_version):
     except Exception as e:
         raise BumpError(f"Error writing version file: {e}") from e
 
-    # Update the Go version file at ./go/monogram/lib/version.go
+    # Update the Go version file at ./mg/version.go
     version_go_path = Path("mg/version.go")
     try:
         version_go_path.parent.mkdir(parents=True, exist_ok=True)

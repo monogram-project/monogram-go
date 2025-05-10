@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	"github.com/chzyer/readline"
-	"github.com/sfkleach/monogram/go/monogram/mg"
+	"github.com/monogram-project/monogram-go/mg"
 )
 
 type State struct {
