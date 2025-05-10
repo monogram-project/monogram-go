@@ -1,2 +1,3 @@
-package lib
+package mg
+
 const Version = "0.5.4"
