@@ -4,7 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-VERSION_FILE = Path("go/monogram/version.txt")
+VERSION_FILE = Path("version.txt")
 
 
 class BumpError(Exception):
@@ -76,10 +76,10 @@ def save_version(new_version):
         raise BumpError(f"Error writing version file: {e}") from e
 
     # Update the Go version file at ./go/monogram/lib/version.go
-    version_go_path = Path("go/monogram/lib/version.go")
+    version_go_path = Path("mg/version.go")
     try:
         version_go_path.parent.mkdir(parents=True, exist_ok=True)
-        version_go_content = f"""package lib\nconst Version = "{new_version}"\n"""
+        version_go_content = f"""package mg\nconst Version = "{new_version}"\n"""
         version_go_path.write_text(version_go_content)
         print(f"Updated version in {version_go_path}")
     except Exception as e:

@@ -2,13 +2,17 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
-## Unreleased
+## [0.5.3] Bug Fixes
 
 ### Fixed
 
 - #149 Empty forms now generate forms with at least one (empty) part. (e.g. `foo endfoo`)
 - Trailing labels: now generate a part. (e.g. `foo x mylabel: endfoo`)
 - #150 Semi-colons no longer eaten by prefix forms inside curly braces.
+
+### Other
+
+- `monogram-go` now split off from the original repo.
 
 
 ## [0.5.2] Prefix Syntax, Numeric Literals, Library now "mg.*"

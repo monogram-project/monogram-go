@@ -2,10 +2,10 @@
 # Build stage
 # ---------
 FROM golang:1.23.8-alpine AS builder
-WORKDIR /go/monogram
+WORKDIR /app
 
 # Copy the Go project directory (adjust the context below if needed)
-COPY go/monogram/ .
+COPY . .
 
 # Install essential tools (curl is used to install just)
 RUN apk update && apk add --no-cache curl
@@ -23,7 +23,7 @@ FROM alpine:3.18
 WORKDIR /app
 
 # Copy the monogram binary from the builder stage
-COPY --from=builder /go/monogram/monogram /app/monogram
+COPY --from=builder /app/monogram /app/monogram
 
 # Ensure the binary is executable
 RUN chmod +x /app/monogram
