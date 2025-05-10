@@ -2,7 +2,7 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
-## [0.5.3] Bug Fixes
+## [0.5.5] Bug Fixes
 
 ### Fixed
 
