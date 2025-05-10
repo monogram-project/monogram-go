@@ -38,7 +38,7 @@ func CheckTranslationToAST(input string) error {
 
 func TestAST(t *testing.T) {
 	// Load the YAML file - we run from go/monogram/lib
-	data, err := os.ReadFile("../../../functests/xml-tests.yaml")
+	data, err := os.ReadFile("../functests/xml-tests.yaml")
 	if err != nil {
 		t.Fatalf("Failed to read YAML file: %v", err)
 	}
