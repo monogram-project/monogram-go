@@ -1,3 +1,7 @@
+[![Build](https://github.com/monogram-project/monogram-go/actions/workflows/build-and-test.yml/badge.svg?branch=main)](https://github.com/monogram-project/monogram-go/actions/workflows/build-and-test.yml)
+![License](https://img.shields.io/github/license/monogram-project/monogram-go)
+![Release](https://img.shields.io/github/v/release/monogram-project/monogram-go)
+
 # Monogram
 
 Monogram is a Go-based tool and library that parses and transforms Monogram
