@@ -53,6 +53,7 @@ const (
 	SignForce
 	SignDot
 	SignMinus
+	SignPlus
 	SignOperator
 )
 
@@ -287,7 +288,7 @@ func (t *Token) VSCodeTokenType() string {
 		switch t.SubType {
 		case SignLabel:
 			return "macro"
-		case SignForce, SignDot, SignMinus, SignOperator:
+		case SignForce, SignDot, SignMinus, SignPlus, SignOperator:
 			return "operator"
 		default:
 			return "operator"

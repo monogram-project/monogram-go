@@ -140,14 +140,20 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 		if context.InsideForm && token1.Type == Sign && token1.SubType == SignLabel {
 			break
 		}
-		if token1.Type == Literal && token1.SubType == LiteralNumber && token1.Text[0] == '-' {
+		if token1.Type == Literal && token1.SubType == LiteralNumber && (token1.Text[0] == '-' || token1.Text[0] == '+') {
 			// Begin the classic hack to handle negative numbers.
 			// TODO: Eliminate the duplication of code here.
 			endLineCol := LineCol{token1.Span.StartLine, token1.Span.StartColumn + 1}
+			subType := SignMinus
+			text := "-"
+			if token1.Text[0] == '+' {
+				subType = SignPlus
+				text = "+"
+			}
 			fake_minus_token := Token{
 				Type:                 Sign,
-				SubType:              SignMinus,
-				Text:                 "-",
+				SubType:              subType,
+				Text:                 text,
 				Span:                 startLineCol.Span(endLineCol),
 				PrecededByNewline:    token1.PrecededByNewline,
 				FollowedByWhitespace: false,

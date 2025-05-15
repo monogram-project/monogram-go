@@ -2,6 +2,14 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
+## Unreleased
+
+### Fixed
+
+- The add and minus signs are treated equally. Expressions such as `x+2` now
+  work in the same way as `x-2`. Previous you would have needed to add
+  spaces.
+
 ## [0.5.5] Bug Fixes
 
 ### Fixed

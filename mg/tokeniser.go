@@ -402,6 +402,8 @@ func (t *Tokenizer) readSign() *Token {
 		subType = SignLabel
 	} else if text == "-" {
 		subType = SignMinus
+	} else if text == "+" {
+		subType = SignPlus
 	} else if text == "!" {
 		subType = SignForce
 	}
