@@ -524,3 +524,49 @@ tests:
           </form>
         </delimited>
       </unit>
+
+  - name: "Bug: inside-form label detection - IF"
+    command: "{command} --format xml --indent 2"
+    input: |
+      if x:
+        y
+      endif
+    expected_output: |
+      <unit>
+        <form syntax="surround">
+          <part keyword="if">
+            <identifier name="x" />
+          </part>
+          <part keyword="_">
+            <identifier name="y" />
+          </part>
+        </form>
+      </unit>
+
+  - name: "Bug: inside-form label detection - JSON expression"
+    command: "{command} --format xml --indent 2"
+    input: |
+      foo
+        { 
+          a : b,
+          x : y
+        }
+      endfoo
+    expected_output: |
+      <unit>
+        <form syntax="surround">
+          <part keyword="foo">
+            <delimited kind="braces" separator="comma">
+              <operator name=":" syntax="infix">
+                <identifier name="a" />
+                <identifier name="b" />
+              </operator>
+              <operator name=":" syntax="infix">
+                <identifier name="x" />
+                <identifier name="y" />
+              </operator>
+            </delimited>
+          </part>
+        </form>
+      </unit>
+

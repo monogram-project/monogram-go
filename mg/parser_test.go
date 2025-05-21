@@ -29,7 +29,7 @@ func TestParsePrefix0(t *testing.T) {
 		t.Fatalf("getParser error: %v", err)
 		return
 	}
-	cxt := Context{false, false}
+	cxt := makeContext()
 
 	// Act
 	node, err := parser.doReadPrimaryExpr(cxt)
@@ -65,7 +65,7 @@ func TestParsePrefix1(t *testing.T) {
 		t.Fatalf("getParser error: %v", err)
 		return
 	}
-	cxt := Context{false, false}
+	cxt := makeContext()
 
 	// Act
 	node, err := parser.doReadPrimaryExpr(cxt)
@@ -105,7 +105,7 @@ func TestParsePrefix2NoComma(t *testing.T) {
 		t.Fatalf("getParser error: %v", err)
 		return
 	}
-	cxt := Context{false, false}
+	cxt := makeContext()
 
 	// Act
 	node, err := parser.doReadPrimaryExpr(cxt)

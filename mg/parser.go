@@ -34,11 +34,6 @@ func NewParser(tokens []*Token, defaultLabel string, includeSpans bool, decimal 
 	}
 }
 
-type Context struct {
-	InsideForm    bool
-	AcceptNewline bool
-}
-
 // hasNext checks if there are tokens left to consume.
 func (p *Parser) hasNext() bool {
 	return p.pos < len(p.tokens)
@@ -82,9 +77,7 @@ func (p *Parser) readExpr(context Context) (*Node, error) {
 
 func (p *Parser) readArguments(subType uint8, context Context) (string, *Node, error) {
 	lineCol := p.startLineCol()
-	c := context
-	c.AcceptNewline = false
-	sep, seq, err := p.readExprSeqTo(subType, true, c)
+	sep, seq, err := p.readExprSeqTo(subType, true, context.setInsideForm(false))
 	if err != nil {
 		return "", nil, err
 	}
@@ -166,9 +159,7 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 			token1.Text = token1.Text[1:]
 			token1.Span.StartColumn++
 			token1.PrecededByNewline = false
-			c := context
-			c.AcceptNewline = false
-			rhs, err := p.readExprPrec(prec, c)
+			rhs, err := p.readExprPrec(prec, context.setInsideForm(false))
 			if err != nil {
 				return nil, err
 			}
@@ -195,8 +186,7 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 			break
 		}
 		token2 := p.next()
-		c := context
-		c.AcceptNewline = false
+		c := context.setInsideForm(false)
 		curr_lhs := lhs
 		if token2.Type == OpenBracket && token2.SubType != BracketBrace {
 			sep_text, args, err := p.readArguments(token2.SubType, c)
@@ -306,6 +296,11 @@ func (p *Parser) readExprSeqTo(closingSubtype uint8, allowComma bool, context Co
 			p.next()
 			continue
 		}
+		if context.AcceptNewline && t.PrecededByNewline && allowSemicolon {
+			allowComma = false
+			separatorDecided = true
+			continue
+		}
 		if t.Type == CloseBracket {
 			if t.SubType == closingSubtype {
 				p.next()
@@ -334,9 +329,7 @@ func chooseSeparator(separatorDecided bool, allowComma bool, allowSemicolon bool
 
 func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) {
 	closingTokenText := "end" + formStart.Text
-	c := context
-	c.InsideForm = true
-	c.AcceptNewline = true
+	c := context.setInsideForm(true)
 	var currentPart []*Node
 	content := []*Node{}
 	first_expr_in_part := true
@@ -493,7 +486,7 @@ func (p *Parser) tryReadSemi() bool {
 
 // readDelimitedExpr reads a delimited expression.
 func (p *Parser) readDelimitedExpr(open *Token, context Context) (*Node, error) {
-	sep, seq, err := p.readExprSeqTo(open.SubType, true, context)
+	sep, seq, err := p.readExprSeqTo(open.SubType, true, context.setInsideForm(false))
 	if err != nil {
 		return nil, err
 	}
@@ -614,9 +607,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 		if token.SubType != SignLabel && token.SubType != SignDot {
 			prec, valid := token.Precedence()
 			if valid && prec > 0 {
-				c := context
-				c.AcceptNewline = false
-				expr, err := p.readExprPrec(prefixPrecedence, c)
+				expr, err := p.readExprPrec(prefixPrecedence, context.setInsideForm(false))
 				if err != nil {
 					return nil, err
 				}
@@ -640,8 +631,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 
 func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
 	p.next()
-	cxt := context
-	cxt.AcceptNewline = true
+	cxt := context.setInsideForm(true)
 	startAgain := true
 
 	formBuilder := NewFormBuilder(token.Text, p.startLineCol(), p.IncludeSpans)
@@ -797,7 +787,7 @@ func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includ
 	parser := NewParser(tokens, defaultLabel, includeSpans, decimal)
 	nodes := []*Node{}
 	for parser.hasNext() {
-		node, err := parser.readExpr(Context{})
+		node, err := parser.readExpr(makeContext())
 		if err != nil {
 			return nil, err
 		} else {
