@@ -4,11 +4,19 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+### Changed
+
+- Newlines act as soft-semi-colons inside braces, emphasising their role as
+  compound statements.
+
+
 ### Fixed
 
 - The add and minus signs are treated equally. Expressions such as `x+2` now
   work in the same way as `x-2`. Previous you would have needed to add
   spaces.
+- JSON can now be nested inside forms. Previously it would incorrectly give
+  a syntax error.
 
 - The `^` character is now allowed in operators. It was always meant to be
   part of the base character set, analogous to the C language.
