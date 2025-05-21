@@ -486,7 +486,7 @@ func (p *Parser) tryReadSemi() bool {
 
 // readDelimitedExpr reads a delimited expression.
 func (p *Parser) readDelimitedExpr(open *Token, context Context) (*Node, error) {
-	sep, seq, err := p.readExprSeqTo(open.SubType, true, context.setInsideForm(false))
+	sep, seq, err := p.readExprSeqTo(open.SubType, true, context.setInsideBraces(open.SubType == BracketBrace))
 	if err != nil {
 		return nil, err
 	}
