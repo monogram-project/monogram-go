@@ -314,11 +314,13 @@ func (p *Parser) readExprSeqTo(closingSubtype uint8, allowComma bool, context Co
 		}
 		return "", nil, fmt.Errorf("unexpected token: %s", t.Text)
 	}
-	sep_text := chooseSeparator(allowFlags)
+	sep_text := chooseKindValue(allowFlags)
 	return sep_text, seq, nil
 }
 
-func chooseSeparator(allowFlags uint8) string {
+// chooseKindValue returns the kind value based on the allowFlags. If more
+// than one flag is set, it returns ValueUndefined ("undefined").
+func chooseKindValue(allowFlags uint8) string {
 	switch allowFlags {
 	case flagComma:
 		return ValueComma
@@ -482,7 +484,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			}
 		}
 	}
-	return builder.Build(endLineCol, chooseSeparator(allowFlags)), nil
+	return builder.Build(endLineCol, chooseKindValue(allowFlags)), nil
 }
 
 // readDelimitedExpr reads a delimited expression.
