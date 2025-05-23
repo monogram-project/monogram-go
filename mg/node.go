@@ -40,6 +40,7 @@ const ValueSurround = "surround"
 const ValueComma = "comma"
 const ValueSemicolon = "semicolon"
 const ValueUndefined = "undefined"
+const ValueNewline = "newline"
 
 type FormBuilder struct {
 	node         *Node
@@ -48,12 +49,16 @@ type FormBuilder struct {
 	includeSpans bool    // Whether to include spans in the form
 }
 
-func NewFormBuilder(partName string, lc LineCol, includeSpans bool) *FormBuilder {
+func NewFormBuilder(partName string, lc LineCol, includeSpans bool, prefix_syntax bool) *FormBuilder {
+	syntax := ValueSurround
+	if prefix_syntax {
+		syntax = ValuePrefix
+	}
 	return &FormBuilder{
 		node: &Node{
 			Name: NameForm,
 			Options: map[string]string{
-				OptionSyntax: ValuePrefix,
+				OptionSyntax: syntax,
 			},
 			Children: []*Node{
 				{
@@ -77,7 +82,7 @@ func (b *FormBuilder) AddChild(child *Node) {
 	lastpart.Children = append(lastpart.Children, child)
 }
 
-func (b *FormBuilder) endPartSpan(endPart LineCol) {
+func (b *FormBuilder) _endPartSpan(endPart LineCol) {
 	if b.includeSpans {
 		parts := b.node.Children
 		lastpart := parts[len(parts)-1]
@@ -88,7 +93,7 @@ func (b *FormBuilder) endPartSpan(endPart LineCol) {
 func (b *FormBuilder) BeginNextPart(partName string, endOldPart LineCol, startNewPart LineCol) {
 
 	// Set the span of the last part
-	b.endPartSpan(endOldPart)
+	b._endPartSpan(endOldPart)
 
 	// Create a new part
 	b.node.Children = append(b.node.Children, &Node{
@@ -104,9 +109,10 @@ func (b *FormBuilder) BeginNextPart(partName string, endOldPart LineCol, startNe
 
 }
 
-func (b *FormBuilder) Build(endForm LineCol) *Node {
+func (b *FormBuilder) Build(endForm LineCol, kind string) *Node {
+	b.node.Options[OptionKind] = kind
 	if b.includeSpans {
-		b.endPartSpan(endForm)
+		b._endPartSpan(endForm)
 		b.node.Options[OptionSpan] = b.startForm.SpanString(endForm)
 	}
 	return b.node
