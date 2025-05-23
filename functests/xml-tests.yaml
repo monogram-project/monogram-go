@@ -583,7 +583,7 @@ tests:
       <unit>
         <form syntax="surround">
           <part keyword="foo">
-            <delimited kind="braces" separator="semicolon">
+            <delimited kind="braces" separator="newline">
               <operator name="=" syntax="infix">
                 <identifier name="a" />
                 <identifier name="b" />

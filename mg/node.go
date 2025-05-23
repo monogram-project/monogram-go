@@ -40,6 +40,7 @@ const ValueSurround = "surround"
 const ValueComma = "comma"
 const ValueSemicolon = "semicolon"
 const ValueUndefined = "undefined"
+const ValueNewline = "newline"
 
 type FormBuilder struct {
 	node         *Node
