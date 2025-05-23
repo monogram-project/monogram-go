@@ -6,7 +6,7 @@ type Context struct {
 }
 
 func makeContext() Context {
-	return Context{AcceptNewline: false}
+	return Context{AcceptNewline: true}
 }
 
 func (c Context) setInsideForm(insideForm bool) Context {

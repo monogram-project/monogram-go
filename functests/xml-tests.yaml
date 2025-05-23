@@ -597,4 +597,231 @@ tests:
         </form>
       </unit>
 
-  
+  - name: "Uniform handling of separators - parentheses"
+    command: "{command} --format xml --indent 2"
+    input: |
+      ()
+      (x)
+      (x,)
+      (x;)
+      (x
+      )
+      (x, y)
+      (x, y,)
+      (x; y)
+      (x; y;)
+      (x
+      y)
+    expected_output: |
+      <unit>
+        <delimited kind="parentheses" separator="undefined" />
+        <delimited kind="parentheses" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="parentheses" separator="comma">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="parentheses" separator="semicolon">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="parentheses" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="parentheses" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="parentheses" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="parentheses" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="parentheses" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="parentheses" separator="newline">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+      </unit>
+
+  - name: "Uniform handling of separators - brackets"
+    command: "{command} --format xml --indent 2"
+    input: |
+      []
+      [x]
+      [x,]
+      [x;]
+      [x
+      ]
+      [x, y]
+      [x, y,]
+      [x; y]
+      [x; y;]
+      [x
+      y]
+    expected_output: |
+      <unit>
+        <delimited kind="brackets" separator="undefined" />
+        <delimited kind="brackets" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="brackets" separator="comma">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="brackets" separator="semicolon">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="brackets" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="brackets" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="brackets" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="brackets" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="brackets" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="brackets" separator="newline">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+      </unit>
+
+  - name: "Uniform handling of separators - braces"
+    command: "{command} --format xml --indent 2"
+    input: |
+      {}
+      {x}
+      {x,}
+      {x;}
+      {x
+      }
+      {x, y}
+      {x, y,}
+      {x; y}
+      {x; y;}
+      {x
+      y}
+    expected_output: |
+      <unit>
+        <delimited kind="braces" separator="undefined" />
+        <delimited kind="braces" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="braces" separator="comma">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="braces" separator="semicolon">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="braces" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="braces" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="braces" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="braces" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="braces" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="braces" separator="newline">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+      </unit>
+
+
+  - name: "Uniform handling of separators - braces"
+    command: "{command} --format xml --indent 2"
+    input: |
+      foo  endfoo 
+      foo x endfoo 
+      foo x, endfoo 
+      foo x; endfoo 
+      foo x
+      endfoo 
+      foo x, y endfoo 
+      foo x, y, endfoo 
+      foo x; y endfoo 
+      foo x; y; endfoo 
+      foo x
+      y endfoo 
+    expected_output: |
+      <unit>
+        <form kind="undefined" syntax="surround">
+          <part keyword="foo" />
+        </form>
+        <form kind="undefined" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form kind="comma" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form kind="semicolon" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form kind="undefined" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form kind="comma" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+        <form kind="comma" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+        <form kind="semicolon" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+        <form kind="semicolon" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+        <form kind="newline" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+      </unit>
