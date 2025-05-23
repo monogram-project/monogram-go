@@ -6,8 +6,8 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 ### Changed
 
-- Newlines act as soft-semi-colons inside braces, emphasising their role as
-  compound statements.
+- The interior of forms and bracketed (delimited) expressions now all
+  support commas, semi-colons and newlines as separators.
 
 
 ### Fixed
