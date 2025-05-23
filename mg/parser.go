@@ -333,7 +333,7 @@ func chooseSeparator(allowFlags uint8) string {
 	}
 }
 
-func (p *Parser) checkExplicitTermination(allowFlags uint8) (bool, uint8, error) {
+func (p *Parser) tryReadExplicitTermination(allowFlags uint8) (bool, uint8, error) {
 	token := p.peek()
 	if token == nil {
 		return false, 0, fmt.Errorf("unexpected end of tokens")
@@ -368,13 +368,28 @@ func (p *Parser) requireImplicitTermination(allowFlags uint8) (uint8, error) {
 	return flagNewline, nil
 }
 
-type Mode uint8
+type Mode bool
 
 const (
-	secondMode Mode = iota
-	firstMode
-	alphaMode
+	betaMode  Mode = false
+	alphaMode Mode = true
 )
+
+/*
+    if ALPHA:
+		BETA
+		BETA
+	else-if ALPHA:
+		BETA
+		BETA
+	else-if ALPHA:
+		BETA
+		BETA
+	else:
+		BETA
+		BETA
+	endif
+*/
 
 func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) {
 	allowFlags := flagComma | flagSemicolon | flagNewline
@@ -387,6 +402,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 	currentKeyword := formStart
 	startLineCol := p.startLineCol()
 	var endLineCol LineCol
+	builder := NewFormBuilder(formStart.Text, startLineCol, p.IncludeSpans, false)
 	for {
 		if !p.hasNext() {
 			return nil, fmt.Errorf("unexpected end of tokens")
@@ -406,10 +422,11 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			if !p.hasNext() {
 				return nil, fmt.Errorf("unexpected end of input in form: %s", formStart.Text)
 			}
-			prev_expr_explicitly_terminated, allowFlags, err = p.checkExplicitTermination(allowFlags)
+			prev_expr_explicitly_terminated, allowFlags, err = p.tryReadExplicitTermination(allowFlags)
 			if err != nil {
 				return nil, err
 			}
+			builder.AddChild(n)
 			t := p.peek()
 			if t.IsLabel() {
 				endLC := p.endLineCol()
@@ -428,12 +445,12 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 					startLineCol = p.startLineCol()
 				}
 				currentPart = []*Node{}
-				mode = firstMode
+				builder.BeginNextPart(p.UnglueOption.Text, endLC, p.startLineCol())
+				mode = alphaMode
 			} else {
 				currentPart = append(currentPart, n)
-				mode = secondMode
+				mode = betaMode
 			}
-
 		} else if token.IsSimpleLabelToken() {
 			lc34 := p.endLineCol()
 			t := p.next() // skip the label
@@ -458,7 +475,8 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 				startLineCol = p.startLineCol()
 			}
 			currentPart = []*Node{}
-			mode = firstMode
+			builder.BeginNextPart(token.Text, lc34, p.startLineCol())
+			mode = betaMode
 		} else if token.IsCompoundLabelToken(formStart) {
 			p.SetAsCompoundLabel(token)
 			lc34 := p.endLineCol()
@@ -480,6 +498,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 				startLineCol = p.startLineCol()
 			}
 			currentPart = []*Node{}
+			builder.BeginNextPart(currentKeyword.Text, lc34, p.startLineCol())
 			mode = alphaMode
 		} else {
 			if !prev_expr_explicitly_terminated {
@@ -493,12 +512,13 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			if err != nil {
 				return nil, err
 			}
+			builder.AddChild(n)
 			currentPart = append(currentPart, n)
 			if !p.hasNext() {
 				return nil, fmt.Errorf("unexpected end of input in form: %s", formStart.Text)
 			}
-			mode = secondMode
-			prev_expr_explicitly_terminated, allowFlags, err = p.checkExplicitTermination(allowFlags)
+			mode = betaMode
+			prev_expr_explicitly_terminated, allowFlags, err = p.tryReadExplicitTermination(allowFlags)
 			if err != nil {
 				return nil, err
 			}
@@ -515,24 +535,12 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 	if p.IncludeSpans {
 		content[len(content)-1].Options[OptionSpan] = startLineCol.SpanString(endLineCol)
 	}
-	return &Node{
-		Name:     NameForm,
-		Options:  map[string]string{OptionSyntax: ValueSurround},
-		Children: content,
-	}, nil
-}
-
-func (p *Parser) tryReadSemi() bool {
-	token := p.peek()
-	if token == nil {
-		return false
-	}
-	if token.Type == Punctuation && token.SubType == PunctuationSemicolon {
-		p.next()
-		return true
-	} else {
-		return token.PrecededByNewline
-	}
+	return builder.Build(endLineCol), nil
+	// return &Node{
+	// 	Name:     NameForm,
+	// 	Options:  map[string]string{OptionSyntax: ValueSurround},
+	// 	Children: content,
+	// }, nil
 }
 
 // readDelimitedExpr reads a delimited expression.
@@ -685,7 +693,7 @@ func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
 	cxt := context.setInsideForm(true)
 	startAgain := true
 
-	formBuilder := NewFormBuilder(token.Text, p.startLineCol(), p.IncludeSpans)
+	formBuilder := NewFormBuilder(token.Text, p.startLineCol(), p.IncludeSpans, true)
 
 	for p.hasNext() {
 		next := p.peek()
