@@ -302,19 +302,17 @@ func (p *Parser) readExprSeqTo(closingSubtype uint8, allowComma bool, context Co
 			p.next()
 			continue
 		}
-		if context.AcceptNewline && t.PrecededByNewline && (allowFlags&flagNewline != 0) {
-			allowFlags = flagNewline
-			continue
-		}
 		if t.Type == CloseBracket {
 			if t.SubType == closingSubtype {
 				p.next()
 				break
 			}
 			return "", nil, fmt.Errorf("unexpected closing bracket")
-		} else {
-			return "", nil, fmt.Errorf("unexpected token: %s", t.Text)
+		} else if context.AcceptNewline && t.PrecededByNewline && (allowFlags&flagNewline != 0) {
+			allowFlags = flagNewline
+			continue
 		}
+		return "", nil, fmt.Errorf("unexpected token: %s", t.Text)
 	}
 	sep_text := chooseSeparator(allowFlags)
 	return sep_text, seq, nil
@@ -368,26 +366,31 @@ func (p *Parser) requireImplicitTermination(allowFlags uint8) (uint8, error) {
 	return flagNewline, nil
 }
 
-type Mode bool
+type Mode uint8
 
 const (
-	betaMode  Mode = false
-	alphaMode Mode = true
+	alphaMode Mode = iota
+	betaMode
+	gammaMode
 )
 
 /*
     if ALPHA:
 		BETA
-		BETA
+		GAMMA
+		GAMMA
 	else-if ALPHA:
 		BETA
-		BETA
+		GAMMA
+		GAMMA
 	else-if ALPHA:
 		BETA
-		BETA
+		GAMMA
+		GAMMA
 	else:
 		BETA
-		BETA
+		GAMMA
+		GAMMA
 	endif
 */
 
@@ -395,11 +398,11 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 	allowFlags := flagComma | flagSemicolon | flagNewline
 	closingTokenText := "end" + formStart.Text
 	context = context.setInsideForm(true)
-	var currentPart []*Node
-	content := []*Node{}
+	// var currentPart []*Node
+	// content := []*Node{}
 	mode := alphaMode
 	prev_expr_explicitly_terminated := false
-	currentKeyword := formStart
+	// currentKeyword := formStart
 	startLineCol := p.startLineCol()
 	var endLineCol LineCol
 	builder := NewFormBuilder(formStart.Text, startLineCol, p.IncludeSpans, false)
@@ -431,25 +434,10 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			if t.IsLabel() {
 				endLC := p.endLineCol()
 				p.next()
-				currentPart = append(currentPart, n)
-				content = append(content, &Node{
-					Name: NamePart,
-					Options: map[string]string{
-						OptionKeyword: currentKeyword.Text,
-					},
-					Children: currentPart,
-				})
-				currentKeyword = p.UnglueOption
-				if p.IncludeSpans {
-					content[len(content)-1].Options[OptionSpan] = startLineCol.SpanString(endLC)
-					startLineCol = p.startLineCol()
-				}
-				currentPart = []*Node{}
 				builder.BeginNextPart(p.UnglueOption.Text, endLC, p.startLineCol())
-				mode = alphaMode
-			} else {
-				currentPart = append(currentPart, n)
 				mode = betaMode
+			} else {
+				mode = gammaMode
 			}
 		} else if token.IsSimpleLabelToken() {
 			lc34 := p.endLineCol()
@@ -459,22 +447,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 				return nil, e
 			}
 			p.next() // remove the ':'
-			new_currentKeyword := token
 
-			content = append(content, &Node{
-				Name: NamePart,
-				Options: map[string]string{
-					OptionKeyword: currentKeyword.Text,
-				},
-				Children: currentPart,
-			})
-
-			currentKeyword = new_currentKeyword
-			if p.IncludeSpans {
-				content[len(content)-1].Options[OptionSpan] = startLineCol.SpanString(lc34)
-				startLineCol = p.startLineCol()
-			}
-			currentPart = []*Node{}
 			builder.BeginNextPart(token.Text, lc34, p.startLineCol())
 			mode = betaMode
 		} else if token.IsCompoundLabelToken(formStart) {
@@ -484,24 +457,10 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			t2 := p.next() // remove the '-
 			t3 := p.next() // remove the form-start
 
-			content = append(content, &Node{
-				Name: NamePart,
-				Options: map[string]string{
-					OptionKeyword: currentKeyword.Text,
-				},
-				Children: currentPart,
-			})
-
-			currentKeyword = &Token{Text: t1.Text + t2.Text + t3.Text}
-			if p.IncludeSpans {
-				content[len(content)-1].Options[OptionSpan] = startLineCol.SpanString(lc34)
-				startLineCol = p.startLineCol()
-			}
-			currentPart = []*Node{}
-			builder.BeginNextPart(currentKeyword.Text, lc34, p.startLineCol())
+			builder.BeginNextPart(t1.Text+t2.Text+t3.Text, lc34, p.startLineCol())
 			mode = alphaMode
 		} else {
-			if !prev_expr_explicitly_terminated {
+			if mode == gammaMode && !prev_expr_explicitly_terminated {
 				var err error
 				allowFlags, err = p.requireImplicitTermination(allowFlags)
 				if err != nil {
@@ -513,34 +472,17 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 				return nil, err
 			}
 			builder.AddChild(n)
-			currentPart = append(currentPart, n)
 			if !p.hasNext() {
 				return nil, fmt.Errorf("unexpected end of input in form: %s", formStart.Text)
 			}
-			mode = betaMode
+			mode = gammaMode
 			prev_expr_explicitly_terminated, allowFlags, err = p.tryReadExplicitTermination(allowFlags)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
-	// if len(currentPart) > 0 {
-	content = append(content, &Node{
-		Name: NamePart,
-		Options: map[string]string{
-			OptionKeyword: currentKeyword.Text,
-		},
-		Children: currentPart,
-	})
-	if p.IncludeSpans {
-		content[len(content)-1].Options[OptionSpan] = startLineCol.SpanString(endLineCol)
-	}
-	return builder.Build(endLineCol), nil
-	// return &Node{
-	// 	Name:     NameForm,
-	// 	Options:  map[string]string{OptionSyntax: ValueSurround},
-	// 	Children: content,
-	// }, nil
+	return builder.Build(endLineCol, chooseSeparator(allowFlags)), nil
 }
 
 // readDelimitedExpr reads a delimited expression.
@@ -742,7 +684,7 @@ func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
 		}
 	}
 
-	return formBuilder.Build(p.endLineCol()), nil
+	return formBuilder.Build(p.endLineCol(), ValueUndefined), nil
 }
 
 func (p *Parser) convertMultilineStringSubToken(token *Token) (*Node, error) {
