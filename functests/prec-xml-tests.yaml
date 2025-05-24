@@ -1,0 +1,54 @@
+# The top-level normalization flag applies to all tests unless overridden.
+normalize: xml
+tests:
+
+  - name: "Allow ^ as operator"
+    command: "{command} --format xml --include-spans"
+    input: |
+      x ^ y
+    expected_output: |
+      <unit span="1 1 2 1">
+        <operator name="^" span="1 1 1 6" syntax="infix">
+          <identifier name="x" span="1 1 1 2" />
+          <identifier name="y" span="1 5 1 6" />
+        </operator>
+      </unit>
+
+  - name: "& binds more tightly than ^ or |"
+    command: "{command} --format xml"
+    input: |
+      x & y ^ z
+      x ^ y & z
+      x & y | w
+      x | y & z
+    expected_output: |
+      <unit>
+        <operator name="^" syntax="infix">
+          <operator name="&amp;" syntax="infix">
+            <identifier name="x" />
+            <identifier name="y" />
+          </operator>
+          <identifier name="z" />
+        </operator>
+        <operator name="^" syntax="infix">
+          <identifier name="x" />
+          <operator name="&amp;" syntax="infix">
+            <identifier name="y" />
+            <identifier name="z" />
+          </operator>
+        </operator>
+        <operator name="|" syntax="infix">
+          <operator name="&amp;" syntax="infix">
+            <identifier name="x" />
+            <identifier name="y" />
+          </operator>
+          <identifier name="w" />
+        </operator>
+        <operator name="|" syntax="infix">
+          <identifier name="x" />
+          <operator name="&amp;" syntax="infix">
+            <identifier name="y" />
+            <identifier name="z" />
+          </operator>
+        </operator>
+      </unit>

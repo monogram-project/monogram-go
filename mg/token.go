@@ -166,8 +166,8 @@ func (t *Token) SetSeen(tokenizer *Tokenizer, seen bool) {
 	t.Span.EndColumn = tokenizer.colNo
 }
 
-const signChars = ".*/%+-<>~!&|?:="
-const precCharacters = ".([*/%+-<>~!&|?:="
+const signChars = ".*/%+-<>~!&^|?:="
+const precCharacters = ".([*/%+-<>~!&^|?:="
 
 func (t *Token) DelimiterName() string {
 	switch t.Type {
