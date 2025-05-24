@@ -10,6 +10,9 @@ Following the style in https://keepachangelog.com/en/1.0.0/
   work in the same way as `x-2`. Previous you would have needed to add
   spaces.
 
+- The `^` character is now allowed in operators. It was always meant to be
+  part of the base character set, analogous to the C language.
+
 ## [0.5.5] Bug Fixes
 
 ### Fixed
