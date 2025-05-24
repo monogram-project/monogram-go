@@ -49,9 +49,9 @@ type FormBuilder struct {
 	includeSpans bool    // Whether to include spans in the form
 }
 
-func NewFormBuilder(partName string, lc LineCol, includeSpans bool, prefix_syntax bool) *FormBuilder {
+func NewFormBuilder(partName string, lc LineCol, includeSpans bool, usePrefixSyntax bool) *FormBuilder {
 	syntax := ValueSurround
-	if prefix_syntax {
+	if usePrefixSyntax {
 		syntax = ValuePrefix
 	}
 	return &FormBuilder{
