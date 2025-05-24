@@ -570,3 +570,29 @@ tests:
         </form>
       </unit>
 
+  - name: "Bug: inside-form label detection - statements"
+    command: "{command} --format xml --indent 2"
+    input: |
+      foo
+        { 
+          a = b
+          x = y
+        }
+      endfoo
+    expected_output: |
+      <unit>
+        <form syntax="surround">
+          <part keyword="foo">
+            <delimited kind="braces" separator="semicolon">
+              <operator name="=" syntax="infix">
+                <identifier name="a" />
+                <identifier name="b" />
+              </operator>
+              <operator name="=" syntax="infix">
+                <identifier name="x" />
+                <identifier name="y" />
+              </operator>
+            </delimited>
+          </part>
+        </form>
+      </unit>
