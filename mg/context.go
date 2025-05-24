@@ -20,7 +20,7 @@ func (c Context) setAcceptNewline(acceptNewline bool) Context {
 	return c
 }
 
-func (c Context) setInsideDelimiters(insideBraces bool) Context {
-	c.AcceptNewline = insideBraces
-	return c.setInsideForm(false).setAcceptNewline(insideBraces)
+func (c Context) setInsideDelimiters(insideDelimiters bool) Context {
+	c.AcceptNewline = insideDelimiters
+	return c.setInsideForm(false).setAcceptNewline(insideDelimiters)
 }
