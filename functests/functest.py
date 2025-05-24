@@ -27,8 +27,7 @@ the first token in the provided command resolves to an executable located within
 a permitted directory. Use the --check-on-path option to specify the required
 base directory for allowed executables. For example:
 
-    python3 runtests.py --tests tests.yaml --check-on-path
-    /path/to/allowed/directory
+    `python3 runtests.py --tests tests.yaml --check-on-path /path/to/allowed/directory`
 
 Normalization:
 -----------
@@ -147,6 +146,17 @@ def is_command_valid(command, base_path=None):
 
     if not resolved:
         return False, f"Could not resolve executable: {executable}"
+    
+    # Check if resolved path is under base_path
+    if base_path is None:
+        base_path = os.getcwd()
+    base_path = os.path.realpath(base_path)
+    try:
+        common = os.path.commonpath([resolved, base_path])
+        if common != base_path:
+            return False, f"Executable {resolved} is not under allowed path {base_path}"
+    except ValueError:
+        return False, f"Executable {resolved} is not under allowed path {base_path}"
 
     return True, ""
 
