@@ -87,7 +87,7 @@ unittest-coverage:
 
 # Run the functional tests
 functest: build-mini poetry-update-if-needed
-    (cd functests && poetry run python3 functest.py --quiet --tests *-tests.yaml --command='../monogram-mini')
+    (cd functests && poetry run python3 functest.py --quiet --tests *-tests.yaml --command='../monogram-mini' --check-on-path '..')
 
 poetry-update-if-needed:
     cd functests && (poetry env info > /dev/null 2>&1 || poetry update)
@@ -103,7 +103,7 @@ functest-coverage: build-mini
     rm -rf _build
     mkdir -p _build/functest
     mkdir -p _build/merged_functest
-    (cd functests && env GOCOVERDIR=../_build/functest poetry run python3 functest.py --tests *-tests.yaml --command='../monogram-test-coverage')
+    (cd functests && env GOCOVERDIR=../_build/functest poetry run python3 functest.py --tests *-tests.yaml --command='../monogram-test-coverage' --check-on-path '..')
     go tool covdata merge -i=_build/functest -o=_build/merged_functest
     go tool covdata textfmt -i=_build/functest -o=_build/functest.out
     go tool cover -func=_build/functest.out > _build/functest.txt
