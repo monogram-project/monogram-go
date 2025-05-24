@@ -71,6 +71,9 @@ build-full:
 build-mini:
     go build -o monogram-mini ./cmd/monogram
 
+web:
+    go run -tags withweb ./cmd/monogram --test
+
 # Run the unittests
 unittest:
     # go test -v -cover ./mg
