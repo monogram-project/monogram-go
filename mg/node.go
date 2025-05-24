@@ -109,8 +109,8 @@ func (b *FormBuilder) BeginNextPart(partName string, endOldPart LineCol, startNe
 
 }
 
-func (b *FormBuilder) Build(endForm LineCol, kind string) *Node {
-	b.node.Options[OptionKind] = kind
+func (b *FormBuilder) Build(endForm LineCol, separator string) *Node {
+	b.node.Options[OptionSeparator] = separator
 	if b.includeSpans {
 		b._endPartSpan(endForm)
 		b.node.Options[OptionSpan] = b.startForm.SpanString(endForm)
