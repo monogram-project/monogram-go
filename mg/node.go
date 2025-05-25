@@ -21,6 +21,7 @@ const NameString = "string"
 const NameJoin = "join"
 const NameJoinLines = "joinlines"
 const NameInterpolate = "interpolation"
+const NameLiteral = "literal"
 
 const OptionValue = "value"
 const OptionsDecimalValue = "decimal"

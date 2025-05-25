@@ -318,7 +318,11 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 
 		// Match identifiers
 		if unicode.IsLetter(r) || r == '_' {
-			t.readIdentifier().SetSeen(t, seen)
+			tok, err := t.readIdentifier()
+			if err != nil {
+				return err
+			}
+			tok.SetSeen(t, seen)
 			continue
 		}
 
@@ -361,9 +365,24 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 					token.SetSeen(t, seen) // Process as a raw string
 				}
 			} else {
-				t.readIdentifier().SetSeen(t, seen)
+				tok, err := t.readIdentifier()
+				if err != nil {
+					return err
+				}
+				tok.SetSeen(t, seen)
 			}
 			continue
+		}
+
+		// Match extended literals with no type. readIdentifier  does what is
+		// needed here.
+		if r == '〚' {
+			tok, err := t.readIdentifier()
+			if err != nil {
+				return err
+			}
+			tok.SetSeen(t, seen)
+			return nil
 		}
 
 		// Discard unexpected characters
@@ -379,6 +398,23 @@ func (t *Tokenizer) IsNumberFollowing() bool {
 
 func (t *Tokenizer) isSign(r rune) bool {
 	return strings.ContainsRune(signChars, r)
+}
+
+func (t *Tokenizer) readToRune(target rune) (string, *TokenizerError) {
+	// Read characters until the target rune is found or end of line/input.
+	var text strings.Builder
+	for t.hasMoreInput() {
+		r, _ := t.peek()
+		if r == target {
+			t.consume() // Consume the target rune
+			return text.String(), nil
+		}
+		if r == '\n' || r == '\r' {
+			return "", &TokenizerError{Message: "Unexpected newline while reading to rune", Line: t.lineNo, Column: t.colNo}
+		}
+		text.WriteRune(t.consume()) // Consume the current character
+	}
+	return "", &TokenizerError{Message: fmt.Sprintf("End of input reached before finding rune %c", target), Line: t.lineNo, Column: t.colNo}
 }
 
 func (t *Tokenizer) readSign() *Token {
@@ -1214,7 +1250,7 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 	return token, nil
 }
 
-func (t *Tokenizer) readIdentifier() *Token {
+func (t *Tokenizer) readIdentifier() (*Token, *TokenizerError) {
 	startLineCol := t.StartLineCol()
 	var text strings.Builder
 	var escSeen bool = false
@@ -1239,14 +1275,28 @@ func (t *Tokenizer) readIdentifier() *Token {
 	}
 
 	// Peek at the next character after the identifier to check for whitespace
+	// or extended literal syntax.
+	var token *Token
 	r, ok := t.peek()
-	followedByWhitespace := ok && unicode.IsSpace(r)
-
-	// Add the identifier token with the new field
-	token := t.addTokenLineCol(Identifier, IdentifierVariable, text.String(), startLineCol)
-	token.FollowedByWhitespace = followedByWhitespace
-	token.EscapeSeen = escSeen
-	return token
+	if ok && r == '〚' {
+		t.consume()                     // Consume the opening extended literal syntax
+		value, err := t.readToRune('〛') // Consume the extended literal syntax
+		if err != nil {
+			return nil, err
+		}
+		token = t.addTokenLineCol(Literal, LiteralExtended, value, startLineCol)
+		token.Specifier = text.String()
+	} else {
+		// Add the identifier token with the new field
+		token = t.addTokenLineCol(Identifier, IdentifierVariable, text.String(), startLineCol)
+		token.EscapeSeen = escSeen
+	}
+	{
+		r, ok := t.peek()
+		followedByWhitespace := ok && unicode.IsSpace(r)
+		token.FollowedByWhitespace = followedByWhitespace
+		return token, nil
+	}
 }
 
 func (t *Tokenizer) markReservedTokens() *TokenizerError {

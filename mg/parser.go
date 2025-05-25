@@ -582,7 +582,18 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 
 		case LiteralMultilineString:
 			return p.convertMultilineStringSubToken(token)
+		case LiteralRegex:
+			return nil, fmt.Errorf("regexes are not supported yet: %s", token.Text)
+		case LiteralExtended:
+			return &Node{
+				Name: NameLiteral,
+				Options: map[string]string{
+					OptionValue:     token.Text,
+					OptionSpecifier: token.Specifier,
+				},
+			}, nil
 		}
+		return nil, fmt.Errorf("unexpected literal token: %s", token.Text)
 	case Identifier:
 		if token.IsMacro() {
 			return p.readPrefixForm(context, token)

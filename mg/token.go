@@ -23,6 +23,8 @@ const (
 	LiteralInterpolatedString
 	LiteralExpressionString
 	LiteralMultilineString
+	LiteralRegex
+	LiteralExtended
 )
 
 // Subtypes for Identifier
