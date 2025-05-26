@@ -51,6 +51,7 @@ type FormatOptions struct {
 	DefaultLabel string
 	IncludeSpans bool
 	Decimal      bool
+	CheckRegex   bool
 }
 
 // setupFlags initializes a flag set with the common flag definitions.
@@ -63,6 +64,7 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 	fs.StringVarP(&options.DefaultLabel, "default-breaker", "b", options.DefaultLabel, "Default breakers")
 	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include start/end of expressions in the output")
 	fs.BoolVar(&options.Decimal, "decimal", options.Decimal, "Decode numbers integers and floats in base 10")
+	fs.BoolVar(&options.CheckRegex, "re", options.CheckRegex, "Check regular expressions for validity")
 	if optionsFile != nil {
 		fs.StringVar(optionsFile, "options-file", "", "File containing additional options")
 	}
@@ -137,6 +139,7 @@ func parseToAST(input string, foptions *FormatOptions) (*mg.Node, error) {
 		DefaultLabel: foptions.DefaultLabel,
 		IncludeSpans: foptions.IncludeSpans,
 		Decimal:      foptions.Decimal,
+		CheckRegex:   foptions.CheckRegex,
 	}
 	return p_opts.ParseToAST(input, foptions.Input, foptions.Limit)
 }

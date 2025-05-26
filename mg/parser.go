@@ -2,6 +2,7 @@ package mg
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -20,16 +21,18 @@ type Parser struct {
 	UnglueOption *Token
 	IncludeSpans bool
 	Decimal      bool
+	RegexCheck   bool // Whether to check regex syntax.
 	Idents       map[string]HowIdentsAreUsed
 }
 
-func NewParser(tokens []*Token, defaultLabel string, includeSpans bool, decimal bool) *Parser {
+func NewParser(tokens []*Token, defaultLabel string, includeSpans bool, decimal bool, checkRegex bool) *Parser {
 	return &Parser{
 		tokens:       tokens,
 		pos:          0,
 		UnglueOption: &Token{Type: Identifier, SubType: IdentifierVariable, Text: defaultLabel},
 		IncludeSpans: includeSpans,
 		Decimal:      decimal,
+		RegexCheck:   checkRegex,
 		Idents:       make(map[string]HowIdentsAreUsed),
 	}
 }
@@ -567,6 +570,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 				Name:    NameString,
 				Options: map[string]string{OptionQuote: token.QuoteWord(), OptionValue: token.Text},
 			}, nil
+
 		case LiteralNumber:
 			opts, err := p.numberOptions(token.Text)
 			if err != nil {
@@ -582,14 +586,18 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 
 		case LiteralMultilineString:
 			return p.convertMultilineStringSubToken(token)
+
 		case LiteralRegex:
-			return nil, fmt.Errorf("regexes are not supported yet: %s", token.Text)
-		case LiteralExtended:
+			if p.RegexCheck && !isValidRegex(token.Text) {
+				return nil, fmt.Errorf("invalid regex: %s", token.Text)
+
+			}
 			return &Node{
-				Name: NameLiteral,
+				Name: NameString,
 				Options: map[string]string{
+					OptionQuote:     ValueRegex,
 					OptionValue:     token.Text,
-					OptionSpecifier: token.Specifier,
+					OptionSpecifier: ValueRegex,
 				},
 			}, nil
 		}
@@ -641,6 +649,11 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 		return nil, fmt.Errorf("unexpected token (case #1): %s, %d, %d", token.Text, token.Type, token.SubType)
 	}
 	return nil, fmt.Errorf("unexpected token (case #2): %s, %d, %d", token.Text, token.Type, token.SubType)
+}
+
+func isValidRegex(pattern string) bool {
+	_, err := regexp.Compile(pattern)
+	return err == nil
 }
 
 func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
@@ -797,8 +810,8 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 	return expressionNode, nil
 }
 
-func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includeSpans bool, decimal bool) ([]*Node, error) {
-	parser := NewParser(tokens, defaultLabel, includeSpans, decimal)
+func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includeSpans bool, decimal bool, checkRegex bool) ([]*Node, error) {
+	parser := NewParser(tokens, defaultLabel, includeSpans, decimal, checkRegex)
 	nodes := []*Node{}
 	for parser.hasNext() {
 		node, err := parser.readExpr(makeContext())
@@ -814,7 +827,7 @@ func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includ
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, defaultLabel string, include_spans bool, decodeNumbers bool, colOffset int) ([]*Node, Span, error) {
+func parseToASTArray(input string, limit bool, defaultLabel string, include_spans bool, decodeNumbers bool, checkRegex bool, colOffset int) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
 	tokens, span, terr := tokenizeInput(input, colOffset)
 	if terr != nil {
@@ -822,7 +835,7 @@ func parseToASTArray(input string, limit bool, defaultLabel string, include_span
 	}
 
 	// Step 2: Parse the tokens into nodes
-	nodes, err := parseTokensToNodes(tokens, limit, defaultLabel, include_spans, decodeNumbers)
+	nodes, err := parseTokensToNodes(tokens, limit, defaultLabel, include_spans, decodeNumbers, checkRegex)
 	if err != nil {
 		return nil, Span{}, err
 	}

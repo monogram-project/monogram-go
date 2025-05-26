@@ -5,6 +5,7 @@ type ParserOptions struct {
 	DefaultLabel string
 	IncludeSpans bool
 	Decimal      bool
+	CheckRegex   bool
 }
 
 func NewParserOptions() *ParserOptions {
@@ -13,12 +14,13 @@ func NewParserOptions() *ParserOptions {
 		DefaultLabel: "_",
 		IncludeSpans: false,
 		Decimal:      false,
+		CheckRegex:   false,
 	}
 }
 
 func (p_opts *ParserOptions) ParseToAST(input string, src string, limit bool) (*Node, error) {
 	// Get the array of nodes
-	nodes, span, err := parseToASTArray(input, limit, p_opts.DefaultLabel, p_opts.IncludeSpans, p_opts.Decimal, p_opts.colOffset)
+	nodes, span, err := parseToASTArray(input, limit, p_opts.DefaultLabel, p_opts.IncludeSpans, p_opts.Decimal, p_opts.CheckRegex, p_opts.colOffset)
 	if err != nil {
 		return nil, err
 	}

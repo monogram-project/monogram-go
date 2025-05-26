@@ -318,11 +318,10 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 
 		// Match identifiers
 		if unicode.IsLetter(r) || r == '_' {
-			tok, err := t.readIdentifier()
+			_, err := t.readIdentifierSetSeen(seen)
 			if err != nil {
 				return err
 			}
-			tok.SetSeen(t, seen)
 			continue
 		}
 
@@ -365,29 +364,39 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 					token.SetSeen(t, seen) // Process as a raw string
 				}
 			} else {
-				tok, err := t.readIdentifier()
+				_, err := t.readIdentifierSetSeen(seen)
 				if err != nil {
 					return err
 				}
-				tok.SetSeen(t, seen)
 			}
 			continue
 		}
 
-		// Match extended literals with no type. readIdentifier  does what is
-		// needed here.
-		if r == '〚' {
-			tok, err := t.readIdentifier()
-			if err != nil {
-				return err
+		// Match regex literals.
+		if r == '⫽' {
+			terr := t.readRegexLiteral()
+			if terr != nil {
+				return terr
 			}
-			tok.SetSeen(t, seen)
-			return nil
+			continue
 		}
 
 		// Discard unexpected characters
 		return &TokenizerError{Message: fmt.Sprintf("Unexpected character: %c", r), Line: t.lineNo, Column: t.colNo}
 	}
+	return nil
+}
+
+func (t *Tokenizer) readRegexLiteral() *TokenizerError {
+	t.consume() // Consume the '⫽' character
+	txt, err := t.readToRune('⫽')
+	if err != nil {
+		return err
+	}
+	token := t.addToken(Literal, LiteralRegex, txt, t.lineNo, t.colNo)
+	r, ok := t.peek()
+	followedByWhitespace := ok && unicode.IsSpace(r)
+	token.FollowedByWhitespace = followedByWhitespace
 	return nil
 }
 
@@ -1250,6 +1259,15 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 	return token, nil
 }
 
+func (t *Tokenizer) readIdentifierSetSeen(seen bool) (*Token, *TokenizerError) {
+	tok, err := t.readIdentifier()
+	if err != nil {
+		return tok, err
+	}
+	tok.SetSeen(t, seen)
+	return tok, nil
+}
+
 func (t *Tokenizer) readIdentifier() (*Token, *TokenizerError) {
 	startLineCol := t.StartLineCol()
 	var text strings.Builder
@@ -1274,29 +1292,14 @@ func (t *Tokenizer) readIdentifier() (*Token, *TokenizerError) {
 		text.WriteRune(r)
 	}
 
-	// Peek at the next character after the identifier to check for whitespace
-	// or extended literal syntax.
-	var token *Token
+	// Add the identifier token with the new field
+	token := t.addTokenLineCol(Identifier, IdentifierVariable, text.String(), startLineCol)
+	token.EscapeSeen = escSeen
+
 	r, ok := t.peek()
-	if ok && r == '〚' {
-		t.consume()                     // Consume the opening extended literal syntax
-		value, err := t.readToRune('〛') // Consume the extended literal syntax
-		if err != nil {
-			return nil, err
-		}
-		token = t.addTokenLineCol(Literal, LiteralExtended, value, startLineCol)
-		token.Specifier = text.String()
-	} else {
-		// Add the identifier token with the new field
-		token = t.addTokenLineCol(Identifier, IdentifierVariable, text.String(), startLineCol)
-		token.EscapeSeen = escSeen
-	}
-	{
-		r, ok := t.peek()
-		followedByWhitespace := ok && unicode.IsSpace(r)
-		token.FollowedByWhitespace = followedByWhitespace
-		return token, nil
-	}
+	followedByWhitespace := ok && unicode.IsSpace(r)
+	token.FollowedByWhitespace = followedByWhitespace
+	return token, nil
 }
 
 func (t *Tokenizer) markReservedTokens() *TokenizerError {
@@ -1372,6 +1375,7 @@ func tokenizeInput(input string, colOffset int) ([]*Token, Span, *TokenizerError
 	if terr != nil {
 		return nil, Span{}, terr
 	}
+
 	tokenizer.chainTokens()
 	if colOffset > 0 {
 		for _, token := range tokenizer.tokens {

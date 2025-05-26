@@ -24,7 +24,6 @@ const (
 	LiteralExpressionString
 	LiteralMultilineString
 	LiteralRegex
-	LiteralExtended
 )
 
 // Subtypes for Identifier

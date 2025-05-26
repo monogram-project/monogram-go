@@ -21,7 +21,6 @@ const NameString = "string"
 const NameJoin = "join"
 const NameJoinLines = "joinlines"
 const NameInterpolate = "interpolation"
-const NameLiteral = "literal"
 
 const OptionValue = "value"
 const OptionsDecimalValue = "decimal"
@@ -42,6 +41,8 @@ const ValueComma = "comma"
 const ValueSemicolon = "semicolon"
 const ValueUndefined = "undefined"
 const ValueNewline = "newline"
+const ValueChevron = "chevron"
+const ValueRegex = "regex"
 
 type FormBuilder struct {
 	node         *Node
