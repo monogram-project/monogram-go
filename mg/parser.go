@@ -567,8 +567,12 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 		switch token.SubType {
 		case LiteralString:
 			return &Node{
-				Name:    NameString,
-				Options: map[string]string{OptionQuote: token.QuoteWord(), OptionValue: token.Text},
+				Name: NameString,
+				Options: map[string]string{
+					OptionQuote:     token.QuoteWord(),
+					OptionValue:     token.Text,
+					OptionSpecifier: ValueBlank, // Default specifier for strings
+				},
 			}, nil
 
 		case LiteralNumber:
@@ -605,6 +609,24 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	case Identifier:
 		if token.IsMacro() {
 			return p.readPrefixForm(context, token)
+		} else if token.IsTaggedString() {
+			string_token := p.next()
+			return &Node{
+				Name: NameString,
+				Options: map[string]string{
+					OptionQuote:     string_token.QuoteWord(),
+					OptionValue:     string_token.Text,
+					OptionSpecifier: token.Text,
+				},
+			}, nil
+		} else if token.IsTaggedInterpolatedString() {
+			string_token := p.next()
+			interpolationNode, err := p.convertInterpolatedStringSubToken(string_token)
+			if err != nil {
+				return nil, err
+			}
+			interpolationNode.Options[OptionSpecifier] = token.Text
+			return interpolationNode, nil
 		} else {
 			switch token.SubType {
 			case IdentifierVariable:
@@ -751,8 +773,12 @@ func (p *Parser) convertSubToken(subToken *Token) (*Node, error) {
 	} else if subToken.SubType == LiteralString {
 		// Handle plain string parts
 		n := &Node{
-			Name:    NameString,
-			Options: map[string]string{OptionQuote: subToken.QuoteWord(), OptionValue: subToken.Text},
+			Name: NameString,
+			Options: map[string]string{
+				OptionQuote:     subToken.QuoteWord(),
+				OptionValue:     subToken.Text,
+				OptionSpecifier: ValueBlank, // Default specifier for strings
+			},
 		}
 		if p.IncludeSpans {
 			n.Options[OptionSpan] = subToken.SpanString()

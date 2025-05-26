@@ -161,6 +161,28 @@ func (t *Token) IsMacro() bool {
 	return t1.Type == Sign && t1.SubType == SignForce
 }
 
+func (t *Token) IsTaggedString() bool {
+	return t.IsTagged(LiteralString)
+}
+
+func (t *Token) IsTaggedInterpolatedString() bool {
+	return t.IsTagged(LiteralInterpolatedString)
+}
+
+func (t *Token) IsTagged(subtype uint8) bool {
+	if t.Type != Identifier || t.FollowedByWhitespace {
+		return false
+	}
+	t1 := t.NextToken
+	if t1 == nil || (t1.Type != Literal || (t1.SubType != LiteralString && t1.SubType != subtype)) {
+		return false
+	}
+	if t.FollowedByWhitespace {
+		return false
+	}
+	return true
+}
+
 func (t *Token) SetSeen(tokenizer *Tokenizer, seen bool) {
 	t.PrecededByNewline = seen
 	t.Span.EndLine = tokenizer.lineNo

@@ -43,6 +43,7 @@ const ValueUndefined = "undefined"
 const ValueNewline = "newline"
 const ValueChevron = "chevron"
 const ValueRegex = "regex"
+const ValueBlank = ""
 
 type FormBuilder struct {
 	node         *Node
