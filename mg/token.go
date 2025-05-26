@@ -172,6 +172,10 @@ func (t *Token) IsTaggedInterpolatedString() bool {
 	return t.IsTagged(LiteralInterpolatedString)
 }
 
+func (t *Token) IsTaggedMultilineString() bool {
+	return t.IsTagged(LiteralMultilineString)
+}
+
 func (t *Token) IsTagged(subtype uint8) bool {
 	if t.Type != Identifier || t.FollowedByWhitespace {
 		return false
@@ -184,6 +188,10 @@ func (t *Token) IsTagged(subtype uint8) bool {
 		return false
 	}
 	return true
+}
+
+func (t *Token) IsStringToken() bool {
+	return t.Type == Literal && (t.SubType == LiteralString || t.SubType == LiteralInterpolatedString || t.SubType == LiteralMultilineString)
 }
 
 func (t *Token) SetSeen(tokenizer *Tokenizer, seen bool) {

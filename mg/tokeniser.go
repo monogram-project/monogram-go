@@ -343,46 +343,46 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 			continue
 		}
 
-		// Match tokens starting with backslash (`\`) or `@`.
-		if r == '\\' || r == '@' {
-			// Look ahead to check for a quote
-			secondRune, ok := t.peekN(2)
-			if ok && isOpeningQuoteChar(secondRune) {
-				t.consume() // Consume the backslash
+		// Match tokens starting with backslash (`\`)
+		if r == '\\' {
+			_, err := t.readIdentifierSetSeen(seen)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Match tokens starting with `@`.
+		if r == '@' {
+			// See if we have a tag.
+			t.consume() // Consume the '@'
+			tagText := ""
+			r, ok := t.peek()
+			if ok && (unicode.IsLetter(r) || r == '_') {
+				tagText = t.takeTagText()
+			}
+			r, ok = t.peek()
+			if ok && isOpeningQuoteChar(r) {
 				_, is_triple := t.tryPeekTripleOpeningQuotes()
+				var token *Token
+				var terr *TokenizerError
 				if is_triple {
-					token, terr := t.readMultilineString(true)
-					if terr != nil {
-						return terr
-					}
-					token.SetSeen(t, seen)
+					token, terr = t.readMultilineString(true)
 				} else {
-					token, terr := t.readRawString(false, secondRune, ValueBlank)
-					if terr != nil {
-						return terr
-					}
-					token.SetSeen(t, seen) // Process as a raw string
+					token, terr = t.readRawString(false, r, ValueBlank)
 				}
-			} else if r == '@' {
-				// See if we have a tag.
-				t.consume() // Consume the '@'
-				r, ok = t.peek()
-				if ok && (unicode.IsLetter(r) || r == '_') {
-					tag := t.takeTagText()
-					if t.isNextCharAnOpeningQuote() {
-						token, terr := t.readRawString(false, secondRune, tag)
-						if terr != nil {
-							return terr
-						}
-						token.SetSeen(t, seen) // Process as a raw string
-					}
-				} else {
-					return &TokenizerError{Message: "Invalid character after '@'", Line: t.lineNo, Column: t.colNo}
+				if terr != nil {
+					return terr
 				}
+				if token.Specifier == "" {
+					token.Specifier = tagText
+				}
+				token.SetSeen(t, seen) // Process as a raw string
 			} else {
-				_, err := t.readIdentifierSetSeen(seen)
-				if err != nil {
-					return err
+				return &TokenizerError{
+					Message: fmt.Sprintf("Expected opening quote after '@%s'", tagText),
+					Line:    t.lineNo,
+					Column:  t.colNo,
 				}
 			}
 			continue
@@ -753,7 +753,6 @@ func (t *Tokenizer) readRestOfLine() string {
 }
 
 func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) {
-	fmt.Println("Reading multiline string")
 	startLine, startCol := t.lineNo, t.colNo
 	var subTokens []*Token
 
@@ -784,13 +783,11 @@ func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) 
 
 	// Discard the rest of the next line, which will be the closing quotes.
 	t.skipSpacesUpToNewline()
-	fmt.Println("Trying quotes consumption")
 
 	terr = t.consumeTripleClosingQuotes(closingQuote)
 	if terr != nil {
 		return nil, terr // Return error if closing quotes are malformed
 	}
-	fmt.Println("Closing quotes consumed successfully")
 
 	// Add the multiline string token
 	token := t.addToken(Literal, LiteralMultilineString, "", startLine, startCol)
