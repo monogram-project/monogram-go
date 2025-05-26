@@ -83,6 +83,7 @@ func (t *Token) SpanString() string {
 	return t.Span.SpanString()
 }
 
+// Based on the closing quote character.
 func (t *Token) QuoteWord() string {
 	if t.QuoteRune == '"' {
 		return "double"
@@ -90,6 +91,8 @@ func (t *Token) QuoteWord() string {
 		return "single"
 	} else if t.QuoteRune == '`' {
 		return "backtick"
+	} else if t.QuoteRune == '»' {
+		return "chevron"
 	} else {
 		return "undefined"
 	}

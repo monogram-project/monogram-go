@@ -266,8 +266,8 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 		}
 
 		// Match strings
-		if r == '"' || r == '\'' || r == '`' {
-			_, ok := t.tryPeekTripleQuotes()
+		if isOpeningQuoteChar(r) {
+			_, ok := t.tryPeekTripleOpeningQuotes()
 			if ok {
 				token, terr := t.readMultilineString(false)
 				if terr != nil {
@@ -343,13 +343,13 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 			continue
 		}
 
-		// Match tokens starting with backslash (`\`)
-		if r == '\\' {
+		// Match tokens starting with backslash (`\`) or `@`.
+		if r == '\\' || r == '@' {
 			// Look ahead to check for a quote
 			secondRune, ok := t.peekN(2)
-			if ok && (secondRune == '"' || secondRune == '\'' || secondRune == '`') {
+			if ok && isOpeningQuoteChar(secondRune) {
 				t.consume() // Consume the backslash
-				_, is_triple := t.tryPeekTripleQuotes()
+				_, is_triple := t.tryPeekTripleOpeningQuotes()
 				if is_triple {
 					token, terr := t.readMultilineString(true)
 					if terr != nil {
@@ -357,11 +357,27 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 					}
 					token.SetSeen(t, seen)
 				} else {
-					token, terr := t.readRawString(false, secondRune)
+					token, terr := t.readRawString(false, secondRune, ValueBlank)
 					if terr != nil {
 						return terr
 					}
 					token.SetSeen(t, seen) // Process as a raw string
+				}
+			} else if r == '@' {
+				// See if we have a tag.
+				t.consume() // Consume the '@'
+				r, ok = t.peek()
+				if ok && (unicode.IsLetter(r) || r == '_') {
+					tag := t.takeTagText()
+					if t.isNextCharAnOpeningQuote() {
+						token, terr := t.readRawString(false, secondRune, tag)
+						if terr != nil {
+							return terr
+						}
+						token.SetSeen(t, seen) // Process as a raw string
+					}
+				} else {
+					return &TokenizerError{Message: "Invalid character after '@'", Line: t.lineNo, Column: t.colNo}
 				}
 			} else {
 				_, err := t.readIdentifierSetSeen(seen)
@@ -382,7 +398,7 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 		}
 
 		// Discard unexpected characters
-		return &TokenizerError{Message: fmt.Sprintf("Unexpected character: %c", r), Line: t.lineNo, Column: t.colNo}
+		return &TokenizerError{Message: fmt.Sprintf("Unexpected character (@401): %c", r), Line: t.lineNo, Column: t.colNo}
 	}
 	return nil
 }
@@ -503,11 +519,24 @@ func (t *Tokenizer) readPunctuation() *Token {
 	return t.addToken(Punctuation, subType, string(r), startLine, startCol)
 }
 
-func (t *Tokenizer) tryPeekTripleQuotes() (rune, bool) {
+func (t *Tokenizer) tryPeekTripleOpeningQuotes() (rune, bool) {
+	return t.tryPeekTripleQuotes(true)
+}
+
+func (t *Tokenizer) tryPeekTripleQuotes(is_opening bool) (rune, bool) {
 	// Peek the first character to check if it’s a valid quote character
 	r1, ok1 := t.peek()
-	if !ok1 || (r1 != '\'' && r1 != '"' && r1 != '`') {
-		return 0, false // Invalid or non-quote character
+	if !ok1 {
+		return 0, false // End of input
+	}
+	if is_opening {
+		if !isOpeningQuoteChar(r1) {
+			return 0, false // Invalid opening quote character
+		}
+	} else {
+		if !isClosingQuoteChar(r1) {
+			return 0, false // Invalid closing quote character
+		}
 	}
 
 	// Check if the next two characters match the first one
@@ -520,8 +549,8 @@ func (t *Tokenizer) tryPeekTripleQuotes() (rune, bool) {
 	return r1, true // Successfully read triple quotes
 }
 
-func (t *Tokenizer) consumeTripleQuotes(quote rune) *TokenizerError {
-	r, b := t.tryReadTripleQuotes()
+func (t *Tokenizer) consumeTripleClosingQuotes(quote rune) *TokenizerError {
+	r, b := t.tryReadTripleClosingQuotes()
 	if !b {
 		return &TokenizerError{Message: "Missing triple quotes", Line: t.lineNo, Column: t.colNo}
 	}
@@ -531,8 +560,16 @@ func (t *Tokenizer) consumeTripleQuotes(quote rune) *TokenizerError {
 	return nil
 }
 
-func (t *Tokenizer) tryReadTripleQuotes() (rune, bool) {
-	r, b := t.tryPeekTripleQuotes()
+func (t *Tokenizer) tryReadTripleClosingQuotes() (rune, bool) {
+	return t.tryReadTripleQuotes(false)
+}
+
+func (t *Tokenizer) tryReadTripleOpeningQuotes() (rune, bool) {
+	return t.tryReadTripleQuotes(true)
+}
+
+func (t *Tokenizer) tryReadTripleQuotes(is_opening bool) (rune, bool) {
+	r, b := t.tryPeekTripleQuotes(is_opening)
 
 	if b {
 		// Consume all three quotes
@@ -652,10 +689,11 @@ func (t *Tokenizer) findClosingIndent() (rune, string, string, int, *TokenizerEr
 	t.markPosition()
 
 	// Validate and consume the opening triple quotes
-	quote, ok := t.tryReadTripleQuotes()
+	opening_quote, ok := t.tryReadTripleOpeningQuotes()
 	if !ok {
 		return 0, "", "", 0, &TokenizerError{Message: "Malformed opening triple quotes", Line: t.lineNo, Column: t.colNo}
 	}
+	closing_quote := getMatchingCloseQuote(opening_quote) // Get the matching closing quote
 
 	// Ensure no other non-space characters appear on the opening line
 	specifier, terr := t.readSpecifier()
@@ -670,7 +708,7 @@ func (t *Tokenizer) findClosingIndent() (rune, string, string, int, *TokenizerEr
 	var closingIndent string
 	for t.hasMoreInput() {
 		line := t.readRestOfLine()
-		match, closingIndent = textIsWhitespaceFollowedBy3Quotes(line, quote)
+		match, closingIndent = textIsWhitespaceFollowedBy3Quotes(line, closing_quote)
 		if match {
 			break
 		}
@@ -697,7 +735,7 @@ func (t *Tokenizer) findClosingIndent() (rune, string, string, int, *TokenizerEr
 	}
 
 	t.resetPosition()
-	return quote, closingIndent, specifier, len(lines), nil
+	return closing_quote, closingIndent, specifier, len(lines), nil
 }
 
 func (t *Tokenizer) readRestOfLine() string {
@@ -715,7 +753,7 @@ func (t *Tokenizer) readRestOfLine() string {
 }
 
 func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) {
-
+	fmt.Println("Reading multiline string")
 	startLine, startCol := t.lineNo, t.colNo
 	var subTokens []*Token
 
@@ -723,6 +761,7 @@ func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) 
 	if terr != nil {
 		return nil, terr
 	}
+	closingQuote := getMatchingCloseQuote(openingQuote) // Get the matching closing quote
 
 	// Discard the rest of this line, which are the opening quotes.
 	t.readRestOfLine()
@@ -732,7 +771,7 @@ func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) 
 	for range nlines {
 		if t.tryConsumeText(closingIndent) {
 			if rawFlag {
-				t.readRawString(true, openingQuote)
+				t.readRawString(true, openingQuote, ValueBlank)
 			} else {
 				t.readString(true, openingQuote)
 			}
@@ -745,7 +784,13 @@ func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) 
 
 	// Discard the rest of the next line, which will be the closing quotes.
 	t.skipSpacesUpToNewline()
-	t.consumeTripleQuotes(openingQuote)
+	fmt.Println("Trying quotes consumption")
+
+	terr = t.consumeTripleClosingQuotes(closingQuote)
+	if terr != nil {
+		return nil, terr // Return error if closing quotes are malformed
+	}
+	fmt.Println("Closing quotes consumed successfully")
 
 	// Add the multiline string token
 	token := t.addToken(Literal, LiteralMultilineString, "", startLine, startCol)
@@ -796,11 +841,19 @@ func (t *Tokenizer) tryConsumeText(text string) bool {
 	return false
 }
 
-func (t *Tokenizer) readRawString(unquoted bool, default_quote rune) (*Token, *TokenizerError) {
+func getMatchingCloseQuote(openingQuote rune) rune {
+	// Return the matching closing quote for the given opening quote
+	if openingQuote == '«' {
+		return '»'
+	}
+	return openingQuote // For other quotes, return the same character
+}
+
+func (t *Tokenizer) readRawString(unquoted bool, default_quote rune, specifier string) (*Token, *TokenizerError) {
 	startLine, startCol := t.lineNo, t.colNo
 	quote := default_quote
 	if !unquoted {
-		quote = t.consume() // Consume the opening quote
+		quote = getMatchingCloseQuote(t.consume()) // Consume the opening quote
 	}
 	var text strings.Builder
 
@@ -826,6 +879,7 @@ func (t *Tokenizer) readRawString(unquoted bool, default_quote rune) (*Token, *T
 
 	// Add the raw string token
 	token := t.addToken(Literal, LiteralString, text.String(), startLine, startCol)
+	token.Specifier = specifier
 	token.QuoteRune = quote
 	return token, nil
 }
@@ -835,7 +889,7 @@ func (t *Tokenizer) readString(unquoted bool, default_quote rune) (*Token, *Toke
 	currSpan := Span{startLine, startCol, -1, -1}
 	quote := default_quote
 	if !unquoted {
-		quote = t.consume() // Consume the opening quote
+		quote = getMatchingCloseQuote(t.consume()) // Consume the opening quote
 	}
 	var text strings.Builder
 	var interpolationTokens []*Token
@@ -935,8 +989,8 @@ func (t *Tokenizer) readStringInterpolation() (*Token, *TokenizerError) {
 				} else {
 					return nil, &TokenizerError{Message: "Mismatched bracket", Line: span.StartLine, Column: span.StartColumn}
 				}
-			case '"', '\'', '`': // Enter string state
-				stack = append(stack, r)
+			case '"', '\'', '`', '«': // Enter string state
+				stack = append(stack, getMatchingCloseQuote(r))
 				state = 1
 			case 'r', '\n': // Line breaks are not allowed
 				return nil, &TokenizerError{Message: "Line break in interpolation", Line: t.lineNo, Column: t.colNo}
@@ -985,7 +1039,7 @@ func handleEscapeSequence(t *Tokenizer) string {
 		text.WriteRune('\r')
 	case 't':
 		text.WriteRune('\t')
-	case '\\', '/', '"', '\'', '`': // Escaped backslash, slash, or matching quote
+	case '\\', '/', '"', '\'', '`', '»': // Escaped backslash, slash, or matching quote
 		text.WriteRune(r)
 	case 'u': // Unicode escape sequence
 		text.WriteString(t.readUnicodeEscape())
@@ -1300,6 +1354,38 @@ func (t *Tokenizer) readIdentifier() (*Token, *TokenizerError) {
 	followedByWhitespace := ok && unicode.IsSpace(r)
 	token.FollowedByWhitespace = followedByWhitespace
 	return token, nil
+}
+
+func (t *Tokenizer) takeTagText() string {
+	var text strings.Builder
+
+	for t.hasMoreInput() {
+		r, _ := t.peek()
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_') {
+			break // Stop if the character is not part of an identifier
+		}
+		t.consume() // Consume the character
+		text.WriteRune(r)
+	}
+
+	return text.String()
+}
+
+func (t *Tokenizer) isNextCharAnOpeningQuote() bool {
+	// Check if the next character is a quote
+	r, ok := t.peek()
+	if !ok {
+		return false // No more input
+	}
+	return isOpeningQuoteChar(r)
+}
+
+func isOpeningQuoteChar(r rune) bool {
+	return r == '\'' || r == '"' || r == '`' || r == '«'
+}
+
+func isClosingQuoteChar(r rune) bool {
+	return r == '\'' || r == '"' || r == '`' || r == '»'
 }
 
 func (t *Tokenizer) markReservedTokens() *TokenizerError {

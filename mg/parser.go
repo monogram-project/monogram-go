@@ -571,7 +571,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 				Options: map[string]string{
 					OptionQuote:     token.QuoteWord(),
 					OptionValue:     token.Text,
-					OptionSpecifier: ValueBlank, // Default specifier for strings
+					OptionSpecifier: token.Specifier, // Default specifier for strings
 				},
 			}, nil
 
@@ -796,7 +796,8 @@ func (p *Parser) convertInterpolatedStringSubToken(token *Token) (*Node, error) 
 	interpolationNode := &Node{
 		Name: NameJoin,
 		Options: map[string]string{
-			OptionQuote: token.QuoteWord(),
+			OptionQuote:     token.QuoteWord(),
+			OptionSpecifier: ValueBlank, // Default specifier for interpolated strings
 		},
 		Children: []*Node{},
 	}
