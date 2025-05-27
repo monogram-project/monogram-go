@@ -1,0 +1,143 @@
+# The top-level normalization flag applies to all tests unless overridden.
+normalize: xml
+tests:
+
+  - name: "Simple strings"
+    command: "{command} --format xml --indent 2"
+    input: |
+      "Hello, world!\n"
+      'Hello, world!\n'
+      `Hello, world!\n`
+      «Hello, world!\n»
+    expected_output: |
+      <unit>
+        <string specifier="" quote="double" value="Hello, world!&#xA;"/>
+        <string specifier="" quote="single" value="Hello, world!&#xA;"/>
+        <string specifier="" quote="backtick" value="Hello, world!&#xA;"/>
+        <string specifier="" quote="chevron" value="Hello, world!&#xA;"/>
+      </unit>
+
+  - name: "Interpolations"
+    command: "{command} --format xml --indent 2"
+    input: |
+      "Hello, \(name)! It's a great \{dayOfWeek}!"
+    expected_output: |
+      <unit>
+        <join specifier="" quote="double">
+          <string specifier="" quote="double" value="Hello, "/>
+          <interpolation kind="parentheses">
+            <identifier name="name"/>
+          </interpolation>
+          <string specifier="" quote="double" value="! It's a great "/>
+          <interpolation kind="braces">
+            <identifier name="dayOfWeek"/>
+          </interpolation>
+          <string specifier="" quote="double" value="!"/>
+        </join>
+      </unit>
+
+  - name: "Raw string"
+    command: "{command} --format xml --indent 2"
+    input: |
+      @"Hello, world!\n"
+      @'Hello, world!\n'
+      @`Hello, world!\n`
+      @«Hello, world!\n»
+    expected_output: |
+      <unit>
+        <string specifier="" quote="double" value="Hello, world!\n"/>
+        <string specifier="" quote="single" value="Hello, world!\n"/>
+        <string specifier="" quote="backtick" value="Hello, world!\n"/>
+        <string specifier="" quote="chevron" value="Hello, world!\n"/>
+      </unit>
+
+  - name: "Tagged raw strings"
+    command: "{command} --format xml --indent 2"
+    input: |
+      @txt"Hello, world!\n"
+      @txt'Hello, world!\n'
+      @txt`Hello, world!\n`
+      @txt«Hello, world!\n»
+    expected_output: |
+      <unit>
+        <string specifier="txt" quote="double" value="Hello, world!\n"/>
+        <string specifier="txt" quote="single" value="Hello, world!\n"/>
+        <string specifier="txt" quote="backtick" value="Hello, world!\n"/>
+        <string specifier="txt" quote="chevron" value="Hello, world!\n"/>
+      </unit>  
+
+  - name: "Multiline string"
+    command: "{command} --format xml --indent 2"
+    input: |
+      """
+      Hello, world!\_
+          This is a test.
+      And this is another line.
+      """
+    expected_output: |
+      <unit>
+        <joinlines quote="double" specifier="">
+          <string specifier="" quote="double" value="Hello, world!"/>
+          <string specifier="" quote="double" value="    This is a test."/>
+          <string specifier="" quote="double" value="And this is another line."/>
+        </joinlines>
+      </unit>
+
+  - name: "Multiline string with interpolations"
+    command: "{command} --format xml --indent 2"
+    input: |
+      """
+      Hello, world!\_
+          This is a \{test.example}.
+      And this is another line.
+      """
+    expected_output: |
+      <unit>
+        <joinlines quote="double" specifier="">
+          <string specifier="" quote="double" value="Hello, world!"/>
+          <join specifier="" quote="double">
+            <string specifier="" quote="double" value="    This is a "/>
+            <interpolation kind="braces">
+              <get name="example">
+                <identifier name="test"/>
+              </get>
+            </interpolation>
+            <string specifier="" quote="double" value="."/>
+          </join>
+          <string specifier="" quote="double" value="And this is another line."/>
+        </joinlines>
+      </unit>
+
+  - name: "Raw Multiline string"
+    command: "{command} --format xml --indent 2"
+    input: |
+      @"""
+      Hello, world!\_
+          This is a test.
+      And this is another line.
+      """
+    expected_output: |
+      <unit>
+        <joinlines quote="double" specifier="">
+          <string specifier="" quote="double" value="Hello, world!\_"/>
+          <string specifier="" quote="double" value="    This is a test."/>
+          <string specifier="" quote="double" value="And this is another line."/>
+        </joinlines>
+      </unit>
+
+  - name: "Multiline string with specifier"
+    command: "{command} --format xml --indent 2"
+    input: |
+      """txt
+      Hello, world!\_
+          This is a test.
+      And this is another line.
+      """
+    expected_output: |
+      <unit>
+        <joinlines quote="double" specifier="txt">
+          <string specifier="" quote="double" value="Hello, world!"/>
+          <string specifier="" quote="double" value="    This is a test."/>
+          <string specifier="" quote="double" value="And this is another line."/>
+        </joinlines>
+      </unit>

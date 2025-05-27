@@ -96,6 +96,15 @@ func (t *Tokenizer) peek() (rune, bool) {
 	return r, b > 0
 }
 
+func (t *Tokenizer) isWhiteSpaceNext() bool {
+	// Check if the next rune is whitespace
+	if t.pos >= len(t.input) {
+		return false // End of input
+	}
+	r, _ := utf8.DecodeRuneInString(t.input[t.pos:])
+	return unicode.IsSpace(r)
+}
+
 func (t *Tokenizer) peek3() (int, rune, rune, rune) {
 	// Peek at the next three runes in the input and return how many we
 	// successfully read, along with the runes themselves.
@@ -213,6 +222,10 @@ func (t *Tokenizer) popToken() *Token {
 	token := t.tokens[len(t.tokens)-1]
 	t.tokens = t.tokens[:len(t.tokens)-1] // Remove the last token
 	return token
+}
+
+func (t *Tokenizer) markFollowedByWhitespace(token *Token) {
+	token.FollowedByWhitespace = t.isWhiteSpaceNext()
 }
 
 // Append a token to the token list
@@ -410,9 +423,7 @@ func (t *Tokenizer) readRegexLiteral() *TokenizerError {
 		return err
 	}
 	token := t.addToken(Literal, LiteralRegex, txt, t.lineNo, t.colNo)
-	r, ok := t.peek()
-	followedByWhitespace := ok && unicode.IsSpace(r)
-	token.FollowedByWhitespace = followedByWhitespace
+	t.markFollowedByWhitespace(token)
 	return nil
 }
 
@@ -468,7 +479,9 @@ func (t *Tokenizer) readSign() *Token {
 	} else if text == "!" {
 		subType = SignForce
 	}
-	return t.addToken(Sign, subType, text, startLine, startCol) // 0 for now as signs may not have subtypes yet
+	token := t.addToken(Sign, subType, text, startLine, startCol)
+	t.markFollowedByWhitespace(token) // Mark if followed by whitespace
+	return token
 }
 
 func (t *Tokenizer) readBracket() *Token {
@@ -1346,10 +1359,7 @@ func (t *Tokenizer) readIdentifier() (*Token, *TokenizerError) {
 	// Add the identifier token with the new field
 	token := t.addTokenLineCol(Identifier, IdentifierVariable, text.String(), startLineCol)
 	token.EscapeSeen = escSeen
-
-	r, ok := t.peek()
-	followedByWhitespace := ok && unicode.IsSpace(r)
-	token.FollowedByWhitespace = followedByWhitespace
+	t.markFollowedByWhitespace(token)
 	return token, nil
 }
 

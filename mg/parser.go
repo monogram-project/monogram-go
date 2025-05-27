@@ -634,47 +634,50 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 		return p.readDelimitedExpr(token, context)
 	case Sign:
 		if token.SubType == SignDot {
-			likely_tag_token := token.NextToken
-			if likely_tag_token != nil && likely_tag_token.IsStringToken() {
-				// This is the degenerate case where we have a dot followed by a string.
-				// We simply need to go around the loop again.
-				return p.doReadPrimaryExpr(context)
-			}
-			var likely_string_token *Token
-			if likely_tag_token != nil {
-				likely_string_token = likely_tag_token.NextToken
-			}
-			if likely_tag_token == nil || likely_string_token == nil {
-				return nil, fmt.Errorf("missing tokens after dot")
-			}
-			p.next() // consume the tag
-			p.next() // consume the string
-			if likely_tag_token.IsTaggedString() {
-				return &Node{
-					Name: NameString,
-					Options: map[string]string{
-						OptionQuote:     likely_string_token.QuoteWord(),
-						OptionValue:     likely_string_token.Text,
-						OptionSpecifier: likely_tag_token.Text, // Default specifier for strings
-					},
-				}, nil
-			} else if likely_tag_token.IsTaggedInterpolatedString() {
-				interpolationNode, err := p.convertInterpolatedStringSubToken(likely_string_token)
-				if err != nil {
-					return nil, err
+			if !token.FollowedByWhitespace {
+				likely_tag_token := token.NextToken
+				if likely_tag_token != nil && likely_tag_token.IsStringToken() {
+					// This is the degenerate case where we have a dot followed by a string.
+					// We simply need to go around the loop again.
+					return p.doReadPrimaryExpr(context)
 				}
-				interpolationNode.Options[OptionSpecifier] = likely_tag_token.Text
-				return interpolationNode, nil
-			} else if likely_tag_token.IsTaggedMultilineString() {
-				multilineNode, err := p.convertMultilineStringSubToken(likely_string_token)
-				if err != nil {
-					return nil, err
+				var likely_string_token *Token
+				if likely_tag_token != nil {
+					likely_string_token = likely_tag_token.NextToken
 				}
-				multilineNode.Options[OptionSpecifier] = likely_tag_token.Text
-			} else {
-				return nil, fmt.Errorf("unexpected token following dot: %s", likely_string_token.Text)
+				if likely_tag_token == nil || likely_string_token == nil {
+					return nil, fmt.Errorf("missing tokens after dot")
+				}
+				p.next() // consume the tag
+				p.next() // consume the string
+				if likely_tag_token.IsTaggedString() {
+					return &Node{
+						Name: NameString,
+						Options: map[string]string{
+							OptionQuote:     likely_string_token.QuoteWord(),
+							OptionValue:     likely_string_token.Text,
+							OptionSpecifier: likely_tag_token.Text, // Default specifier for strings
+						},
+					}, nil
+				} else if likely_tag_token.IsTaggedInterpolatedString() {
+					interpolationNode, err := p.convertInterpolatedStringSubToken(likely_string_token)
+					if err != nil {
+						return nil, err
+					}
+					interpolationNode.Options[OptionSpecifier] = likely_tag_token.Text
+					return interpolationNode, nil
+				} else if likely_tag_token.IsTaggedMultilineString() {
+					multilineNode, err := p.convertMultilineStringSubToken(likely_string_token)
+					if err != nil {
+						return nil, err
+					}
+					multilineNode.Options[OptionSpecifier] = likely_tag_token.Text
+				} else {
+					return nil, fmt.Errorf("unexpected token following dot: %s", likely_string_token.Text)
+				}
 			}
 		} else if token.SubType != SignLabel {
+			// This is a prefix operator.
 			prec, valid := token.Precedence()
 			if valid && prec > 0 {
 				expr, err := p.readExprPrec(prefixPrecedence, context.setInsideForm(false))
