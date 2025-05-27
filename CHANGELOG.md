@@ -2,7 +2,7 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
-## Unreleased
+## [0.6.0] Expansion of strings and statement syntax
 
 ### Changed
 
