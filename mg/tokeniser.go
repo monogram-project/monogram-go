@@ -412,7 +412,7 @@ func (t *Tokenizer) tokenize() *MonogramError {
 		}
 
 		// Discard unexpected characters
-		return &MonogramError{Message: fmt.Sprintf("Unexpected character (@401): %c", r), Line: t.lineNo, Column: t.colNo}
+		return &MonogramError{Message: fmt.Sprintf("Unexpected character: %c", r), Line: t.lineNo, Column: t.colNo}
 	}
 	return nil
 }
