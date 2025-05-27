@@ -43,14 +43,15 @@ import (
 var IsBuiltForDocker = "false"
 
 type FormatOptions struct {
-	Format       string
-	Input        string
-	Output       string
-	Indent       int
-	Limit        bool
-	DefaultLabel string
-	IncludeSpans bool
-	Decimal      bool
+	Format        string
+	Input         string
+	Output        string
+	Indent        int
+	Limit         bool
+	DefaultLabel  string
+	IncludeSpans  bool
+	Decimal       bool
+	CheckLiterals bool
 }
 
 // setupFlags initializes a flag set with the common flag definitions.
@@ -63,6 +64,7 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 	fs.StringVarP(&options.DefaultLabel, "default-breaker", "b", options.DefaultLabel, "Default breakers")
 	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include start/end of expressions in the output")
 	fs.BoolVar(&options.Decimal, "decimal", options.Decimal, "Decode numbers integers and floats in base 10")
+	fs.BoolVar(&options.CheckLiterals, "check-literals", options.CheckLiterals, "Check regexs and other literal strings for validity")
 	if optionsFile != nil {
 		fs.StringVar(optionsFile, "options-file", "", "File containing additional options")
 	}
@@ -134,9 +136,10 @@ var availableFormatNames = func() []string {
 
 func parseToAST(input string, foptions *FormatOptions) (*mg.Node, error) {
 	p_opts := &mg.ParserOptions{
-		DefaultLabel: foptions.DefaultLabel,
-		IncludeSpans: foptions.IncludeSpans,
-		Decimal:      foptions.Decimal,
+		DefaultLabel:  foptions.DefaultLabel,
+		IncludeSpans:  foptions.IncludeSpans,
+		Decimal:       foptions.Decimal,
+		CheckLiterals: foptions.CheckLiterals,
 	}
 	return p_opts.ParseToAST(input, foptions.Input, foptions.Limit)
 }

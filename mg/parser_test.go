@@ -18,7 +18,7 @@ func getParser(input string) (*Parser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("getTokens error: %w", err)
 	}
-	return NewParser(tokens, "_", false, false), nil
+	return NewParser(tokens, "_", false, false, true), nil
 }
 
 func TestParsePrefix0(t *testing.T) {

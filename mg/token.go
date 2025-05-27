@@ -23,6 +23,7 @@ const (
 	LiteralInterpolatedString
 	LiteralExpressionString
 	LiteralMultilineString
+	LiteralRegex
 )
 
 // Subtypes for Identifier
@@ -82,6 +83,7 @@ func (t *Token) SpanString() string {
 	return t.Span.SpanString()
 }
 
+// Based on the closing quote character.
 func (t *Token) QuoteWord() string {
 	if t.QuoteRune == '"' {
 		return "double"
@@ -89,6 +91,8 @@ func (t *Token) QuoteWord() string {
 		return "single"
 	} else if t.QuoteRune == '`' {
 		return "backtick"
+	} else if t.QuoteRune == '»' {
+		return "chevron"
 	} else {
 		return "undefined"
 	}
@@ -158,6 +162,36 @@ func (t *Token) IsMacro() bool {
 		return false
 	}
 	return t1.Type == Sign && t1.SubType == SignForce
+}
+
+func (t *Token) IsTaggedString() bool {
+	return t.IsTagged(LiteralString)
+}
+
+func (t *Token) IsTaggedInterpolatedString() bool {
+	return t.IsTagged(LiteralInterpolatedString)
+}
+
+func (t *Token) IsTaggedMultilineString() bool {
+	return t.IsTagged(LiteralMultilineString)
+}
+
+func (t *Token) IsTagged(subtype uint8) bool {
+	if t.Type != Identifier || t.FollowedByWhitespace {
+		return false
+	}
+	t1 := t.NextToken
+	if t1 == nil || (t1.Type != Literal || (t1.SubType != LiteralString && t1.SubType != subtype)) {
+		return false
+	}
+	if t.FollowedByWhitespace {
+		return false
+	}
+	return true
+}
+
+func (t *Token) IsStringToken() bool {
+	return t.Type == Literal && (t.SubType == LiteralString || t.SubType == LiteralInterpolatedString || t.SubType == LiteralMultilineString)
 }
 
 func (t *Token) SetSeen(tokenizer *Tokenizer, seen bool) {

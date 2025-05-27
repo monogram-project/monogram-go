@@ -40,13 +40,13 @@ func TestAST(t *testing.T) {
 	// Load the YAML file - we run from ./mg
 	data, err := os.ReadFile("../functests/xml-tests.yaml")
 	if err != nil {
-		t.Fatalf("Failed to read YAML file: %v", err)
+		t.Errorf("Failed to read YAML file: %v", err)
 	}
 
 	// Parse the YAML file
 	var testFile TestFile
 	if err := yaml.Unmarshal(data, &testFile); err != nil {
-		t.Fatalf("Failed to parse YAML file: %v", err)
+		t.Errorf("Failed to parse YAML file: %v", err)
 	}
 
 	// Iterate over test cases

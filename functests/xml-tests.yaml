@@ -161,119 +161,6 @@ tests:
         <number decimal="72" value="0t10Te+2" />
       </unit>
 
-  - name: "Simple string"
-    command: "{command} --format xml --indent 2"
-    input: |
-      "Hello, world!\n"
-    expected_output: |
-      <unit>
-        <string quote="double" value="Hello, world!&#xA;"/>
-      </unit>
-
-  - name: "Interpolations"
-    command: "{command} --format xml --indent 2"
-    input: |
-      "Hello, \(name)! It's a great \{dayOfWeek}!"
-    expected_output: |
-      <unit>
-        <join quote="double">
-          <string quote="double" value="Hello, "/>
-          <interpolation kind="parentheses">
-            <identifier name="name"/>
-          </interpolation>
-          <string quote="double" value="! It's a great "/>
-          <interpolation kind="braces">
-            <identifier name="dayOfWeek"/>
-          </interpolation>
-          <string quote="double" value="!"/>
-        </join>
-      </unit>
-
-  - name: "Raw string"
-    command: "{command} --format xml --indent 2"
-    input: |
-      \"Hello, world!\n"
-    expected_output: |
-      <unit>
-        <string quote="double" value="Hello, world!\n"/>
-      </unit>
-
-  - name: "Multiline string"
-    command: "{command} --format xml --indent 2"
-    input: |
-      """
-      Hello, world!\_
-          This is a test.
-      And this is another line.
-      """
-    expected_output: |
-      <unit>
-        <joinlines quote="double" specifier="">
-          <string quote="double" value="Hello, world!"/>
-          <string quote="double" value="    This is a test."/>
-          <string quote="double" value="And this is another line."/>
-        </joinlines>
-      </unit>
-
-  - name: "Multiline string with interpolations"
-    command: "{command} --format xml --indent 2"
-    input: |
-      """
-      Hello, world!\_
-          This is a \{test.example}.
-      And this is another line.
-      """
-    expected_output: |
-      <unit>
-        <joinlines quote="double" specifier="">
-          <string quote="double" value="Hello, world!"/>
-          <join quote="double">
-            <string quote="double" value="    This is a "/>
-            <interpolation kind="braces">
-              <get name="example">
-                <identifier name="test"/>
-              </get>
-            </interpolation>
-            <string quote="double" value="."/>
-          </join>
-          <string quote="double" value="And this is another line."/>
-        </joinlines>
-      </unit>
-
-  - name: "Raw Multiline string"
-    command: "{command} --format xml --indent 2"
-    input: |
-      \"""
-      Hello, world!\_
-          This is a test.
-      And this is another line.
-      """
-    expected_output: |
-      <unit>
-        <joinlines quote="double" specifier="">
-          <string quote="double" value="Hello, world!\_"/>
-          <string quote="double" value="    This is a test."/>
-          <string quote="double" value="And this is another line."/>
-        </joinlines>
-      </unit>
-
-  - name: "Multiline string with specifier"
-    command: "{command} --format xml --indent 2"
-    input: |
-      """txt
-      Hello, world!\_
-          This is a test.
-      And this is another line.
-      """
-    expected_output: |
-      <unit>
-        <joinlines quote="double" specifier="txt">
-          <string quote="double" value="Hello, world!"/>
-          <string quote="double" value="    This is a test."/>
-          <string quote="double" value="And this is another line."/>
-        </joinlines>
-      </unit>
-
   - name: "Factorial example"
     command: "{command} --format xml --one --default-breaker more"
     input: |
@@ -286,7 +173,7 @@ tests:
           endif
       enddef
     expected_output: |
-      <form syntax="surround">
+      <form separator="undefined" syntax="surround">
         <part keyword="def">
           <apply kind="parentheses" separator="undefined">
             <identifier name="f"/>
@@ -296,7 +183,7 @@ tests:
           </apply>
         </part>
         <part keyword="more">
-          <form syntax="surround">
+          <form separator="undefined" syntax="surround">
             <part keyword="if">
               <operator name="&lt;=" syntax="infix">
                 <identifier name="n"/>
@@ -336,7 +223,7 @@ tests:
       block 1; 2 endblock
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="semicolon" syntax="surround">
           <part keyword="block">
             <number value="1"/>
             <number value="2"/>
@@ -350,7 +237,7 @@ tests:
       block 1; 2; endblock
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="semicolon" syntax="surround">
           <part keyword="block">
             <number value="1"/>
             <number value="2"/>
@@ -380,7 +267,7 @@ tests:
       endblock
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="newline" syntax="surround">
           <part keyword="block">
             <number value="1"/>
             <number value="2"/>
@@ -397,7 +284,7 @@ tests:
       endblock
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="semicolon" syntax="surround">
           <part keyword="block">
             <number value="1"/>
             <number value="2"/>
@@ -411,7 +298,7 @@ tests:
       return!
     expected_output: |
       <unit>
-        <form syntax="prefix">
+        <form separator="undefined" syntax="prefix">
           <part keyword="return" />
         </form>
       </unit>
@@ -422,7 +309,7 @@ tests:
       return! 99
     expected_output: |
       <unit>
-        <form syntax="prefix">
+        <form separator="undefined" syntax="prefix">
           <part keyword="return">
             <number value="99"/>
           </part>
@@ -435,7 +322,7 @@ tests:
       while! (x) { (x, t) = f(x)}
     expected_output: |
       <unit>
-        <form syntax="prefix">
+        <form separator="undefined" syntax="prefix">
           <part keyword="while">
             <delimited kind="parentheses" separator="undefined">
               <identifier name="x"/>
@@ -467,7 +354,7 @@ tests:
       foo! 99 88 77
     expected_output: |
       <unit>
-        <form syntax="prefix">
+        <form separator="undefined" syntax="prefix">
           <part keyword="foo">
             <number value="99"/>
           </part>
@@ -486,7 +373,7 @@ tests:
       foo endfoo
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="undefined" syntax="surround">
           <part keyword="foo" />
         </form>
       </unit>
@@ -497,7 +384,7 @@ tests:
       foo x mylabel: endfoo
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="undefined" syntax="surround">
           <part keyword="foo">
             <identifier name="x"/>
           </part>
@@ -512,12 +399,12 @@ tests:
     expected_output: |
       <unit>
         <delimited kind="braces" separator="semicolon">
-          <form syntax="prefix">
+          <form separator="undefined" syntax="prefix">
             <part keyword="print">
               <identifier name="x"/>
             </part>
           </form>
-          <form syntax="prefix">
+          <form separator="undefined" syntax="prefix">
             <part keyword="return">
               <number value="0"/>
             </part>
@@ -533,7 +420,7 @@ tests:
       endif
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="undefined" syntax="surround">
           <part keyword="if">
             <identifier name="x" />
           </part>
@@ -554,7 +441,7 @@ tests:
       endfoo
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="undefined" syntax="surround">
           <part keyword="foo">
             <delimited kind="braces" separator="comma">
               <operator name=":" syntax="infix">
@@ -581,9 +468,9 @@ tests:
       endfoo
     expected_output: |
       <unit>
-        <form syntax="surround">
+        <form separator="undefined" syntax="surround">
           <part keyword="foo">
-            <delimited kind="braces" separator="semicolon">
+            <delimited kind="braces" separator="newline">
               <operator name="=" syntax="infix">
                 <identifier name="a" />
                 <identifier name="b" />
@@ -593,6 +480,235 @@ tests:
                 <identifier name="y" />
               </operator>
             </delimited>
+          </part>
+        </form>
+      </unit>
+
+  - name: "Uniform handling of separators - parentheses"
+    command: "{command} --format xml --indent 2"
+    input: |
+      ()
+      (x)
+      (x,)
+      (x;)
+      (x
+      )
+      (x, y)
+      (x, y,)
+      (x; y)
+      (x; y;)
+      (x
+      y)
+    expected_output: |
+      <unit>
+        <delimited kind="parentheses" separator="undefined" />
+        <delimited kind="parentheses" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="parentheses" separator="comma">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="parentheses" separator="semicolon">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="parentheses" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="parentheses" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="parentheses" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="parentheses" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="parentheses" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="parentheses" separator="newline">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+      </unit>
+
+  - name: "Uniform handling of separators - brackets"
+    command: "{command} --format xml --indent 2"
+    input: |
+      []
+      [x]
+      [x,]
+      [x;]
+      [x
+      ]
+      [x, y]
+      [x, y,]
+      [x; y]
+      [x; y;]
+      [x
+      y]
+    expected_output: |
+      <unit>
+        <delimited kind="brackets" separator="undefined" />
+        <delimited kind="brackets" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="brackets" separator="comma">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="brackets" separator="semicolon">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="brackets" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="brackets" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="brackets" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="brackets" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="brackets" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="brackets" separator="newline">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+      </unit>
+
+  - name: "Uniform handling of separators - braces"
+    command: "{command} --format xml --indent 2"
+    input: |
+      {}
+      {x}
+      {x,}
+      {x;}
+      {x
+      }
+      {x, y}
+      {x, y,}
+      {x; y}
+      {x; y;}
+      {x
+      y}
+    expected_output: |
+      <unit>
+        <delimited kind="braces" separator="undefined" />
+        <delimited kind="braces" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="braces" separator="comma">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="braces" separator="semicolon">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="braces" separator="undefined">
+          <identifier name="x" />
+        </delimited>
+        <delimited kind="braces" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="braces" separator="comma">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="braces" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="braces" separator="semicolon">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+        <delimited kind="braces" separator="newline">
+          <identifier name="x" />
+          <identifier name="y" />
+        </delimited>
+      </unit>
+
+
+  - name: "Uniform handling of separators - braces"
+    command: "{command} --format xml --indent 2"
+    input: |
+      foo  endfoo 
+      foo x endfoo 
+      foo x, endfoo 
+      foo x; endfoo 
+      foo x
+      endfoo 
+      foo x, y endfoo 
+      foo x, y, endfoo 
+      foo x; y endfoo 
+      foo x; y; endfoo 
+      foo x
+      y endfoo 
+    expected_output: |
+      <unit>
+        <form separator="undefined" syntax="surround">
+          <part keyword="foo" />
+        </form>
+        <form separator="undefined" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form separator="comma" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form separator="semicolon" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form separator="undefined" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form separator="comma" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+        <form separator="comma" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+        <form separator="semicolon" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+        <form separator="semicolon" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
+          </part>
+        </form>
+        <form separator="newline" syntax="surround">
+          <part keyword="foo">
+            <identifier name="x" />
+            <identifier name="y" />
           </part>
         </form>
       </unit>

@@ -184,9 +184,10 @@ func (n *JoinLinesNode) FromTo() string {
 //-- Join ----------------------------------------------------------------------
 
 type JoinNode struct {
-	Quote    string    `json:"quote"`
-	Span     string    `json:"span"`
-	Elements []Element `json:"elements"`
+	Quote     string    `json:"quote"`
+	Span      string    `json:"span"`
+	Specifier string    `json:"specifier"`
+	Elements  []Element `json:"elements"`
 }
 
 func (n *JoinNode) Name() string {
@@ -198,6 +199,8 @@ func (n *JoinNode) GetOption(name string) string {
 		return n.Quote
 	} else if name == OptionSpan {
 		return n.Span
+	} else if name == OptionSpecifier {
+		return n.Specifier
 	}
 	return ""
 }
@@ -207,15 +210,17 @@ func (n *JoinNode) SetOption(name string, value string) {
 		n.Quote = value
 	} else if name == OptionSpan {
 		n.Span = value
+	} else if name == OptionSpecifier {
+		n.Specifier = value
 	}
 }
 
 func (n *JoinNode) HasOption(name string) bool {
-	return name == OptionQuote || name == OptionSpan
+	return name == OptionQuote || name == OptionSpan || name == OptionSpecifier
 }
 
 func (n *JoinNode) Options() Iterator[string] {
-	return NewItemsIterator(OptionQuote, OptionSpan)
+	return NewItemsIterator(OptionQuote, OptionSpan, OptionSpecifier)
 }
 
 func (n *JoinNode) Children() Iterator[Element] {
@@ -839,9 +844,10 @@ func (n *PrefixOperatorNode) FromTo() string {
 // -- StringNode ---------------------------------------------------------------
 
 type StringNode struct {
-	Value string `json:"value"`
-	Quote string `json:"quote"`
-	Span  string `json:"span"`
+	Value     string `json:"value"`
+	Quote     string `json:"quote"`
+	Span      string `json:"span"`
+	Specifier string `json:"specifier"`
 }
 
 func (n *StringNode) Name() string {
@@ -855,6 +861,8 @@ func (n *StringNode) GetOption(name string) string {
 		return n.Quote
 	} else if name == OptionSpan {
 		return n.Span
+	} else if name == OptionSpecifier {
+		return n.Specifier
 	}
 	return ""
 }
@@ -866,15 +874,17 @@ func (n *StringNode) SetOption(name string, value string) {
 		n.Quote = value
 	} else if name == OptionSpan {
 		n.Span = value
+	} else if name == OptionSpecifier {
+		n.Specifier = value
 	}
 }
 
 func (n *StringNode) HasOption(name string) bool {
-	return name == OptionValue || name == OptionSyntax || name == OptionSpan
+	return name == OptionValue || name == OptionSyntax || name == OptionSpan || name == OptionSpecifier
 }
 
 func (n *StringNode) Options() Iterator[string] {
-	return NewItemsIterator(OptionValue, OptionSyntax, OptionSpan)
+	return NewItemsIterator(OptionValue, OptionSyntax, OptionSpan, OptionSpecifier)
 }
 
 func (n *StringNode) Children() Iterator[Element] {
@@ -1060,9 +1070,10 @@ func (node *Node) ToElement() (Element, error) {
 		}, nil
 	case NameString:
 		return &StringNode{
-			Value: node.Options[OptionValue],
-			Quote: node.Options[OptionSyntax],
-			Span:  node.Options[OptionSpan],
+			Value:     node.Options[OptionValue],
+			Quote:     node.Options[OptionSyntax],
+			Span:      node.Options[OptionSpan],
+			Specifier: node.Options[OptionSpecifier],
 		}, nil
 	case NameJoin:
 		kids, err := AllToElement(node.Children)
@@ -1070,9 +1081,10 @@ func (node *Node) ToElement() (Element, error) {
 			return nil, err
 		}
 		return &JoinNode{
-			Quote:    node.Options[OptionQuote],
-			Span:     node.Options[OptionSpan],
-			Elements: kids,
+			Quote:     node.Options[OptionQuote],
+			Span:      node.Options[OptionSpan],
+			Specifier: node.Options[OptionSpecifier],
+			Elements:  kids,
 		}, nil
 	case NameJoinLines:
 		kids, err := AllToElement(node.Children)
