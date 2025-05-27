@@ -17,6 +17,36 @@ tests:
         <string specifier="" quote="chevron" value="Hello, world!&#xA;"/>
       </unit>
 
+  - name: "Simple strings with empty tags"
+    command: "{command} --format xml --indent 2"
+    input: |
+      ."Hello, world!\n"
+      .'Hello, world!\n'
+      .`Hello, world!\n`
+      .«Hello, world!\n»
+    expected_output: |
+      <unit>
+        <string specifier="" quote="double" value="Hello, world!&#xA;"/>
+        <string specifier="" quote="single" value="Hello, world!&#xA;"/>
+        <string specifier="" quote="backtick" value="Hello, world!&#xA;"/>
+        <string specifier="" quote="chevron" value="Hello, world!&#xA;"/>
+      </unit>
+
+  - name: "Simple strings with non-empty tags"
+    command: "{command} --format xml --indent 2"
+    input: |
+      .md"Hello, world!\n"
+      .md'Hello, world!\n'
+      .md`Hello, world!\n`
+      .md«Hello, world!\n»
+    expected_output: |
+      <unit>
+        <string specifier="md" quote="double" value="Hello, world!&#xA;"/>
+        <string specifier="md" quote="single" value="Hello, world!&#xA;"/>
+        <string specifier="md" quote="backtick" value="Hello, world!&#xA;"/>
+        <string specifier="md" quote="chevron" value="Hello, world!&#xA;"/>
+      </unit>
+
   - name: "Interpolations"
     command: "{command} --format xml --indent 2"
     input: |
@@ -36,7 +66,7 @@ tests:
         </join>
       </unit>
 
-  - name: "Raw string"
+  - name: "Raw string with empty tags"
     command: "{command} --format xml --indent 2"
     input: |
       @"Hello, world!\n"
@@ -64,7 +94,7 @@ tests:
         <string specifier="txt" quote="single" value="Hello, world!\n"/>
         <string specifier="txt" quote="backtick" value="Hello, world!\n"/>
         <string specifier="txt" quote="chevron" value="Hello, world!\n"/>
-      </unit>  
+      </unit>
 
   - name: "Multiline string"
     command: "{command} --format xml --indent 2"
@@ -108,7 +138,7 @@ tests:
         </joinlines>
       </unit>
 
-  - name: "Raw Multiline string"
+  - name: "Raw Multiline string with empty tag"
     command: "{command} --format xml --indent 2"
     input: |
       @"""
@@ -125,7 +155,7 @@ tests:
         </joinlines>
       </unit>
 
-  - name: "Multiline string with specifier"
+  - name: "Multiline string with trailing tag"
     command: "{command} --format xml --indent 2"
     input: |
       """txt
@@ -141,3 +171,58 @@ tests:
           <string specifier="" quote="double" value="And this is another line."/>
         </joinlines>
       </unit>
+
+  - name: "Multiline string with leading non-empty tag"
+    command: "{command} --format xml --indent 2"
+    input: |
+      .txt"""
+      Hello, world!\_
+          This is a test.
+      And this is another line.
+      """
+    expected_output: |
+      <unit>
+        <joinlines quote="double" specifier="txt">
+          <string specifier="" quote="double" value="Hello, world!"/>
+          <string specifier="" quote="double" value="    This is a test."/>
+          <string specifier="" quote="double" value="And this is another line."/>
+        </joinlines>
+      </unit>
+
+  - name: "Multiline string with leading empty tag"
+    command: "{command} --format xml --indent 2"
+    input: |
+      ."""
+      Hello, world!\_
+          This is a test.
+      And this is another line.
+      """
+    expected_output: |
+      <unit>
+        <joinlines quote="double" specifier="">
+          <string specifier="" quote="double" value="Hello, world!"/>
+          <string specifier="" quote="double" value="    This is a test."/>
+          <string specifier="" quote="double" value="And this is another line."/>
+        </joinlines>
+      </unit>
+
+  - name: "Multiline string with leading and trailing tags that disagree"
+    command: "{command} --format xml --indent 2"
+    input: |
+      .txt"""md
+      Hello, world!\_
+          This is a test.
+      And this is another line.
+      """
+    expected_exit_status: 1
+
+  - name: "Raw multiline string with leading and trailing tags that disagree"
+    command: "{command} --format xml --indent 2"
+    input: |
+      @txt"""md
+      Hello, world!\_
+          This is a test.
+      And this is another line.
+      """
+    expected_exit_status: 1
+

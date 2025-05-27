@@ -671,10 +671,17 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 					if err != nil {
 						return nil, err
 					}
+					existing_specifier := multilineNode.Options[OptionSpecifier]
+					if existing_specifier != ValueBlank && likely_tag_token.Text != "" && existing_specifier != likely_tag_token.Text {
+						return nil, fmt.Errorf("conflicting specifiers for multiline string: %s vs %s", existing_specifier, likely_tag_token.Text)
+					}
 					multilineNode.Options[OptionSpecifier] = likely_tag_token.Text
+					return multilineNode, nil
 				} else {
 					return nil, fmt.Errorf("unexpected token following dot: %s", likely_string_token.Text)
 				}
+			} else {
+				return nil, fmt.Errorf("leading-dot followed by whitespace: %s", token.Text)
 			}
 		} else if token.SubType != SignLabel {
 			// This is a prefix operator.

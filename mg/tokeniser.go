@@ -9,12 +9,6 @@ import (
 	"unicode/utf8"
 )
 
-type TokenizerError struct {
-	Message string `json:"message"`
-	Line    int    `json:"line"`
-	Column  int    `json:"column"`
-}
-
 type Tokenizer struct {
 	input        string   // The input string to tokenize
 	tokens       []*Token // The array of tokens generated
@@ -254,7 +248,7 @@ func (t *Tokenizer) newTokenLineCol(tokenType TokenType, subType uint8, text str
 	}
 }
 
-func (t *Tokenizer) tokenize() *TokenizerError {
+func (t *Tokenizer) tokenize() *MonogramError {
 	for t.hasMoreInput() {
 		r, _ := t.peek()
 		seen := t.NewlineSeen
@@ -378,21 +372,28 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 			if ok && isOpeningQuoteChar(r) {
 				_, is_triple := t.tryPeekTripleOpeningQuotes()
 				var token *Token
-				var terr *TokenizerError
+				var terr *MonogramError
 				if is_triple {
 					token, terr = t.readMultilineString(true)
 				} else {
-					token, terr = t.readRawString(false, r, ValueBlank)
+					token, terr = t.readRawString(false, r)
 				}
 				if terr != nil {
 					return terr
 				}
-				if token.Specifier == "" {
+				if token.Specifier != "" && tagText != "" && token.Specifier != tagText {
+					return &MonogramError{
+						Message: fmt.Sprintf("Tag specifier '%s' does not match existing specifier '%s'", tagText, token.Specifier),
+						Line:    t.lineNo,
+						Column:  t.colNo,
+					}
+				}
+				if tagText != "" {
 					token.Specifier = tagText
 				}
 				token.SetSeen(t, seen) // Process as a raw string
 			} else {
-				return &TokenizerError{
+				return &MonogramError{
 					Message: fmt.Sprintf("Expected opening quote after '@%s'", tagText),
 					Line:    t.lineNo,
 					Column:  t.colNo,
@@ -411,12 +412,12 @@ func (t *Tokenizer) tokenize() *TokenizerError {
 		}
 
 		// Discard unexpected characters
-		return &TokenizerError{Message: fmt.Sprintf("Unexpected character (@401): %c", r), Line: t.lineNo, Column: t.colNo}
+		return &MonogramError{Message: fmt.Sprintf("Unexpected character (@401): %c", r), Line: t.lineNo, Column: t.colNo}
 	}
 	return nil
 }
 
-func (t *Tokenizer) readRegexLiteral() *TokenizerError {
+func (t *Tokenizer) readRegexLiteral() *MonogramError {
 	t.consume() // Consume the '⫽' character
 	txt, err := t.readToRune('⫽')
 	if err != nil {
@@ -436,7 +437,7 @@ func (t *Tokenizer) isSign(r rune) bool {
 	return strings.ContainsRune(signChars, r)
 }
 
-func (t *Tokenizer) readToRune(target rune) (string, *TokenizerError) {
+func (t *Tokenizer) readToRune(target rune) (string, *MonogramError) {
 	// Read characters until the target rune is found or end of line/input.
 	var text strings.Builder
 	for t.hasMoreInput() {
@@ -446,11 +447,11 @@ func (t *Tokenizer) readToRune(target rune) (string, *TokenizerError) {
 			return text.String(), nil
 		}
 		if r == '\n' || r == '\r' {
-			return "", &TokenizerError{Message: "Unexpected newline while reading to rune", Line: t.lineNo, Column: t.colNo}
+			return "", &MonogramError{Message: "Unexpected newline while reading to rune", Line: t.lineNo, Column: t.colNo}
 		}
 		text.WriteRune(t.consume()) // Consume the current character
 	}
-	return "", &TokenizerError{Message: fmt.Sprintf("End of input reached before finding rune %c", target), Line: t.lineNo, Column: t.colNo}
+	return "", &MonogramError{Message: fmt.Sprintf("End of input reached before finding rune %c", target), Line: t.lineNo, Column: t.colNo}
 }
 
 func (t *Tokenizer) readSign() *Token {
@@ -562,13 +563,13 @@ func (t *Tokenizer) tryPeekTripleQuotes(is_opening bool) (rune, bool) {
 	return r1, true // Successfully read triple quotes
 }
 
-func (t *Tokenizer) consumeTripleClosingQuotes(quote rune) *TokenizerError {
+func (t *Tokenizer) consumeTripleClosingQuotes(quote rune) *MonogramError {
 	r, b := t.tryReadTripleClosingQuotes()
 	if !b {
-		return &TokenizerError{Message: "Missing triple quotes", Line: t.lineNo, Column: t.colNo}
+		return &MonogramError{Message: "Missing triple quotes", Line: t.lineNo, Column: t.colNo}
 	}
 	if r != quote {
-		return &TokenizerError{Message: fmt.Sprintf("Expected %c, but found %c", quote, r), Line: t.lineNo, Column: t.colNo}
+		return &MonogramError{Message: fmt.Sprintf("Expected %c, but found %c", quote, r), Line: t.lineNo, Column: t.colNo}
 	}
 	return nil
 }
@@ -609,7 +610,7 @@ func (t *Tokenizer) skipSpacesUpToNewline() {
 }
 
 // Method to ensure there are no non-whitespace characters on the same line
-func (t *Tokenizer) ensureRestOfLineIsWhitespace() *TokenizerError {
+func (t *Tokenizer) ensureRestOfLineIsWhitespace() *MonogramError {
 	// Check for non-whitespace characters on the same line
 	for t.hasMoreInput() {
 		r, _ := t.peek()
@@ -628,7 +629,7 @@ func (t *Tokenizer) ensureRestOfLineIsWhitespace() *TokenizerError {
 			break
 		}
 		if !unicode.IsSpace(r) {
-			return &TokenizerError{Message: "Opening triple quote must be on its own line", Line: t.lineNo, Column: t.colNo}
+			return &MonogramError{Message: "Opening triple quote must be on its own line", Line: t.lineNo, Column: t.colNo}
 		}
 		t.consume() // Consume the current character
 	}
@@ -636,7 +637,7 @@ func (t *Tokenizer) ensureRestOfLineIsWhitespace() *TokenizerError {
 }
 
 // Method to read the specifier of a multi-line string / code-fence.
-func (t *Tokenizer) readSpecifier() (string, *TokenizerError) {
+func (t *Tokenizer) readSpecifier() (string, *MonogramError) {
 	// Read all the characters until a newline or end of input.
 	var text strings.Builder
 	for t.hasMoreInput() {
@@ -651,14 +652,14 @@ func (t *Tokenizer) readSpecifier() (string, *TokenizerError) {
 	}
 	strtext := strings.TrimSpace(text.String())
 	if strings.Contains(strtext, " ") {
-		return "", &TokenizerError{Message: "Spaces inside code-fence specifier", Line: t.lineNo, Column: t.colNo}
+		return "", &MonogramError{Message: "Spaces inside code-fence specifier", Line: t.lineNo, Column: t.colNo}
 	}
 	//  Check the specifier matches the regex ^\w*$. This reserves wriggle room
 	//  for future expansion.
 	if len(strtext) > 0 {
 		m, e := regexp.MatchString(`^[a-zA-Z_]\w*$`, strtext)
 		if !m || e != nil {
-			return "", &TokenizerError{Message: "Invalid code-fence specifier", Line: t.lineNo, Column: t.colNo}
+			return "", &MonogramError{Message: "Invalid code-fence specifier", Line: t.lineNo, Column: t.colNo}
 		}
 	}
 	return strtext, nil
@@ -698,13 +699,13 @@ func textIsWhitespaceFollowedBy3Quotes(text string, quote rune) (bool, string) {
 	return false, ""
 }
 
-func (t *Tokenizer) findClosingIndent() (rune, string, string, int, *TokenizerError) {
+func (t *Tokenizer) findClosingIndent() (rune, string, string, int, *MonogramError) {
 	t.markPosition()
 
 	// Validate and consume the opening triple quotes
 	opening_quote, ok := t.tryReadTripleOpeningQuotes()
 	if !ok {
-		return 0, "", "", 0, &TokenizerError{Message: "Malformed opening triple quotes", Line: t.lineNo, Column: t.colNo}
+		return 0, "", "", 0, &MonogramError{Message: "Malformed opening triple quotes", Line: t.lineNo, Column: t.colNo}
 	}
 	closing_quote := getMatchingCloseQuote(opening_quote) // Get the matching closing quote
 
@@ -729,7 +730,7 @@ func (t *Tokenizer) findClosingIndent() (rune, string, string, int, *TokenizerEr
 	}
 
 	if !match {
-		return 0, "", "", 0, &TokenizerError{Message: "Closing triple quote not found", Line: t.lineNo, Column: t.colNo}
+		return 0, "", "", 0, &MonogramError{Message: "Closing triple quote not found", Line: t.lineNo, Column: t.colNo}
 	}
 
 	for i, line := range lines {
@@ -739,7 +740,7 @@ func (t *Tokenizer) findClosingIndent() (rune, string, string, int, *TokenizerEr
 		}
 		// Check if the line starts with the closing indent
 		if !strings.HasPrefix(line, closingIndent) {
-			return 0, "", "", 0, &TokenizerError{
+			return 0, "", "", 0, &MonogramError{
 				Message: "not indented consistently with the closing triple quote",
 				Line:    startLine + i,
 				Column:  startCol,
@@ -765,7 +766,7 @@ func (t *Tokenizer) readRestOfLine() string {
 	return text.String()
 }
 
-func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) {
+func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *MonogramError) {
 	startLine, startCol := t.lineNo, t.colNo
 	var subTokens []*Token
 
@@ -783,7 +784,7 @@ func (t *Tokenizer) readMultilineString(rawFlag bool) (*Token, *TokenizerError) 
 	for range nlines {
 		if t.tryConsumeText(closingIndent) {
 			if rawFlag {
-				t.readRawString(true, openingQuote, ValueBlank)
+				t.readRawString(true, openingQuote)
 			} else {
 				t.readString(true, openingQuote)
 			}
@@ -859,7 +860,7 @@ func getMatchingCloseQuote(openingQuote rune) rune {
 	return openingQuote // For other quotes, return the same character
 }
 
-func (t *Tokenizer) readRawString(unquoted bool, default_quote rune, specifier string) (*Token, *TokenizerError) {
+func (t *Tokenizer) readRawString(unquoted bool, default_quote rune) (*Token, *MonogramError) {
 	startLine, startCol := t.lineNo, t.colNo
 	quote := default_quote
 	if !unquoted {
@@ -869,7 +870,7 @@ func (t *Tokenizer) readRawString(unquoted bool, default_quote rune, specifier s
 
 	for {
 		if !t.hasMoreInput() {
-			return nil, &TokenizerError{Message: "Unterminated raw string", Line: startLine, Column: startCol}
+			return nil, &MonogramError{Message: "Unterminated raw string", Line: startLine, Column: startCol}
 		}
 		r := t.consume()
 		if r == quote { // Closing quote found
@@ -881,7 +882,7 @@ func (t *Tokenizer) readRawString(unquoted bool, default_quote rune, specifier s
 				}
 				break
 			}
-			return nil, &TokenizerError{Message: "Line break in raw string", Line: startLine, Column: startCol}
+			return nil, &MonogramError{Message: "Line break in raw string", Line: startLine, Column: startCol}
 		}
 		// Backslashes are treated as normal characters in raw strings
 		text.WriteRune(r)
@@ -889,12 +890,11 @@ func (t *Tokenizer) readRawString(unquoted bool, default_quote rune, specifier s
 
 	// Add the raw string token
 	token := t.addToken(Literal, LiteralString, text.String(), startLine, startCol)
-	token.Specifier = specifier
 	token.QuoteRune = quote
 	return token, nil
 }
 
-func (t *Tokenizer) readString(unquoted bool, default_quote rune) (*Token, *TokenizerError) {
+func (t *Tokenizer) readString(unquoted bool, default_quote rune) (*Token, *MonogramError) {
 	startLine, startCol := t.lineNo, t.colNo
 	currSpan := Span{startLine, startCol, -1, -1}
 	quote := default_quote
@@ -906,7 +906,7 @@ func (t *Tokenizer) readString(unquoted bool, default_quote rune) (*Token, *Toke
 
 	for {
 		if !t.hasMoreInput() {
-			return nil, &TokenizerError{Message: "Unterminated string", Line: startLine, Column: startCol}
+			return nil, &MonogramError{Message: "Unterminated string", Line: startLine, Column: startCol}
 		}
 		r := t.consume()
 		if !unquoted && r == quote { // Closing quote found
@@ -939,7 +939,7 @@ func (t *Tokenizer) readString(unquoted bool, default_quote rune) (*Token, *Toke
 				}
 				break
 			}
-			return nil, &TokenizerError{Message: "Line break in string", Line: startLine, Column: startCol}
+			return nil, &MonogramError{Message: "Line break in string", Line: startLine, Column: startCol}
 		} else {
 			text.WriteRune(r)
 		}
@@ -966,7 +966,7 @@ func (t *Tokenizer) readString(unquoted bool, default_quote rune) (*Token, *Toke
 	return compoundToken, nil
 }
 
-func (t *Tokenizer) readStringInterpolation() (*Token, *TokenizerError) {
+func (t *Tokenizer) readStringInterpolation() (*Token, *MonogramError) {
 	span := Span{t.lineNo, t.colNo, -1, -1}
 	state := 0       // State 0: inside expression, State 1: inside string
 	var stack []rune // Pushdown stack
@@ -977,7 +977,7 @@ func (t *Tokenizer) readStringInterpolation() (*Token, *TokenizerError) {
 
 	for {
 		if !t.hasMoreInput() {
-			return nil, &TokenizerError{Message: "Unterminated interpolation", Line: span.StartLine, Column: span.StartColumn}
+			return nil, &MonogramError{Message: "Unterminated interpolation", Line: span.StartLine, Column: span.StartColumn}
 		}
 		r := t.consume()
 		switch state {
@@ -997,13 +997,13 @@ func (t *Tokenizer) readStringInterpolation() (*Token, *TokenizerError) {
 						return token, nil
 					}
 				} else {
-					return nil, &TokenizerError{Message: "Mismatched bracket", Line: span.StartLine, Column: span.StartColumn}
+					return nil, &MonogramError{Message: "Mismatched bracket", Line: span.StartLine, Column: span.StartColumn}
 				}
 			case '"', '\'', '`', '«': // Enter string state
 				stack = append(stack, getMatchingCloseQuote(r))
 				state = 1
 			case 'r', '\n': // Line breaks are not allowed
-				return nil, &TokenizerError{Message: "Line break in interpolation", Line: t.lineNo, Column: t.colNo}
+				return nil, &MonogramError{Message: "Line break in interpolation", Line: t.lineNo, Column: t.colNo}
 			}
 		case 1: // Inside string
 			switch r {
@@ -1019,7 +1019,7 @@ func (t *Tokenizer) readStringInterpolation() (*Token, *TokenizerError) {
 						handleEscapeSequence(t)
 					}
 				} else {
-					return nil, &TokenizerError{Message: "Unterminated escape sequence", Line: span.StartLine, Column: span.StartColumn}
+					return nil, &MonogramError{Message: "Unterminated escape sequence", Line: span.StartLine, Column: span.StartColumn}
 				}
 			case stack[len(stack)-1]: // Matching closing quote
 				stack = stack[:len(stack)-1] // Pop stack
@@ -1118,7 +1118,7 @@ const (
 	NumericNonFinite
 )
 
-func (t *Tokenizer) readBase(startLine int, startCol int) (NumericCategory, int, *TokenizerError) {
+func (t *Tokenizer) readBase(startLine int, startCol int) (NumericCategory, int, *MonogramError) {
 	var base int = 10
 	var category NumericCategory = NumericBase
 	n, r1, r2, r3 := t.peek3()
@@ -1147,13 +1147,13 @@ func (t *Tokenizer) readBase(startLine int, startCol int) (NumericCategory, int,
 				// One digit radix.
 				base = int(r1 - '0')
 				if base <= 1 || base > 9 {
-					return category, 0, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
+					return category, 0, &MonogramError{Message: "Invalid number format", Line: startLine, Column: startCol}
 				}
 				t.discard2() // Consume the '\dr'
 			} else if n >= 3 && r3 == radixRune && unicode.IsDigit(r2) {
 				base = int(r1-'0')*10 + int(r2-'0')
 				if base <= 1 || base > 36 {
-					return category, 0, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
+					return category, 0, &MonogramError{Message: "Invalid number format", Line: startLine, Column: startCol}
 				}
 				t.discard2() // Consume the '\d\d'
 				t.consume()  // Consume the 'r'
@@ -1197,7 +1197,7 @@ func IsXDigit(r rune, category NumericCategory, base int) bool {
 	return err == nil
 }
 
-func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
+func (t *Tokenizer) readNumber() (*Token, *MonogramError) {
 	startLine, startCol := t.lineNo, t.colNo
 	start := t.pos
 
@@ -1220,18 +1220,18 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 		if t.tryConsumeRune('1') || t.tryConsumeRune('0') {
 			if t.tryConsumeRune('.') {
 				if t.consume() != '0' {
-					return nil, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
+					return nil, &MonogramError{Message: "Invalid number format", Line: startLine, Column: startCol}
 				}
 			}
 			r, b := t.peek()
 			if b && unicode.IsDigit(r) {
-				return nil, &TokenizerError{Message: "Invalid non-finite number", Line: startLine, Column: startCol}
+				return nil, &MonogramError{Message: "Invalid non-finite number", Line: startLine, Column: startCol}
 			}
 			text := t.input[start:t.pos]
 			token := t.addToken(Literal, LiteralNumber, text, startLine, startCol)
 			return token, nil
 		}
-		return nil, &TokenizerError{Message: "Invalid non-finite number", Line: startLine, Column: startCol}
+		return nil, &MonogramError{Message: "Invalid non-finite number", Line: startLine, Column: startCol}
 	}
 
 	hasDot := false
@@ -1269,7 +1269,7 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 		prev = r
 	}
 	if prev == '.' {
-		return nil, &TokenizerError{Message: "Floating point not followed by valid digit", Line: startLine, Column: startCol}
+		return nil, &MonogramError{Message: "Floating point not followed by valid digit", Line: startLine, Column: startCol}
 	}
 
 	// Now for any exponential notation.
@@ -1303,18 +1303,18 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 			}
 		} else {
 			// If no digits follow 'e' or 'E', it's an error.
-			return nil, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
+			return nil, &MonogramError{Message: "Invalid number format", Line: startLine, Column: startCol}
 		}
 	}
 
 	// If no runes were consumed or the only rune consumed was a sign, return an error.
 	if start == t.pos || (start == t.pos-1 && prev == '-') {
-		return nil, &TokenizerError{Message: "Invalid number format", Line: startLine, Column: startCol}
+		return nil, &MonogramError{Message: "Invalid number format", Line: startLine, Column: startCol}
 	}
 
 	r, b := t.peek()
 	if b && unicode.IsDigit(r) {
-		return nil, &TokenizerError{Message: "Invalid number with extra trailing digits", Line: startLine, Column: startCol}
+		return nil, &MonogramError{Message: "Invalid number with extra trailing digits", Line: startLine, Column: startCol}
 	}
 
 	text := t.input[start:t.pos]
@@ -1323,7 +1323,7 @@ func (t *Tokenizer) readNumber() (*Token, *TokenizerError) {
 	return token, nil
 }
 
-func (t *Tokenizer) readIdentifierSetSeen(seen bool) (*Token, *TokenizerError) {
+func (t *Tokenizer) readIdentifierSetSeen(seen bool) (*Token, *MonogramError) {
 	tok, err := t.readIdentifier()
 	if err != nil {
 		return tok, err
@@ -1332,7 +1332,7 @@ func (t *Tokenizer) readIdentifierSetSeen(seen bool) (*Token, *TokenizerError) {
 	return tok, nil
 }
 
-func (t *Tokenizer) readIdentifier() (*Token, *TokenizerError) {
+func (t *Tokenizer) readIdentifier() (*Token, *MonogramError) {
 	startLineCol := t.StartLineCol()
 	var text strings.Builder
 	var escSeen bool = false
@@ -1395,7 +1395,7 @@ func isClosingQuoteChar(r rune) bool {
 	return r == '\'' || r == '"' || r == '`' || r == '»'
 }
 
-func (t *Tokenizer) markReservedTokens() *TokenizerError {
+func (t *Tokenizer) markReservedTokens() *MonogramError {
 	ident_exists := make(map[string]bool)
 	is_reserved := make(map[string]bool) // A subset of ident_exists
 	for _, token := range t.tokens {
@@ -1414,7 +1414,7 @@ func (t *Tokenizer) markReservedTokens() *TokenizerError {
 		if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
 			if strings.HasPrefix(token.Text, "end") {
 				//return fmt.Errorf("cannot use %s as an opening keyword", token.Text)
-				return &TokenizerError{
+				return &MonogramError{
 					Message: fmt.Sprintf("cannot use '%s' as an opening keyword", token.Text),
 					Line:    token.Span.StartLine,
 					Column:  token.Span.StartColumn,
@@ -1454,7 +1454,7 @@ func (t *Tokenizer) chainTokens() {
 	}
 }
 
-func tokenizeInput(input string, colOffset int) ([]*Token, Span, *TokenizerError) {
+func tokenizeInput(input string, colOffset int) ([]*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
 	tokenizer := NewTokenizer(input)
 
