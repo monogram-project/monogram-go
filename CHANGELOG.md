@@ -6,20 +6,41 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 ### Changed
 
+- Raw strings are no longer marked with a leading `\`. Instead we have
+  adopted `@` to indicate raw-strings (c.f. C#). For an explanation see
+  [discussion on extensible literals](https://github.com/monogram-project/monogram/blob/main/docs/decisions/0020-extensible-literals/0020-extensible-literals.md). e.g. `@"To insert a tab type '\t' at the terminal."` 
+
 - The interior of forms and bracketed (delimited) expressions now all
   support commas, semi-colons and newlines as separators.
+  
+### Added
 
+- String can now use chevrons (guillemets) as alternative quotes e.g.
+  `«The quick brown \(animal) jumps over the lazy dog.»` See 
+  [non-ASCII characters in Monogram](https://github.com/monogram-project/monogram/blob/main/docs/decisions/0019-unicode-characters-beyond-ascii/0019-unicode-characters-beyond-ascii.md).
+
+- In-line raw strings can now be tagged as having a special meaning in the same
+  way as multi-line strings. In this case we use the space after the `@` to 
+  add the tag indicating what the string represents e.g. `@date«2025-05-27»`.
+
+- In-line normal (non-raw) strings also support tags. In this case they use
+  a leading `.` e.g. `.date«\(yyyy)-\(mm)-\(dd)»`
+
+- Regular expressions now have their own literal syntax e.g. `⫽ab.*yz⫽`. This
+  can be syntax checked with the new `--check-literals` option.
 
 ### Fixed
 
 - The add and minus signs are treated equally. Expressions such as `x+2` now
   work in the same way as `x-2`. Previous you would have needed to add
   spaces.
+
 - JSON can now be nested inside forms. Previously it would incorrectly give
   a syntax error.
 
 - The `^` character is now allowed in operators. It was always meant to be
   part of the base character set, analogous to the C language.
+
 
 ## [0.5.5] Bug Fixes
 
