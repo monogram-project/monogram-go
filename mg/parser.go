@@ -16,24 +16,24 @@ const (
 
 // Parser holds the list of tokens and our current reading position.
 type Parser struct {
-	tokens       []*Token
-	pos          int
-	UnglueOption *Token
-	IncludeSpans bool
-	Decimal      bool
-	RegexCheck   bool // Whether to check regex syntax.
-	Idents       map[string]HowIdentsAreUsed
+	tokens        []*Token
+	pos           int
+	UnglueOption  *Token
+	IncludeSpans  bool
+	Decimal       bool
+	CheckLiterals bool // Whether to check regex syntax.
+	Idents        map[string]HowIdentsAreUsed
 }
 
-func NewParser(tokens []*Token, defaultLabel string, includeSpans bool, decimal bool, checkRegex bool) *Parser {
+func NewParser(tokens []*Token, defaultLabel string, includeSpans bool, decimal bool, checkLiterals bool) *Parser {
 	return &Parser{
-		tokens:       tokens,
-		pos:          0,
-		UnglueOption: &Token{Type: Identifier, SubType: IdentifierVariable, Text: defaultLabel},
-		IncludeSpans: includeSpans,
-		Decimal:      decimal,
-		RegexCheck:   checkRegex,
-		Idents:       make(map[string]HowIdentsAreUsed),
+		tokens:        tokens,
+		pos:           0,
+		UnglueOption:  &Token{Type: Identifier, SubType: IdentifierVariable, Text: defaultLabel},
+		IncludeSpans:  includeSpans,
+		Decimal:       decimal,
+		CheckLiterals: checkLiterals,
+		Idents:        make(map[string]HowIdentsAreUsed),
 	}
 }
 
@@ -566,6 +566,9 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	case Literal:
 		switch token.SubType {
 		case LiteralString:
+			if token.Specifier == "re" && p.CheckLiterals && !isValidRegex(token.Text) {
+				return nil, fmt.Errorf("invalid regex: %s", token.Text)
+			}
 			return &Node{
 				Name: NameString,
 				Options: map[string]string{
@@ -592,7 +595,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 			return p.convertMultilineStringSubToken(token)
 
 		case LiteralRegex:
-			if p.RegexCheck && !isValidRegex(token.Text) {
+			if p.CheckLiterals && !isValidRegex(token.Text) {
 				return nil, fmt.Errorf("invalid regex: %s", token.Text)
 
 			}
@@ -860,8 +863,8 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 	return expressionNode, nil
 }
 
-func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includeSpans bool, decimal bool, checkRegex bool) ([]*Node, error) {
-	parser := NewParser(tokens, defaultLabel, includeSpans, decimal, checkRegex)
+func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includeSpans bool, decimal bool, checkLiterals bool) ([]*Node, error) {
+	parser := NewParser(tokens, defaultLabel, includeSpans, decimal, checkLiterals)
 	nodes := []*Node{}
 	for parser.hasNext() {
 		node, err := parser.readExpr(makeContext())
@@ -877,7 +880,7 @@ func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includ
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, defaultLabel string, include_spans bool, decodeNumbers bool, checkRegex bool, colOffset int) ([]*Node, Span, error) {
+func parseToASTArray(input string, limit bool, defaultLabel string, include_spans bool, decodeNumbers bool, checkLiterals bool, colOffset int) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
 	tokens, span, terr := tokenizeInput(input, colOffset)
 	if terr != nil {
@@ -885,7 +888,7 @@ func parseToASTArray(input string, limit bool, defaultLabel string, include_span
 	}
 
 	// Step 2: Parse the tokens into nodes
-	nodes, err := parseTokensToNodes(tokens, limit, defaultLabel, include_spans, decodeNumbers, checkRegex)
+	nodes, err := parseTokensToNodes(tokens, limit, defaultLabel, include_spans, decodeNumbers, checkLiterals)
 	if err != nil {
 		return nil, Span{}, err
 	}

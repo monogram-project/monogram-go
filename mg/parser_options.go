@@ -1,26 +1,26 @@
 package mg
 
 type ParserOptions struct {
-	colOffset    int
-	DefaultLabel string
-	IncludeSpans bool
-	Decimal      bool
-	CheckRegex   bool
+	colOffset     int
+	DefaultLabel  string
+	IncludeSpans  bool
+	Decimal       bool
+	CheckLiterals bool
 }
 
 func NewParserOptions() *ParserOptions {
 	return &ParserOptions{
-		colOffset:    0,
-		DefaultLabel: "_",
-		IncludeSpans: false,
-		Decimal:      false,
-		CheckRegex:   false,
+		colOffset:     0,
+		DefaultLabel:  "_",
+		IncludeSpans:  false,
+		Decimal:       false,
+		CheckLiterals: false,
 	}
 }
 
 func (p_opts *ParserOptions) ParseToAST(input string, src string, limit bool) (*Node, error) {
 	// Get the array of nodes
-	nodes, span, err := parseToASTArray(input, limit, p_opts.DefaultLabel, p_opts.IncludeSpans, p_opts.Decimal, p_opts.CheckRegex, p_opts.colOffset)
+	nodes, span, err := parseToASTArray(input, limit, p_opts.DefaultLabel, p_opts.IncludeSpans, p_opts.Decimal, p_opts.CheckLiterals, p_opts.colOffset)
 	if err != nil {
 		return nil, err
 	}
