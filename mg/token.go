@@ -8,12 +8,19 @@ type TokenType int
 
 const (
 	// Major Types
-	Literal TokenType = iota
+	Capstone TokenType = iota
+	Literal
 	Identifier
 	Punctuation
 	OpenBracket
 	CloseBracket
 	Sign
+)
+
+// Subtypes for Capstone
+const (
+	CapstoneStart uint8 = iota
+	CapstoneEnd
 )
 
 // Subtypes for Literal
@@ -55,6 +62,10 @@ const (
 	SignDot
 	SignMinus
 	SignPlus
+	SignLessThan
+	SignLessThanSlash
+	SignGreaterThan
+	SignSlashGreaterThan
 	SignOperator
 )
 
@@ -231,19 +242,53 @@ func (t *Token) Precedence() (int, bool) {
 
 	// Precedence is only meaningful for Signs and Brackets
 	if t.Type != Sign && t.Type != OpenBracket {
-		t.precValue = 0
-		t.precValid = true
-		t.errFlag = true // Cache that this token has no valid precedence
-		return 0, false
+		return setCacheNoValidPrecedence(t) // Cache that this token has no valid precedence
 	}
 
+	if t.Type == Sign && (t.SubType == SignLessThanSlash || t.SubType == SignSlashGreaterThan) {
+		return setCacheNoValidPrecedence(t) // Cache that this token has no valid precedence
+	}
+
+	P, ok := textPrecedence(t.Text)
+	if !ok {
+		return setCacheNoValidPrecedence(t)
+	}
+
+	// // Get the first rune of the token's text
+	// runes := []rune(t.Text)
+	// if len(runes) == 0 {
+	// 	// Invalid token with empty text
+	// 	return setCacheNoValidPrecedence(t)
+	// }
+	// firstRune := runes[0]
+
+	// // Find the position of the first rune in the signs string
+	// pos := strings.IndexRune(precCharacters, firstRune)
+	// if pos == -1 {
+	// 	// If the rune is not in the signs string
+	// 	return setCacheNoValidPrecedence(t)
+	// }
+
+	// // Calculate precedence
+	// P := (pos + 1) * 10
+	// if len(runes) > 1 && runes[0] == runes[1] {
+	// 	// If the first rune occurs twice in the token, subtract 1
+	// 	P--
+	// }
+
+	// Cache the precedence result and success
+	t.precValue = P
+	t.precValid = true
+	t.errFlag = false // Cache success (no error)
+
+	return P, true
+}
+
+func textPrecedence(text string) (int, bool) {
 	// Get the first rune of the token's text
-	runes := []rune(t.Text)
+	runes := []rune(text)
 	if len(runes) == 0 {
 		// Invalid token with empty text
-		t.precValue = 0
-		t.precValid = true
-		t.errFlag = true // Cache the error
 		return 0, false
 	}
 	firstRune := runes[0]
@@ -252,9 +297,6 @@ func (t *Token) Precedence() (int, bool) {
 	pos := strings.IndexRune(precCharacters, firstRune)
 	if pos == -1 {
 		// If the rune is not in the signs string
-		t.precValue = 0
-		t.precValid = true
-		t.errFlag = true // Cache the error
 		return 0, false
 	}
 
@@ -265,12 +307,14 @@ func (t *Token) Precedence() (int, bool) {
 		P--
 	}
 
-	// Cache the precedence result and success
-	t.precValue = P
-	t.precValid = true
-	t.errFlag = false // Cache success (no error)
-
 	return P, true
+}
+
+func setCacheNoValidPrecedence(t *Token) (int, bool) {
+	t.precValue = 0
+	t.precValid = true
+	t.errFlag = true
+	return 0, false
 }
 
 // VSCodeTokenType maps the token's type and subtype to a VSCode semantic token type.
@@ -322,12 +366,73 @@ func (t *Token) VSCodeTokenType() string {
 		switch t.SubType {
 		case SignLabel:
 			return "macro"
-		case SignForce, SignDot, SignMinus, SignPlus, SignOperator:
-			return "operator"
 		default:
 			return "operator"
 		}
 	default:
 		return "unknown"
 	}
+}
+
+func (t *Token) isCapstone() bool {
+	return t.Type == Capstone
+}
+
+func (t *Token) isNotCapstone() bool {
+	return t.Type != Capstone
+}
+
+func classifySign(text string) uint8 {
+	// Classify the sign based on its text
+	switch text {
+	case ".":
+		return SignDot
+	case ":":
+		return SignLabel
+	case "-":
+		return SignMinus
+	case "+":
+		return SignPlus
+	case "!":
+		return SignForce
+	case "<":
+		return SignLessThan
+	case "</":
+		return SignLessThanSlash
+	case ">":
+		return SignGreaterThan
+	case "/>":
+		return SignSlashGreaterThan
+	default:
+		return SignOperator // Default case for other signs
+	}
+}
+
+func (t *Token) SplitGlued() {
+	// Find the first occurence of >< in the token text and split down the middle.
+	parts := strings.SplitN(t.Text, "><", 2)
+	if len(parts) != 2 {
+		return // If the token does not contain ><, stop.
+	}
+	textLHS := parts[0] + ">" // Keep the first part and add the closing '>'
+	textRHS := "<" + parts[1] // Keep the second part and add the opening '<'
+
+	span := t.Span // Store the original span
+
+	t.Text = textLHS                                     // Update the original token's text to the first part
+	t.SubType = classifySign(textLHS)                    // Classify the first part
+	t.Span.EndColumn = t.Span.StartColumn + len(textLHS) // Adjust the end column
+
+	t2 := &Token{
+		Type:    Sign,
+		SubType: classifySign(textRHS),
+		Text:    textRHS,
+	}
+
+	t2.Span = span                       // Copy the span from the original token
+	t2.Span.StartColumn = span.EndColumn // Adjust the start column
+
+	// Now tie the new token into the chain.
+	t2.NextToken = t.NextToken
+	t.NextToken = t2
 }

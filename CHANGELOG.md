@@ -2,6 +2,65 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
+## Unreleased
+
+### Changed
+
+- XML-style tags have been added to the grammar. Technically this is a change
+  because it prevents the use of `<` as a prefix operator. However you can now
+  write the following:
+
+```txt
+<monogram>
+  <entry id="1">
+    <name> "Sample Entry" </name>
+    <description> "This is a simple XML example for Monogram." </description>
+  </entry>
+</monogram>
+```
+
+Note that this feature only provides the _tags_ and not character data. This
+is not an attempt to reinvent XML, merely to allow you to express XML's 
+structure and nesting in an intuitive fashion.
+
+The above example is translated into XML like this:
+
+```xml
+<unit>
+  <element>
+    <identifier name="monogram" />
+    <attributes />
+    <children separator="undefined">
+      <element>
+        <identifier name="entry" />
+        <attributes>
+          <operator name="=" syntax="infix">
+            <identifier name="id" />
+            <string quote="double" specifier="" value="1" />
+          </operator>
+        </attributes>
+        <children separator="newline">
+          <element>
+            <identifier name="name" />
+            <attributes />
+            <children separator="undefined">
+              <string quote="double" specifier="" value="Sample Entry" />
+            </children>
+          </element>
+          <element>
+            <identifier name="description" />
+            <attributes />
+            <children separator="undefined">
+              <string quote="double" specifier="" value="This is a simple XML example for Monogram." />
+            </children>
+          </element>
+        </children>
+      </element>
+    </children>
+  </element>
+</unit>
+```
+
 ## [0.6.0] Expansion of strings and statement syntax
 
 ### Changed

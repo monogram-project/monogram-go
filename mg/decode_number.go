@@ -26,7 +26,7 @@ func (d *DecodedNumber) IntValue() (int, error) {
 		}
 		return int(f), nil
 	} else if d.IsNonFinite {
-		return 0, fmt.Errorf("Cannot convert non-finite number to int")
+		return 0, fmt.Errorf("cannot convert non-finite number to int")
 	}
 	sofar := 0
 	base := d.Base

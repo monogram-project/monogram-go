@@ -16,8 +16,7 @@ const (
 
 // Parser holds the list of tokens and our current reading position.
 type Parser struct {
-	tokens        []*Token
-	pos           int
+	currentToken  *Token // The current token being processed.
 	UnglueOption  *Token
 	IncludeSpans  bool
 	Decimal       bool
@@ -25,10 +24,9 @@ type Parser struct {
 	Idents        map[string]HowIdentsAreUsed
 }
 
-func NewParser(tokens []*Token, defaultLabel string, includeSpans bool, decimal bool, checkLiterals bool) *Parser {
+func NewParser(init_token *Token, defaultLabel string, includeSpans bool, decimal bool, checkLiterals bool) *Parser {
 	return &Parser{
-		tokens:        tokens,
-		pos:           0,
+		currentToken:  init_token,
 		UnglueOption:  &Token{Type: Identifier, SubType: IdentifierVariable, Text: defaultLabel},
 		IncludeSpans:  includeSpans,
 		Decimal:       decimal,
@@ -39,38 +37,51 @@ func NewParser(tokens []*Token, defaultLabel string, includeSpans bool, decimal 
 
 // hasNext checks if there are tokens left to consume.
 func (p *Parser) hasNext() bool {
-	return p.pos < len(p.tokens)
+	return p.currentToken.NextToken.isNotCapstone()
 }
 
 // next returns the current token and advances our pointer.
 func (p *Parser) next() *Token {
-	tok := p.tokens[p.pos]
-	p.pos++
+	tok := p.currentToken.NextToken
+	p.currentToken = tok
+	if tok.isCapstone() {
+		return nil // No more tokens available.
+	}
+	return tok
+}
+
+func (p *Parser) safeNext() *Token {
+	tok := p.currentToken.NextToken
+	p.currentToken = tok
 	return tok
 }
 
 func (p *Parser) startLineCol() LineCol {
-	t := p.peek()
-	if t == nil {
-		return LineCol{0, 0}
-	}
+	t := p.currentToken.NextToken
+	return LineCol{t.Span.StartLine, t.Span.StartColumn}
+}
+
+func (p *Parser) startLineColFromPrevToken() LineCol {
+	t := p.currentToken
 	return LineCol{t.Span.StartLine, t.Span.StartColumn}
 }
 
 func (p *Parser) endLineCol() LineCol {
-	if p.pos > 0 {
-		t := p.tokens[p.pos-1]
-		return LineCol{t.Span.EndLine, t.Span.EndColumn}
-	}
-	return LineCol{0, 0}
+	t := p.currentToken
+	return LineCol{t.Span.EndLine, t.Span.EndColumn}
 }
 
 // peek returns the current token without advancing.
 func (p *Parser) peek() *Token {
-	if p.hasNext() {
-		return p.tokens[p.pos]
+	t := p.currentToken.NextToken
+	if t.isCapstone() {
+		return nil // No more tokens available.
 	}
-	return nil
+	return t
+}
+
+func (p *Parser) safePeek() *Token {
+	return p.currentToken.NextToken
 }
 
 func (p *Parser) readExpr(context Context) (*Node, error) {
@@ -80,7 +91,7 @@ func (p *Parser) readExpr(context Context) (*Node, error) {
 
 func (p *Parser) readArguments(subType uint8, context Context) (string, *Node, error) {
 	lineCol := p.startLineCol()
-	sep, seq, err := p.readExprSeqTo(subType, true, context.setInsideForm(false))
+	sep, seq, err := p.readExprSeqTo(CloseBracket, subType, true, context.setInsideForm(false))
 	if err != nil {
 		return "", nil, err
 	}
@@ -100,7 +111,7 @@ func (p *Parser) readOptExprPrec(formStart *Token, outer_prec int, context Conte
 	if !p.hasNext() {
 		return nil, nil
 	}
-	token := p.peek()
+	token := p.safePeek()
 	if token.Type == Punctuation {
 		return nil, nil
 	}
@@ -129,7 +140,7 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 		return nil, err
 	}
 	for p.hasNext() {
-		token1 := p.peek()
+		token1 := p.safePeek()
 		if context.AcceptNewline && token1.PrecededByNewline {
 			break
 		}
@@ -206,8 +217,8 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 				Children: []*Node{lhs, args},
 			}
 		} else if token2.Type == Sign && token2.SubType == SignDot && p.hasNext() {
-			property := p.next()
-			if p.hasNext() && p.peek().Type == OpenBracket && p.peek().SubType != BracketBrace {
+			property := p.safeNext()
+			if t := p.safePeek(); t.Type == OpenBracket && t.SubType != BracketBrace {
 				token3 := p.next()
 				sep_text, rhs, err := p.readArguments(token3.SubType, c)
 				if err != nil {
@@ -268,27 +279,24 @@ const (
 	flagNewline   uint8 = 4
 )
 
-func (p *Parser) readExprSeqTo(closingSubtype uint8, allowComma bool, context Context) (string, []*Node, error) {
+func (p *Parser) readExprSeqTo(closingType TokenType, closingSubtype uint8, allowComma bool, context Context) (string, []*Node, error) {
 	seq := []*Node{}
 	allowFlags := flagSemicolon | flagNewline
 	if allowComma {
 		allowFlags |= flagComma
 	}
 	for p.hasNext() {
-		t := p.peek()
-		if t.Type == CloseBracket {
-			if t.SubType == closingSubtype {
-				p.next()
-				break
-			}
-			return "", nil, fmt.Errorf("unexpected closing bracket")
+		t := p.safePeek()
+		if t.Type == closingType && t.SubType == closingSubtype {
+			p.safeNext()
+			break
 		}
 		expr, err := p.readExpr(context)
 		if err != nil {
 			return "", nil, err
 		}
 		seq = append(seq, expr)
-		t = p.peek()
+		t = p.safePeek()
 		if t.Type == Punctuation {
 			switch t.SubType {
 			case PunctuationComma:
@@ -305,13 +313,11 @@ func (p *Parser) readExprSeqTo(closingSubtype uint8, allowComma bool, context Co
 			p.next()
 			continue
 		}
-		if t.Type == CloseBracket {
-			if t.SubType == closingSubtype {
-				p.next()
-				break
-			}
-			return "", nil, fmt.Errorf("unexpected closing bracket")
-		} else if context.AcceptNewline && t.PrecededByNewline && (allowFlags&flagNewline != 0) {
+		if t.Type == closingType && t.SubType == closingSubtype {
+			p.next()
+			break
+		}
+		if context.AcceptNewline && t.PrecededByNewline && (allowFlags&flagNewline != 0) {
 			allowFlags = flagNewline
 			continue
 		}
@@ -339,7 +345,7 @@ func chooseKindValue(allowFlags uint8) string {
 func (p *Parser) tryReadExplicitTermination(allowFlags uint8) (bool, uint8, error) {
 	token := p.peek()
 	if token == nil {
-		return false, 0, fmt.Errorf("unexpected end of tokens")
+		return false, 0, fmt.Errorf("unexpected end of tokens (missing terminator?)")
 	}
 	if token.Type == Punctuation {
 		switch token.SubType {
@@ -363,7 +369,8 @@ func (p *Parser) tryReadExplicitTermination(allowFlags uint8) (bool, uint8, erro
 func (p *Parser) requireImplicitTermination(allowFlags uint8) (uint8, error) {
 	token := p.peek()
 	if token == nil {
-		return 0, fmt.Errorf("unexpected end of tokens")
+		// Token cannot be nil here, defensive programming.
+		return 0, fmt.Errorf("unexpected end of tokens (internal error)")
 	}
 	if (allowFlags&flagNewline == 0) || !token.PrecededByNewline {
 		return 0, fmt.Errorf("unexpected token while looking for separator: %s", token.Text)
@@ -413,9 +420,9 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 	builder := NewFormBuilder(formStart.Text, startLineCol, p.IncludeSpans, false)
 	for {
 		if !p.hasNext() {
-			return nil, fmt.Errorf("unexpected end of tokens")
+			return nil, fmt.Errorf("unexpected end of tokens (missing end of form): %s", closingTokenText)
 		}
-		token := p.peek()
+		token := p.safePeek()
 		if token.Type == Identifier && token.SubType == IdentifierFormEnd && token.Text == closingTokenText {
 			endLineCol = p.endLineCol()
 			p.next()
@@ -435,7 +442,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 				return nil, err
 			}
 			builder.AddChild(n)
-			t := p.peek()
+			t := p.safePeek()
 			if t.IsLabel() {
 				endLC := p.endLineCol()
 				p.next()
@@ -492,7 +499,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 
 // readDelimitedExpr reads a delimited expression.
 func (p *Parser) readDelimitedExpr(open *Token, context Context) (*Node, error) {
-	sep, seq, err := p.readExprSeqTo(open.SubType, true, context.setInsideDelimiters(true))
+	sep, seq, err := p.readExprSeqTo(CloseBracket, open.SubType, true, context.setInsideDelimiters(true))
 	if err != nil {
 		return nil, err
 	}
@@ -558,7 +565,7 @@ func (p *Parser) SetAsIdentifier(token *Token) error {
 
 func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	if !p.hasNext() {
-		return nil, fmt.Errorf("unexpected end of tokens")
+		return nil, fmt.Errorf("unexpected end of tokens (expression required here)")
 	}
 	token := p.next()
 
@@ -633,6 +640,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	case OpenBracket:
 		return p.readDelimitedExpr(token, context)
 	case Sign:
+		// fmt.Println("Sign token:", token.Text, token.SubType)
 		if token.SubType == SignDot {
 			if !token.FollowedByWhitespace {
 				likely_tag_token := token.NextToken
@@ -683,6 +691,10 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 			} else {
 				return nil, fmt.Errorf("leading-dot followed by whitespace: %s", token.Text)
 			}
+		} else if token.SubType == SignLessThan {
+			return p.readXmlElement()
+		} else if token.SubType == SignLessThanSlash {
+			return nil, fmt.Errorf("unexpected closing XML tag token: %s", token.Text)
 		} else if token.SubType != SignLabel {
 			// This is a prefix operator.
 			prec, valid := token.Precedence()
@@ -700,6 +712,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 					Children: []*Node{expr},
 				}, nil
 			}
+
 		} else {
 			return nil, fmt.Errorf("misplace sign token: %s", token.Text)
 		}
@@ -714,6 +727,135 @@ func isValidRegex(pattern string) bool {
 	return err == nil
 }
 
+// Need to watch out for:
+//  ><      which is an opening/closing tag followed by an opening tag
+//  ></     which is a opening/closing tag followed by a closing tag
+//  /><     which is a standalone tag followed by an opening tag
+//  /></    which is a standalong tag followed by a closing tag
+
+func (p *Parser) readXmlElement() (*Node, error) {
+	// The initial `<` has been consumed at this point.
+	element_name, err := p.readExprPrec(0, Context{})
+
+	attrs := &Node{Name: NameElementAttributes, Options: map[string]string{}}
+	kids := &Node{Name: NameElementChildren, Options: map[string]string{}}
+	if err != nil {
+		return nil, fmt.Errorf("error reading XML element name: %v", err)
+	}
+
+	element := &Node{Name: NameElement, Options: map[string]string{}}
+	element.Children = append(element.Children, element_name)
+	element.Children = append(element.Children, attrs)
+	element.Children = append(element.Children, kids)
+
+	// Read attributes until we hit the closing `/>` or `>`.
+	attrsStartLineCol := p.startLineCol()
+	var attrsEndLineCol LineCol
+	for {
+		attrsEndLineCol = p.endLineCol()
+		token := p.peek()
+		if token == nil {
+			return nil, fmt.Errorf("unexpected end of input while reading XML element")
+		}
+
+		// Do we have glued symbols?
+		if token.Type == Sign && token.SubType == SignOperator {
+			if token.Text == "><" || token.Text == "/></" || token.Text == "/><" || token.Text == "></" {
+				token.SplitGlued()
+			}
+		}
+
+		if token.Type == Sign && token.SubType == SignSlashGreaterThan {
+			p.next() // consume the `/>`
+			if p.IncludeSpans {
+				attrsSpan := attrsStartLineCol.Span(attrsEndLineCol)
+				attrs.Options[OptionSpan] = attrsSpan.SpanString()
+				kidsSpan := attrsEndLineCol.Span(attrsEndLineCol)
+				kids.Options[OptionSpan] = kidsSpan.SpanString()
+			}
+			return element, nil
+		}
+		if token.Type == Sign && token.SubType == SignGreaterThan {
+			p.next() // consume the `>`
+			break
+		}
+		P, ok := textPrecedence(">")
+		if !ok {
+			return nil, fmt.Errorf("cannot determine precedence for '=' in XML element attributes (internal error)")
+		}
+
+		// We want to bind a little tighter than the precedence of `>`.
+		lhs, err := p.readExprPrec(P-2, Context{})
+		if err != nil {
+			return nil, err
+		}
+		// Now for the `=` operator.
+		eq_token := p.next()
+		if eq_token == nil || eq_token.Type != Sign || eq_token.Text != "=" {
+			return nil, fmt.Errorf("expected '=' after XML element attribute name, but got: %s", eq_token.Text)
+		}
+		// Now read the right-hand side of the operator.
+		rhs, err := p.readExprPrec(P-2, Context{})
+		if err != nil {
+			return nil, err
+		}
+
+		attrs.Children = append(attrs.Children, &Node{
+			Name: NameOperator,
+			Options: map[string]string{
+				OptionName:   eq_token.Text,
+				OptionSyntax: ValueInfix,
+			},
+			Children: []*Node{lhs, rhs}, // lhs and rhs are the children of the operator node
+		})
+	}
+
+	if p.IncludeSpans {
+		attrsSpan := attrsStartLineCol.Span(attrsEndLineCol)
+		attrs.Options[OptionSpan] = attrsSpan.SpanString()
+	}
+
+	// Now read elements up to the closing tag.
+	kidsStartLineCol := p.startLineCol()
+	sep, nodes, err := p.readExprSeqTo(Sign, SignLessThanSlash, true, makeContext())
+	if err != nil {
+		return nil, err
+	}
+	kids.Children = append(kids.Children, nodes...)
+	kids.Options[OptionSeparator] = sep
+	// The previous token was the closing tag, so we need to set the span from that point.
+	if p.IncludeSpans {
+		kids.Options[OptionSpan] = kidsStartLineCol.SpanString(p.startLineColFromPrevToken())
+	}
+
+	// Now read the closing repetition of the element name.
+	closingName := p.next()
+	if closingName == nil {
+		return nil, fmt.Errorf("unexpected end of input while reading closing element name")
+	}
+	if closingName.Type != Identifier {
+		return nil, fmt.Errorf("closing element name is not an identifier: %s", closingName.Text)
+	}
+	closingLessThen := p.next()
+	if closingLessThen == nil || closingLessThen.Type != Sign || closingLessThen.SubType != SignGreaterThan {
+		return nil, fmt.Errorf("expected closing '>' after closing element name: %s", closingName.Text)
+	}
+
+	if closingName.Text == "_" {
+		return element, nil
+	}
+
+	if element_name.Name != NameIdentifier {
+		return nil, fmt.Errorf("expected element name to be an identifier matching: %s (hint: use _)", closingName.Text)
+	}
+
+	if element_name.Options[OptionName] != closingName.Text {
+		return nil, fmt.Errorf("closing element name '%s' does not match opening element name '%s'", closingName.Text, element_name.Options[OptionName])
+	}
+
+	return element, nil
+}
+
 func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
 	p.next()
 	cxt := context.setInsideForm(true)
@@ -722,7 +864,7 @@ func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
 	formBuilder := NewFormBuilder(token.Text, p.startLineCol(), p.IncludeSpans, true)
 
 	for p.hasNext() {
-		next := p.peek()
+		next := p.safePeek()
 		if next.IsSemi() || next.PrecededByNewline {
 			break
 		}
@@ -873,8 +1015,8 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 	return expressionNode, nil
 }
 
-func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includeSpans bool, decimal bool, checkLiterals bool) ([]*Node, error) {
-	parser := NewParser(tokens, defaultLabel, includeSpans, decimal, checkLiterals)
+func parseTokensToNodes(initToken *Token, limit bool, defaultLabel string, includeSpans bool, decimal bool, checkLiterals bool) ([]*Node, error) {
+	parser := NewParser(initToken, defaultLabel, includeSpans, decimal, checkLiterals)
 	nodes := []*Node{}
 	for parser.hasNext() {
 		node, err := parser.readExpr(makeContext())
@@ -892,13 +1034,13 @@ func parseTokensToNodes(tokens []*Token, limit bool, defaultLabel string, includ
 
 func parseToASTArray(input string, limit bool, defaultLabel string, include_spans bool, decodeNumbers bool, checkLiterals bool, colOffset int) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
-	tokens, span, terr := tokenizeInput(input, colOffset)
+	initToken, span, terr := tokenizeInput(input, colOffset)
 	if terr != nil {
 		return nil, Span{}, fmt.Errorf(terr.Message + " (line " + fmt.Sprint(terr.Line) + ", column " + fmt.Sprint(terr.Column) + ")")
 	}
 
 	// Step 2: Parse the tokens into nodes
-	nodes, err := parseTokensToNodes(tokens, limit, defaultLabel, include_spans, decodeNumbers, checkLiterals)
+	nodes, err := parseTokensToNodes(initToken, limit, defaultLabel, include_spans, decodeNumbers, checkLiterals)
 	if err != nil {
 		return nil, Span{}, err
 	}

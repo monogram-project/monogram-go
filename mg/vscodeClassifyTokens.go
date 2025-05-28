@@ -26,7 +26,7 @@ func VSCodeClassifyTokens(input io.Reader, output io.Writer) {
 		log.Fatalf("Error: Failed to read input: %v", err)
 	}
 	// fmt.Println("VSCodeClassifyTokens: input data:", string(data))
-	tokens, _, terr := tokenizeInput(string(data), 0)
+	initToken, _, terr := tokenizeInput(string(data), 0)
 	if terr != nil {
 		// fmt.Println("Error: Failed to tokenize input", terr)
 		jsonOutput, err := json.MarshalIndent(map[string]interface{}{
@@ -42,17 +42,19 @@ func VSCodeClassifyTokens(input io.Reader, output io.Writer) {
 	// Parse the tokens into nodes, which will side effect the tokens in the array
 	// allowing us to detect labels accurately. We can ignore any errors as we
 	// are only after the side-effect.
-	parseTokensToNodes(tokens, false, "_", false, false, false)
+	parseTokensToNodes(initToken, false, "_", false, false, false)
 
 	var classifications []TokenClassification = []TokenClassification{}
 
-	for _, token := range tokens {
+	token := initToken.NextToken
+	for token.Type != Capstone {
 		classifications = append(classifications, TokenClassification{
 			Type:  token.VSCodeTokenType(),
 			Value: token.Text,
 			Start: Position{Line: token.Span.StartLine, Column: token.Span.StartColumn},
 			End:   Position{Line: token.Span.EndLine, Column: token.Span.EndColumn}, // TODO!
 		})
+		token = token.NextToken
 	}
 
 	// Serialize the classifications into JSON
