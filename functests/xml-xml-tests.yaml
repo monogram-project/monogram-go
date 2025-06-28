@@ -1,0 +1,134 @@
+# The top-level normalization flag applies to all tests unless overridden.
+normalize: xml
+tests:
+
+  - name: "Standalone element"
+    command: "{command} --format xml"
+    input: |
+      <foo/>
+    expected_output: |
+      <unit>
+        <element>
+          <tag name="foo" />
+          <attributes />
+          <children separator="undefined" />
+        </element>
+      </unit>
+
+  - name: "Start-end pair no separating whitespace"
+    command: "{command} --format xml"
+    input: |
+      <foo></foo>
+    expected_output: |
+      <unit>
+        <element>
+          <tag name="foo" />
+          <attributes />
+          <children separator="undefined" />
+        </element>
+      </unit>
+
+  - name: "Standalone element with attributes, minimal whitespace"
+    command: "{command} --format xml"
+    input: |
+      <foo bar="gort"/>
+    expected_output: |
+      <unit>
+        <element>
+          <tag name="foo" />
+          <attributes>
+            <operator name="=" syntax="infix">
+              <tag name="bar" />
+              <string quote="double" specifier="" value="gort" />
+            </operator>
+          </attributes>
+          <children separator="undefined" />
+        </element>
+      </unit>
+
+  - name: "Start-end pair with attributes, minimal whitespace"
+    command: "{command} --format xml"
+    input: |
+      <foo bar="gort"></foo>
+    expected_output: |
+      <unit>
+        <element>
+          <tag name="foo" />
+          <attributes>
+            <operator name="=" syntax="infix">
+              <tag name="bar" />
+              <string quote="double" specifier="" value="gort" />
+            </operator>
+          </attributes>
+          <children separator="undefined" />
+        </element>
+      </unit>
+
+  - name: "Standalone element with variable for element name and attributes"
+    command: "{command} --format xml"
+    input: |
+      <(name) bar="gort" baz="grok"/>
+    expected_output: |
+      <unit>
+        <element>
+          <delimited kind="parentheses" separator="undefined">
+            <identifier name="name" />
+          </delimited>          
+          <attributes>
+            <operator name="=" syntax="infix">
+              <tag name="bar" />
+              <string quote="double" specifier="" value="gort" />
+            </operator>
+            <operator name="=" syntax="infix">
+              <tag name="baz" />
+              <string quote="double" specifier="" value="grok" />
+            </operator>
+          </attributes>
+          <children separator="undefined" />
+        </element>
+      </unit>
+
+  - name: "Nested element to XML taken from the CHANGELOG.md"
+    command: "{command} --format xml"
+    input: |
+      <monogram>
+        <entry id="1">
+          <name> "Sample Entry" </name>
+          <description> "This is a simple XML example for Monogram." </description>
+        </entry>
+      </monogram>
+    expected_output: |
+      <unit>
+        <element>
+          <tag name="monogram" />
+          <attributes />
+          <children separator="undefined">
+            <element>
+              <tag name="entry" />
+              <attributes>
+                <operator name="=" syntax="infix">
+                  <tag name="id" />
+                  <string quote="double" specifier="" value="1" />
+                </operator>
+              </attributes>
+              <children separator="newline">
+                <element>
+                  <tag name="name" />
+                  <attributes />
+                  <children separator="undefined">
+                    <string quote="double" specifier="" value="Sample Entry" />
+                  </children>
+                </element>
+                <element>
+                  <tag name="description" />
+                  <attributes />
+                  <children separator="undefined">
+                    <string quote="double" specifier="" value="This is a simple XML example for Monogram." />
+                  </children>
+                </element>
+              </children>
+            </element>
+          </children>
+        </element>
+      </unit>
+

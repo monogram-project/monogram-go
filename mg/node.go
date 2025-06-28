@@ -24,6 +24,7 @@ const NameInterpolate = "interpolation"
 const NameElement = "element"
 const NameElementAttributes = "attributes"
 const NameElementChildren = "children"
+const NameTag = "tag"
 
 const OptionValue = "value"
 const OptionsDecimalValue = "decimal"

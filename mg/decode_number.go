@@ -119,10 +119,11 @@ func decodeNumber(text string) (DecodedNumber, error) {
 	}
 
 	decoded.Sign = 1
-	if text[0] == '-' {
+	switch text[0] {
+	case '-':
 		decoded.Sign = -1
 		text = text[1:]
-	} else if text[0] == '+' {
+	case '+':
 		text = text[1:]
 	}
 

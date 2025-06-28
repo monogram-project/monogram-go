@@ -91,18 +91,20 @@ func (n *InterpolateNode) Name() string {
 }
 
 func (n *InterpolateNode) GetOption(name string) string {
-	if name == OptionKind {
+	switch name {
+	case OptionKind:
 		return n.Kind
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *InterpolateNode) SetOption(name string, value string) {
-	if name == OptionKind {
+	switch name {
+	case OptionKind:
 		n.Kind = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -141,22 +143,24 @@ func (n *JoinLinesNode) Name() string {
 }
 
 func (n *JoinLinesNode) GetOption(name string) string {
-	if name == OptionQuote {
+	switch name {
+	case OptionQuote:
 		return n.Quote
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
-	} else if name == OptionSpecifier {
+	case OptionSpecifier:
 		return n.Specifier
 	}
 	return ""
 }
 
 func (n *JoinLinesNode) SetOption(name string, value string) {
-	if name == OptionQuote {
+	switch name {
+	case OptionQuote:
 		n.Quote = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
-	} else if name == OptionSpecifier {
+	case OptionSpecifier:
 		n.Specifier = value
 	}
 }
@@ -195,22 +199,24 @@ func (n *JoinNode) Name() string {
 }
 
 func (n *JoinNode) GetOption(name string) string {
-	if name == OptionQuote {
+	switch name {
+	case OptionQuote:
 		return n.Quote
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
-	} else if name == OptionSpecifier {
+	case OptionSpecifier:
 		return n.Specifier
 	}
 	return ""
 }
 
 func (n *JoinNode) SetOption(name string, value string) {
-	if name == OptionQuote {
+	switch name {
+	case OptionQuote:
 		n.Quote = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
-	} else if name == OptionSpecifier {
+	case OptionSpecifier:
 		n.Specifier = value
 	}
 }
@@ -248,18 +254,20 @@ func (n *FormNode) Name() string {
 }
 
 func (n *FormNode) GetOption(name string) string {
-	if name == OptionSyntax {
+	switch name {
+	case OptionSyntax:
 		return n.Syntax
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *FormNode) SetOption(name string, value string) {
-	if name == OptionSyntax {
+	switch name {
+	case OptionSyntax:
 		n.Syntax = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -297,18 +305,20 @@ func (n *PartNode) Name() string {
 }
 
 func (n *PartNode) GetOption(name string) string {
-	if name == OptionKeyword {
+	switch name {
+	case OptionKeyword:
 		return n.Keyword
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *PartNode) SetOption(name string, value string) {
-	if name == OptionKeyword {
+	switch name {
+	case OptionKeyword:
 		n.Keyword = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -346,18 +356,20 @@ func (n *UnitNode) Name() string {
 }
 
 func (n *UnitNode) GetOption(name string) string {
-	if name == OptionSrc {
+	switch name {
+	case OptionSrc:
 		return n.Src
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *UnitNode) SetOption(name string, value string) {
-	if name == OptionSrc {
+	switch name {
+	case OptionSrc:
 		n.Src = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -397,22 +409,24 @@ func (n *ApplyNode) Name() string {
 }
 
 func (n *ApplyNode) GetOption(name string) string {
-	if name == OptionKind {
+	switch name {
+	case OptionKind:
 		return n.Kind
-	} else if name == OptionSeparator {
+	case OptionSeparator:
 		return n.Separator
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *ApplyNode) SetOption(name string, value string) {
-	if name == OptionKind {
+	switch name {
+	case OptionKind:
 		n.Kind = value
-	} else if name == OptionSeparator {
+	case OptionSeparator:
 		n.Separator = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -495,22 +509,24 @@ func (n *DelimitedNode) Name() string {
 }
 
 func (n *DelimitedNode) GetOption(name string) string {
-	if name == OptionKind {
+	switch name {
+	case OptionKind:
 		return n.Kind
-	} else if name == OptionSeparator {
+	case OptionSeparator:
 		return n.Separator
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *DelimitedNode) SetOption(name string, value string) {
-	if name == OptionKind {
+	switch name {
+	case OptionKind:
 		n.Kind = value
-	} else if name == OptionSeparator {
+	case OptionSeparator:
 		n.Separator = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -548,18 +564,20 @@ func (n *GetNode) Name() string {
 }
 
 func (n *GetNode) GetOption(name string) string {
-	if name == OptionName {
+	switch name {
+	case OptionName:
 		return n.Property
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *GetNode) SetOption(name string, value string) {
-	if name == OptionName {
+	switch name {
+	case OptionName:
 		n.Property = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -584,11 +602,12 @@ func (n *GetNode) FromTo() string {
 	return n.Span
 }
 
-// -- IdentifierNode -----------------------------------------------------------
+// -- IdentifierNode and TagNode -----------------------------------------------
 
 type IdentifierNode struct {
-	Id   string `json:"name"`
-	Span string `json:"span"`
+	Id     string `json:"name"`
+	Span   string `json:"span"`
+	Domain string `json:"domain"` // Domain can be "tag", "variable", etc.
 }
 
 func (n *IdentifierNode) Name() string {
@@ -596,18 +615,20 @@ func (n *IdentifierNode) Name() string {
 }
 
 func (n *IdentifierNode) GetOption(name string) string {
-	if name == OptionName {
+	switch name {
+	case OptionName:
 		return n.Id
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *IdentifierNode) SetOption(name string, value string) {
-	if name == OptionName {
+	switch name {
+	case OptionName:
 		n.Id = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -632,6 +653,55 @@ func (n *IdentifierNode) FromTo() string {
 	return n.Span
 }
 
+type TagNode struct {
+	Id     string `json:"name"`
+	Span   string `json:"span"`
+	Domain string `json:"domain"` // Domain can be "tag", "variable", etc.
+}
+
+func (n *TagNode) Name() string {
+	return NameIdentifier
+}
+
+func (n *TagNode) GetOption(name string) string {
+	switch name {
+	case OptionName:
+		return n.Id
+	case OptionSpan:
+		return n.Span
+	}
+	return ""
+}
+
+func (n *TagNode) SetOption(name string, value string) {
+	switch name {
+	case OptionName:
+		n.Id = value
+	case OptionSpan:
+		n.Span = value
+	}
+}
+
+func (n *TagNode) HasOption(name string) bool {
+	return name == OptionName || name == OptionSpan
+}
+
+func (n *TagNode) Options() Iterator[string] {
+	return NewItemsIterator(OptionName, OptionSpan)
+}
+
+func (n *TagNode) Children() Iterator[Element] {
+	return NewNullIterator[Element]()
+}
+
+func (n *TagNode) ChildrenCount() int {
+	return 0
+}
+
+func (n *TagNode) FromTo() string {
+	return n.Span
+}
+
 // -- InvokeNode ---------------------------------------------------------------
 
 type InvokeNode struct {
@@ -648,26 +718,28 @@ func (n *InvokeNode) Name() string {
 }
 
 func (n *InvokeNode) GetOption(name string) string {
-	if name == OptionKind {
+	switch name {
+	case OptionKind:
 		return n.Kind
-	} else if name == OptionSeparator {
+	case OptionSeparator:
 		return n.Separator
-	} else if name == OptionName {
+	case OptionName:
 		return n.Property
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *InvokeNode) SetOption(name string, value string) {
-	if name == OptionKind {
+	switch name {
+	case OptionKind:
 		n.Kind = value
-	} else if name == OptionSeparator {
+	case OptionSeparator:
 		n.Separator = value
-	} else if name == OptionName {
+	case OptionName:
 		n.Property = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -704,18 +776,20 @@ func (n *NumberNode) Name() string {
 }
 
 func (n *NumberNode) GetOption(name string) string {
-	if name == OptionValue {
+	switch name {
+	case OptionValue:
 		return fmt.Sprintf("%f", n.Value)
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *NumberNode) SetOption(name string, value string) {
-	if name == OptionValue {
+	switch name {
+	case OptionValue:
 		fmt.Sscanf(value, "%f", &n.Value)
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -754,20 +828,22 @@ func (n *InfixOperatorNode) Name() string {
 }
 
 func (n *InfixOperatorNode) GetOption(name string) string {
-	if name == OptionName {
+	switch name {
+	case OptionName:
 		return n.Op
-	} else if name == OptionSyntax {
+	case OptionSyntax:
 		return ValueInfix
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *InfixOperatorNode) SetOption(name string, value string) {
-	if name == OptionName {
+	switch name {
+	case OptionName:
 		n.Op = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -803,20 +879,22 @@ func (n *PrefixOperatorNode) Name() string {
 }
 
 func (n *PrefixOperatorNode) GetOption(name string) string {
-	if name == OptionName {
+	switch name {
+	case OptionName:
 		return n.Op
-	} else if name == OptionSyntax {
+	case OptionSyntax:
 		return ValuePrefix
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
 	}
 	return ""
 }
 
 func (n *PrefixOperatorNode) SetOption(name string, value string) {
-	if name == OptionName {
+	switch name {
+	case OptionName:
 		n.Op = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
 	}
 }
@@ -855,26 +933,28 @@ func (n *StringNode) Name() string {
 }
 
 func (n *StringNode) GetOption(name string) string {
-	if name == OptionValue {
+	switch name {
+	case OptionValue:
 		return n.Value
-	} else if name == OptionSyntax {
+	case OptionSyntax:
 		return n.Quote
-	} else if name == OptionSpan {
+	case OptionSpan:
 		return n.Span
-	} else if name == OptionSpecifier {
+	case OptionSpecifier:
 		return n.Specifier
 	}
 	return ""
 }
 
 func (n *StringNode) SetOption(name string, value string) {
-	if name == OptionValue {
+	switch name {
+	case OptionValue:
 		n.Value = value
-	} else if name == OptionSyntax {
+	case OptionSyntax:
 		n.Quote = value
-	} else if name == OptionSpan {
+	case OptionSpan:
 		n.Span = value
-	} else if name == OptionSpecifier {
+	case OptionSpecifier:
 		n.Specifier = value
 	}
 }
@@ -896,6 +976,147 @@ func (n *StringNode) ChildrenCount() int {
 }
 
 func (n *StringNode) FromTo() string {
+	return n.Span
+}
+
+// -- ElementNode --------------------------------------------------------------
+
+type ElementNode struct {
+	Span              string  `json:"span"`
+	ElementName       Element `json:"name"`
+	ElementAttributes Element `json:"attributes"`
+	ElementChildren   Element `json:"children"`
+}
+
+func (n *ElementNode) Name() string {
+	return NameElement
+}
+
+func (n *ElementNode) GetOption(name string) string {
+	switch name {
+	case OptionSpan:
+		return n.Span
+	}
+	return ""
+}
+
+func (n *ElementNode) SetOption(name string, value string) {
+	switch name {
+	case OptionSpan:
+		n.Span = value
+	}
+}
+
+func (n *ElementNode) HasOption(name string) bool {
+	return name == OptionSpan
+}
+
+func (n *ElementNode) Options() Iterator[string] {
+	return NewSingletonIterator(OptionSpan)
+}
+
+func (n *ElementNode) Children() Iterator[Element] {
+	return NewItemsIterator(n.ElementName, n.ElementAttributes, n.ElementChildren)
+}
+
+func (n *ElementNode) ChildrenCount() int {
+	return 3
+}
+
+func (n *ElementNode) FromTo() string {
+	return n.Span
+}
+
+type ElementAttributesNode struct {
+	Span     string    `json:"span"`
+	Bindings []Element `json:"children"`
+}
+
+func (n *ElementAttributesNode) Name() string {
+	return NameElementAttributes
+}
+
+func (n *ElementAttributesNode) GetOption(name string) string {
+	switch name {
+	case OptionSpan:
+		return n.Span
+	}
+	return ""
+}
+
+func (n *ElementAttributesNode) SetOption(name string, value string) {
+	switch name {
+	case OptionSpan:
+		n.Span = value
+	}
+}
+
+func (n *ElementAttributesNode) HasOption(name string) bool {
+	return name == OptionSpan
+}
+
+func (n *ElementAttributesNode) Options() Iterator[string] {
+	return NewSingletonIterator(OptionSpan)
+}
+
+func (n *ElementAttributesNode) Children() Iterator[Element] {
+	return NewSliceIterator(n.Bindings)
+}
+
+func (n *ElementAttributesNode) ChildrenCount() int {
+	return len(n.Bindings)
+}
+
+func (n *ElementAttributesNode) FromTo() string {
+	return n.Span
+}
+
+type ElementChildrenNode struct {
+	Span      string    `json:"span"`
+	Separator string    `json:"separator"`
+	Exprs     []Element `json:"children"`
+}
+
+func (n *ElementChildrenNode) Name() string {
+	return NameElementChildren
+}
+
+func (n *ElementChildrenNode) GetOption(name string) string {
+	switch name {
+	case OptionSpan:
+		return n.Span
+	case OptionSeparator:
+		return n.Separator
+	}
+	return ""
+}
+
+func (n *ElementChildrenNode) SetOption(name string, value string) {
+	switch name {
+	case OptionSpan:
+		n.Span = value
+	case OptionSeparator:
+		n.Separator = value
+	}
+}
+
+func (n *ElementChildrenNode) HasOption(name string) bool {
+	return name == OptionSpan
+}
+
+func (n *ElementChildrenNode) Options() Iterator[string] {
+	return NewSingletonIterator(OptionSpan)
+}
+
+func (n *ElementChildrenNode) Children() Iterator[Element] {
+	return NewSliceIterator(n.Exprs)
+}
+
+func (n *ElementChildrenNode) ChildrenCount() int {
+	return len(n.Exprs)
+}
+
+func (n *ElementChildrenNode) FromTo() string {
 	return n.Span
 }
 
@@ -1004,6 +1225,11 @@ func (node *Node) ToElement() (Element, error) {
 			Id:   node.Options[OptionName],
 			Span: node.Options[OptionSpan],
 		}, nil
+	case NameTag:
+		return &TagNode{
+			Id:   node.Options[OptionName],
+			Span: node.Options[OptionSpan],
+		}, nil
 	case NameInvoke:
 		if len(node.Children) != 2 {
 			return nil, fmt.Errorf("invoke node must have exactly two children")
@@ -1105,6 +1331,36 @@ func (node *Node) ToElement() (Element, error) {
 			Kind:    node.Options[OptionKind],
 			Span:    node.Options[OptionSpan],
 			Element: e,
+		}, nil
+	case NameElement:
+		kids, err := AllToElement(node.Children)
+		if err != nil {
+			return nil, err
+		}
+		return &JoinNode{
+			Quote:     node.Options[OptionQuote],
+			Span:      node.Options[OptionSpan],
+			Specifier: node.Options[OptionSpecifier],
+			Elements:  kids,
+		}, nil
+	case NameElementAttributes:
+		kids, err := AllToElement(node.Children)
+		if err != nil {
+			return nil, err
+		}
+		return &ElementAttributesNode{
+			Span:     node.Options[OptionSpan],
+			Bindings: kids,
+		}, nil
+	case NameElementChildren:
+		kids, err := AllToElement(node.Children)
+		if err != nil {
+			return nil, err
+		}
+		return &ElementChildrenNode{
+			Span:      node.Options[OptionSpan],
+			Separator: node.Options[OptionSeparator],
+			Exprs:     kids,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unknown node type: %s", node.Name)

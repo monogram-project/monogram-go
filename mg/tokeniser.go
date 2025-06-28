@@ -480,20 +480,6 @@ func (t *Tokenizer) readSign() *Token {
 	return token
 }
 
-func splitOnAngleBrackets(input string) []string {
-	var result []string
-	start := 0
-
-	for i := range len(input) - 1 {
-		if input[i] == '>' && input[i+1] == '<' {
-			result = append(result, input[start:i+1])
-			start = i + 1
-		}
-	}
-	result = append(result, input[start:])
-	return result
-}
-
 func (t *Tokenizer) readBracket() *Token {
 	startLine, startCol := t.lineNo, t.colNo
 	r := t.consume() // Consume the bracket character
@@ -532,9 +518,10 @@ func (t *Tokenizer) readPunctuation() *Token {
 
 	// Determine the subtype
 	var subType uint8
-	if r == ',' {
+	switch r {
+	case ',':
 		subType = PunctuationComma
-	} else if r == ';' {
+	case ';':
 		subType = PunctuationSemicolon
 	}
 
@@ -1106,20 +1093,21 @@ func (t *Tokenizer) readBase(startLine int, startCol int) (NumericCategory, int,
 	n, r1, r2, r3 := t.peek3()
 	if n >= 2 {
 		if r1 == '0' {
-			if r2 == hexRune {
+			switch r2 {
+			case hexRune:
 				base = 16
 				t.discard2() // Consume the '0x' prefix.
-			} else if r2 == binRune {
+			case binRune:
 				base = 2
 				t.discard2() // Consume the '0b' prefix.
-			} else if r2 == octRune {
+			case octRune:
 				base = 8
 				t.discard2() // Consume the '0o' prefix.
-			} else if r2 == nonFiniteRune {
+			case nonFiniteRune:
 				base = 2
 				category = NumericNonFinite
 				t.discard2() // Consume the '0n' prefix.
-			} else if r2 == balancedTernaryRune {
+			case balancedTernaryRune:
 				base = 3
 				category = NumericBalancedTernary
 				t.discard2() // Consume the '0t' prefix.

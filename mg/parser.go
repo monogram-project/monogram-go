@@ -628,8 +628,10 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 					}
 				}
 				return &Node{
-					Name:    NameIdentifier,
-					Options: map[string]string{OptionName: token.Text},
+					Name: NameIdentifier,
+					Options: map[string]string{
+						OptionName: token.Text,
+					},
 				}, nil
 			case IdentifierFormStart:
 				return p.readFormExpr(token, context)
@@ -727,14 +729,17 @@ func isValidRegex(pattern string) bool {
 }
 
 func (p *Parser) readXmlElement() (*Node, error) {
-	// The initial `<` has been consumed at this point.
+	// The initial `<` has been consumed at this point. Using precedence 0 to read the element
+	// forces the use of brackets for any non-trivial element names.
 	element_name, err := p.readExprPrec(0, Context{})
-
-	attrs := &Node{Name: NameElementAttributes, Options: map[string]string{}}
-	kids := &Node{Name: NameElementChildren, Options: map[string]string{}}
 	if err != nil {
 		return nil, fmt.Errorf("error reading XML element name: %v", err)
 	}
+	if element_name.Name == NameIdentifier {
+		element_name.Name = NameTag
+	}
+	attrs := &Node{Name: NameElementAttributes, Options: map[string]string{}}
+	kids := &Node{Name: NameElementChildren, Options: map[string]string{}}
 
 	element := &Node{Name: NameElement, Options: map[string]string{}}
 	element.Children = append(element.Children, element_name)
@@ -772,16 +777,19 @@ func (p *Parser) readXmlElement() (*Node, error) {
 		}
 
 		// We want to bind a little tighter than the precedence of `>`.
-		lhs, err := p.readExprPrec(P-2, Context{})
+		lhs, err := p.readExprPrec(0, Context{})
 		if err != nil {
 			return nil, err
+		}
+		if lhs.Name == NameIdentifier {
+			lhs.Name = NameTag
 		}
 		// Now for the `=` operator.
 		eq_token := p.next()
 		if eq_token == nil || eq_token.Type != Sign || eq_token.Text != "=" {
 			return nil, fmt.Errorf("expected '=' after XML element attribute name, but got: %s", eq_token.Text)
 		}
-		// Now read the right-hand side of the operator.
+		// Now read the right-hand side of the operator. We want to bind a little tighter than the precedence of `>`.
 		rhs, err := p.readExprPrec(P-2, Context{})
 		if err != nil {
 			return nil, err
@@ -832,8 +840,8 @@ func (p *Parser) readXmlElement() (*Node, error) {
 		return element, nil
 	}
 
-	if element_name.Name != NameIdentifier {
-		return nil, fmt.Errorf("expected element name to be an identifier matching: %s (hint: use _)", closingName.Text)
+	if element_name.Name != NameTag {
+		return nil, fmt.Errorf("expected tag name to be an identifier matching: %s (hint: use _)", closingName.Text)
 	}
 
 	if element_name.Options[OptionName] != closingName.Text {
@@ -931,11 +939,12 @@ func (p *Parser) insertConvertedSubToken(subToken *Token, interpolationNode *Nod
 }
 
 func (p *Parser) convertSubToken(subToken *Token) (*Node, error) {
-	if subToken.SubType == LiteralExpressionString {
+	switch subToken.SubType {
+	case LiteralExpressionString:
 		// Recursively parse the expression string
 		node, err := p.convertLiteralExpressionStringSubToken(subToken)
 		return node, err
-	} else if subToken.SubType == LiteralString {
+	case LiteralString:
 		// Handle plain string parts
 		n := &Node{
 			Name: NameString,
@@ -949,10 +958,10 @@ func (p *Parser) convertSubToken(subToken *Token) (*Node, error) {
 			n.Options[OptionSpan] = subToken.SpanString()
 		}
 		return n, nil
-	} else if subToken.SubType == LiteralInterpolatedString {
+	case LiteralInterpolatedString:
 		node, err := p.convertInterpolatedStringSubToken(subToken)
 		return node, err
-	} else {
+	default:
 		return nil, fmt.Errorf("unexpected sub-token subtype: %v", subToken.SubType)
 	}
 }
