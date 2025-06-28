@@ -712,7 +712,6 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 					Children: []*Node{expr},
 				}, nil
 			}
-
 		} else {
 			return nil, fmt.Errorf("misplace sign token: %s", token.Text)
 		}
@@ -726,12 +725,6 @@ func isValidRegex(pattern string) bool {
 	_, err := regexp.Compile(pattern)
 	return err == nil
 }
-
-// Need to watch out for:
-//  ><      which is an opening/closing tag followed by an opening tag
-//  ></     which is a opening/closing tag followed by a closing tag
-//  /><     which is a standalone tag followed by an opening tag
-//  /></    which is a standalong tag followed by a closing tag
 
 func (p *Parser) readXmlElement() (*Node, error) {
 	// The initial `<` has been consumed at this point.
@@ -747,6 +740,7 @@ func (p *Parser) readXmlElement() (*Node, error) {
 	element.Children = append(element.Children, element_name)
 	element.Children = append(element.Children, attrs)
 	element.Children = append(element.Children, kids)
+	kids.Options[OptionSeparator] = ValueUndefined // Default separator for kids
 
 	// Read attributes until we hit the closing `/>` or `>`.
 	attrsStartLineCol := p.startLineCol()
@@ -756,13 +750,6 @@ func (p *Parser) readXmlElement() (*Node, error) {
 		token := p.peek()
 		if token == nil {
 			return nil, fmt.Errorf("unexpected end of input while reading XML element")
-		}
-
-		// Do we have glued symbols?
-		if token.Type == Sign && token.SubType == SignOperator {
-			if token.Text == "><" || token.Text == "/></" || token.Text == "/><" || token.Text == "></" {
-				token.SplitGlued()
-			}
 		}
 
 		if token.Type == Sign && token.SubType == SignSlashGreaterThan {

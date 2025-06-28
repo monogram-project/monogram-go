@@ -458,11 +458,17 @@ func (t *Tokenizer) readSign() *Token {
 	startLine, startCol := t.lineNo, t.colNo
 	start := t.pos
 
+	prev_was_gt := false
 	for t.hasMoreInput() {
 		r, _ := t.peek()
 		if !t.isSign(r) {
 			break
 		}
+		if prev_was_gt && r == '<' {
+			break
+		}
+		prev_was_gt = (r == '>')
+
 		t.consume()
 	}
 
@@ -472,6 +478,20 @@ func (t *Tokenizer) readSign() *Token {
 	token := t.addToken(Sign, subType, text, startLine, startCol)
 	t.markFollowedByWhitespace(token) // Mark if followed by whitespace
 	return token
+}
+
+func splitOnAngleBrackets(input string) []string {
+	var result []string
+	start := 0
+
+	for i := range len(input) - 1 {
+		if input[i] == '>' && input[i+1] == '<' {
+			result = append(result, input[start:i+1])
+			start = i + 1
+		}
+	}
+	result = append(result, input[start:])
+	return result
 }
 
 func (t *Tokenizer) readBracket() *Token {
