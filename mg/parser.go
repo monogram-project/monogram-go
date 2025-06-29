@@ -571,51 +571,7 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 
 	switch token.Type {
 	case Literal:
-		switch token.SubType {
-		case LiteralString:
-			if token.Specifier == "re" && p.CheckLiterals && !isValidRegex(token.Text) {
-				return nil, fmt.Errorf("invalid regex: %s", token.Text)
-			}
-			return &Node{
-				Name: NameString,
-				Options: map[string]string{
-					OptionQuote:     token.QuoteWord(),
-					OptionValue:     token.Text,
-					OptionSpecifier: token.Specifier, // Default specifier for strings
-				},
-			}, nil
-
-		case LiteralNumber:
-			opts, err := p.numberOptions(token.Text)
-			if err != nil {
-				return nil, err
-			}
-			return &Node{
-				Name:    NameNumber,
-				Options: opts,
-			}, nil
-
-		case LiteralInterpolatedString: // Handling interpolated strings
-			return p.convertInterpolatedStringSubToken(token)
-
-		case LiteralMultilineString:
-			return p.convertMultilineStringSubToken(token)
-
-		case LiteralRegex:
-			if p.CheckLiterals && !isValidRegex(token.Text) {
-				return nil, fmt.Errorf("invalid regex: %s", token.Text)
-
-			}
-			return &Node{
-				Name: NameString,
-				Options: map[string]string{
-					OptionQuote:     ValueRegex,
-					OptionValue:     token.Text,
-					OptionSpecifier: ValueRegex,
-				},
-			}, nil
-		}
-		return nil, fmt.Errorf("unexpected literal token: %s", token.Text)
+		return literalToExpr(token, p)
 	case Identifier:
 		if token.IsMacro() {
 			return p.readPrefixForm(context, token)
@@ -723,20 +679,138 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	return nil, fmt.Errorf("unexpected token (case #2): %s, %d, %d", token.Text, token.Type, token.SubType)
 }
 
+func literalToExpr(token *Token, p *Parser) (*Node, error) {
+	switch token.SubType {
+	case LiteralString:
+		if token.Specifier == "re" && p.CheckLiterals && !isValidRegex(token.Text) {
+			return nil, fmt.Errorf("invalid regex: %s", token.Text)
+		}
+		return &Node{
+			Name: NameString,
+			Options: map[string]string{
+				OptionQuote:     token.QuoteWord(),
+				OptionValue:     token.Text,
+				OptionSpecifier: token.Specifier, // Default specifier for strings
+			},
+		}, nil
+
+	case LiteralNumber:
+		opts, err := p.numberOptions(token.Text)
+		if err != nil {
+			return nil, err
+		}
+		return &Node{
+			Name:    NameNumber,
+			Options: opts,
+		}, nil
+
+	case LiteralInterpolatedString: // Handling interpolated strings
+		return p.convertInterpolatedStringSubToken(token)
+
+	case LiteralMultilineString:
+		return p.convertMultilineStringSubToken(token)
+
+	case LiteralRegex:
+		if p.CheckLiterals && !isValidRegex(token.Text) {
+			return nil, fmt.Errorf("invalid regex: %s", token.Text)
+
+		}
+		return &Node{
+			Name: NameString,
+			Options: map[string]string{
+				OptionQuote:     ValueRegex,
+				OptionValue:     token.Text,
+				OptionSpecifier: ValueRegex,
+			},
+		}, nil
+	}
+	return nil, fmt.Errorf("unexpected literal token: %s", token.Text)
+}
+
 func isValidRegex(pattern string) bool {
 	_, err := regexp.Compile(pattern)
 	return err == nil
 }
 
+func (p *Parser) readTagExpr() (*Node, error) {
+	token := p.next()
+	if token == nil {
+		return nil, fmt.Errorf("unexpected end of input while reading tag expression")
+	}
+	if token.Type == Identifier && token.SubType == IdentifierVariable {
+		return &Node{
+			Name:    NameTag,
+			Options: map[string]string{OptionName: token.Text},
+		}, nil
+	}
+	if token.Type == OpenBracket {
+		subtype := token.SubType
+		expr, err := p.readExpr(Context{})
+		if err != nil {
+			return nil, fmt.Errorf("error reading tag expression: %v", err)
+		}
+		closingToken := p.next()
+		if closingToken == nil {
+			return nil, fmt.Errorf("unexpected end of input while reading tag expression")
+		}
+		if closingToken.Type != CloseBracket || closingToken.SubType != subtype {
+			return nil, fmt.Errorf("expected closing bracket for tag expression, but got: %s", closingToken.Text)
+		}
+		return &Node{
+			Name: NameDelimited,
+			Options: map[string]string{
+				OptionKind:      token.DelimiterName(),
+				OptionSeparator: ValueUndefined, // Default separator for tags
+			},
+			Children: []*Node{expr},
+		}, nil
+	}
+	return nil, fmt.Errorf("expected identifier or bracketed expression for tag, but got: %s", token.Text)
+}
+
+func (p *Parser) readAttrExpr() (*Node, error) {
+	token := p.next()
+	if token == nil {
+		return nil, fmt.Errorf("unexpected end of input while reading attribute expression")
+	}
+	if token.Type == Literal {
+		expr, err := literalToExpr(token, p)
+		if err != nil {
+			return nil, fmt.Errorf("error reading attribute expression: %v", err)
+		}
+		return expr, nil
+	}
+	if token.Type == OpenBracket {
+		subtype := token.SubType
+		expr, err := p.readExpr(Context{})
+		if err != nil {
+			return nil, fmt.Errorf("error reading attribute expression: %v", err)
+		}
+		closingToken := p.next()
+		if closingToken == nil {
+			return nil, fmt.Errorf("unexpected end of input while reading attribute expression")
+		}
+		if closingToken.Type != CloseBracket || closingToken.SubType != subtype {
+			return nil, fmt.Errorf("expected closing bracket for attribute expression, but got: %s", closingToken.Text)
+		}
+		return &Node{
+			Name: NameDelimited,
+			Options: map[string]string{
+				OptionKind:      token.DelimiterName(),
+				OptionSeparator: ValueUndefined, // Default separator for attributes
+			},
+			Children: []*Node{expr},
+		}, nil
+	}
+	return nil, fmt.Errorf("expected literal or bracketed expression for attribute, but got: %s", token.Text)
+}
+
 func (p *Parser) readXmlElement() (*Node, error) {
 	// The initial `<` has been consumed at this point. Using precedence 0 to read the element
 	// forces the use of brackets for any non-trivial element names.
-	element_name, err := p.readExprPrec(0, Context{})
+	element_name, err := p.readTagExpr()
 	if err != nil {
-		return nil, fmt.Errorf("error reading XML element name: %v", err)
-	}
-	if element_name.Name == NameIdentifier {
-		element_name.Name = NameTag
+		return nil, err
 	}
 	attrs := &Node{Name: NameElementAttributes, Options: map[string]string{}}
 	kids := &Node{Name: NameElementChildren, Options: map[string]string{}}
@@ -771,18 +845,11 @@ func (p *Parser) readXmlElement() (*Node, error) {
 			p.next() // consume the `>`
 			break
 		}
-		P, ok := textPrecedence(">")
-		if !ok {
-			return nil, fmt.Errorf("cannot determine precedence for '=' in XML element attributes (internal error)")
-		}
 
 		// We want to bind a little tighter than the precedence of `>`.
-		lhs, err := p.readExprPrec(0, Context{})
+		lhs, err := p.readTagExpr()
 		if err != nil {
 			return nil, err
-		}
-		if lhs.Name == NameIdentifier {
-			lhs.Name = NameTag
 		}
 		// Now for the `=` operator.
 		eq_token := p.next()
@@ -790,7 +857,7 @@ func (p *Parser) readXmlElement() (*Node, error) {
 			return nil, fmt.Errorf("expected '=' after XML element attribute name, but got: %s", eq_token.Text)
 		}
 		// Now read the right-hand side of the operator. We want to bind a little tighter than the precedence of `>`.
-		rhs, err := p.readExprPrec(P-2, Context{})
+		rhs, err := p.readAttrExpr()
 		if err != nil {
 			return nil, err
 		}
@@ -836,6 +903,7 @@ func (p *Parser) readXmlElement() (*Node, error) {
 		return nil, fmt.Errorf("expected closing '>' after closing element name: %s", closingName.Text)
 	}
 
+	// If the closing name is "_", we treat it as a wildcard and do not check it.
 	if closingName.Text == "_" {
 		return element, nil
 	}
