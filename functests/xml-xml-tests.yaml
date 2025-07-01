@@ -64,6 +64,46 @@ tests:
         </element>
       </unit>
 
+  - name: "Start-end pair with attributes, single-quotes, minimal whitespace"
+    command: "{command} --format xml"
+    input: |
+      <foo bar='gort'></foo>
+    expected_output: |
+      <unit>
+        <element>
+          <tag name="foo" />
+          <attributes>
+            <operator name="=" syntax="infix">
+              <tag name="bar" />
+              <string quote="single" specifier="" value="gort" />
+            </operator>
+          </attributes>
+          <children separator="undefined" />
+        </element>
+      </unit>
+
+  - name: "Standalone element with attributes, backticks, multiple whitespace"
+    command: "{command} --format xml"
+    input: |
+      <foo bar=`gort` baz="grok"/>
+    expected_output: |
+      <unit>
+        <element>
+          <tag name="foo" />
+          <attributes>
+            <operator name="=" syntax="infix">
+              <tag name="bar" />
+              <string quote="backtick" specifier="" value="gort" />
+            </operator>
+            <operator name="=" syntax="infix">
+              <tag name="baz" />
+              <string quote="double" specifier="" value="grok" />
+            </operator>
+          </attributes>
+          <children separator="undefined" />
+        </element>
+      </unit>
+
   - name: "Standalone element with variable for element name and attributes"
     command: "{command} --format xml"
     input: |
@@ -90,6 +130,7 @@ tests:
 
   - name: "Start-end pair with variable for element name and braces"
     command: "{command} --format xml"
+    # Note: </_> is a wildcard closing tag, which is useful when the element name is dynamic.
     input: |
       <{name}></_>
     expected_output: |
@@ -175,3 +216,58 @@ tests:
         </element>
       </unit>
 
+  - name: "Embedded Attribute Pair"
+    command: "{command} --format xml"
+    input: |
+      <foo (x) />
+    expected_output: |
+      <unit>
+        <element>
+          <tag name="foo" />
+          <attributes>
+            <delimited kind="parentheses" separator="undefined">
+              <identifier name="x" />
+            </delimited>
+          </attributes>
+          <children separator="undefined" />
+        </element>
+      </unit>
+
+  - name: "Unclosed tag"
+    command: "{command} --format xml"
+    input: |
+      <foo
+    expected_exit_status: 1
+    # Should fail gracefully with parse error
+
+  - name: "Mismatched closing tag"
+    command: "{command} --format xml" 
+    input: |
+      <foo></bar>
+    expected_exit_status: 1
+
+  - name: "Missing closing bracket"
+    command: "{command} --format xml"
+    input: |
+      <foo bar="value"
+    expected_exit_status: 1
+
+
+  - name: "Unquoted attribute value"
+    command: "{command} --format xml"
+    input: |
+      <foo bar=value/>
+    expected_exit_status: 1
+
+  - name: "Missing attribute value"
+    command: "{command} --format xml"
+    input: |
+      <foo bar=/>
+    expected_exit_status: 1
+
+  - name: "Malformed expression in tag position"
+    command: "{command} --format xml"
+    input: |
+      <{incomplete/>
+    expected_exit_status: 1
+    
