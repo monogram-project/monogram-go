@@ -5,20 +5,20 @@ import (
 	"testing"
 )
 
-func getTokens(input string) ([]*Token, error) {
-	tokens, _, err := tokenizeInput(input, 0)
+func getTokens(input string) (*Token, error) {
+	initToken, _, err := tokenizeInput(input, 0)
 	if err != nil {
 		return nil, fmt.Errorf("tokenizeInput error: %s", err.Message)
 	}
-	return tokens, nil
+	return initToken, nil
 }
 
 func getParser(input string) (*Parser, error) {
-	tokens, err := getTokens(input)
+	initToken, err := getTokens(input)
 	if err != nil {
 		return nil, fmt.Errorf("getTokens error: %w", err)
 	}
-	return NewParser(tokens, "_", false, false, true), nil
+	return NewParser(initToken, "_", false, false, true), nil
 }
 
 func TestParsePrefix0(t *testing.T) {

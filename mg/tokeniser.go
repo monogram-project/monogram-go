@@ -458,28 +458,23 @@ func (t *Tokenizer) readSign() *Token {
 	startLine, startCol := t.lineNo, t.colNo
 	start := t.pos
 
+	prev_was_gt := false
 	for t.hasMoreInput() {
 		r, _ := t.peek()
 		if !t.isSign(r) {
 			break
 		}
+		if prev_was_gt && r == '<' {
+			break
+		}
+		prev_was_gt = (r == '>')
+
 		t.consume()
 	}
 
 	// Add the sign token
 	text := t.input[start:t.pos]
-	subType := SignOperator
-	if text == "." {
-		subType = SignDot
-	} else if text == ":" {
-		subType = SignLabel
-	} else if text == "-" {
-		subType = SignMinus
-	} else if text == "+" {
-		subType = SignPlus
-	} else if text == "!" {
-		subType = SignForce
-	}
+	subType := classifySign(text)
 	token := t.addToken(Sign, subType, text, startLine, startCol)
 	t.markFollowedByWhitespace(token) // Mark if followed by whitespace
 	return token
@@ -523,9 +518,10 @@ func (t *Tokenizer) readPunctuation() *Token {
 
 	// Determine the subtype
 	var subType uint8
-	if r == ',' {
+	switch r {
+	case ',':
 		subType = PunctuationComma
-	} else if r == ';' {
+	case ';':
 		subType = PunctuationSemicolon
 	}
 
@@ -607,33 +603,6 @@ func (t *Tokenizer) skipSpacesUpToNewline() {
 		}
 		t.consume() // Consume the whitespace character
 	}
-}
-
-// Method to ensure there are no non-whitespace characters on the same line
-func (t *Tokenizer) ensureRestOfLineIsWhitespace() *MonogramError {
-	// Check for non-whitespace characters on the same line
-	for t.hasMoreInput() {
-		r, _ := t.peek()
-		if r == '\n' { // End of line
-			t.consume()
-			break
-		}
-		if r == '\r' { // Handle \r\n line endings
-			t.consume() // Consume \r
-			// IMPORTANT: This direct indexing is only safe because we know
-			// that the next character is a \n i.e. between 0-127. In this range
-			// the UTF-8 encoding is identical to the ASCII encoding.
-			if t.hasMoreInput() && t.input[t.pos] == '\n' {
-				t.consume() // Consume \n
-			}
-			break
-		}
-		if !unicode.IsSpace(r) {
-			return &MonogramError{Message: "Opening triple quote must be on its own line", Line: t.lineNo, Column: t.colNo}
-		}
-		t.consume() // Consume the current character
-	}
-	return nil
 }
 
 // Method to read the specifier of a multi-line string / code-fence.
@@ -1124,20 +1093,21 @@ func (t *Tokenizer) readBase(startLine int, startCol int) (NumericCategory, int,
 	n, r1, r2, r3 := t.peek3()
 	if n >= 2 {
 		if r1 == '0' {
-			if r2 == hexRune {
+			switch r2 {
+			case hexRune:
 				base = 16
 				t.discard2() // Consume the '0x' prefix.
-			} else if r2 == binRune {
+			case binRune:
 				base = 2
 				t.discard2() // Consume the '0b' prefix.
-			} else if r2 == octRune {
+			case octRune:
 				base = 8
 				t.discard2() // Consume the '0o' prefix.
-			} else if r2 == nonFiniteRune {
+			case nonFiniteRune:
 				base = 2
 				category = NumericNonFinite
 				t.discard2() // Consume the '0n' prefix.
-			} else if r2 == balancedTernaryRune {
+			case balancedTernaryRune:
 				base = 3
 				category = NumericBalancedTernary
 				t.discard2() // Consume the '0t' prefix.
@@ -1378,15 +1348,6 @@ func (t *Tokenizer) takeTagText() string {
 	return text.String()
 }
 
-func (t *Tokenizer) isNextCharAnOpeningQuote() bool {
-	// Check if the next character is a quote
-	r, ok := t.peek()
-	if !ok {
-		return false // No more input
-	}
-	return isOpeningQuoteChar(r)
-}
-
 func isOpeningQuoteChar(r rune) bool {
 	return r == '\'' || r == '"' || r == '`' || r == '«'
 }
@@ -1444,6 +1405,7 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 	return nil
 }
 
+// Link tokens into a singly-linked list.
 func (t *Tokenizer) chainTokens() {
 	for n, token := range t.tokens {
 		if n == 0 {
@@ -1454,9 +1416,32 @@ func (t *Tokenizer) chainTokens() {
 	}
 }
 
-func tokenizeInput(input string, colOffset int) ([]*Token, Span, *MonogramError) {
+// Always safe to ask for the previous token.
+func (t *Tokenizer) addInitToken() *Token {
+	// Create capstone token for the start of input
+	startToken := t.addToken(Capstone, CapstoneStart, "<START>", t.lineNo, t.colNo)
+	startToken.Span.EndLine = t.lineNo
+	startToken.Span.EndColumn = t.colNo
+	t.tokens = append(t.tokens, startToken) // Add to the list of tokens
+	return startToken
+}
+
+// Always safe to ask for the next token.
+func (t *Tokenizer) addFiniToken() *Token {
+	// Create capstone token for the end of input
+	endToken := t.addToken(Capstone, CapstoneEnd, "<END>", t.lineNo, t.colNo)
+	endToken.Span.EndLine = t.lineNo
+	endToken.Span.EndColumn = t.colNo
+	endToken.NextToken = endToken         // Point to itself
+	t.tokens = append(t.tokens, endToken) // Add to the list of tokens
+	return endToken
+}
+
+func tokenizeInput(input string, colOffset int) (*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
 	tokenizer := NewTokenizer(input)
+
+	initToken := tokenizer.addInitToken() // Add capstone token for the start of input
 
 	// Perform tokenization
 	terr := tokenizer.tokenize()
@@ -1464,12 +1449,15 @@ func tokenizeInput(input string, colOffset int) ([]*Token, Span, *MonogramError)
 		return nil, Span{}, terr
 	}
 
+	tokenizer.addFiniToken() // Add capstone token for the end of input
+
 	terr = tokenizer.markReservedTokens()
 	if terr != nil {
 		return nil, Span{}, terr
 	}
 
 	tokenizer.chainTokens()
+
 	if colOffset > 0 {
 		for _, token := range tokenizer.tokens {
 			token.Span.StartColumn += colOffset
@@ -1477,6 +1465,9 @@ func tokenizeInput(input string, colOffset int) ([]*Token, Span, *MonogramError)
 		}
 	}
 
+	// Discard the array of tokens.
+	tokenizer.tokens = make([]*Token, 0)
+
 	// Return the list of tokens
-	return tokenizer.tokens, Span{1, 1, tokenizer.lineNo, tokenizer.colNo}, nil
+	return initToken, Span{1, 1, tokenizer.lineNo, tokenizer.colNo}, nil
 }
