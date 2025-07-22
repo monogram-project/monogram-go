@@ -166,7 +166,7 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 				FollowedByWhitespace: false,
 				NextToken:            token1,
 			}
-			prec, ok := fake_minus_token.Precedence()
+			prec, ok := fake_minus_token.PrefixPrecedence()
 			if !ok || prec > outer_prec {
 				break
 			}
@@ -195,7 +195,7 @@ func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
 			}
 			continue
 		}
-		prec, ok := token1.Precedence()
+		prec, ok := token1.InfixPrecedence()
 		if !ok || prec > outer_prec {
 			break
 		}
@@ -654,10 +654,9 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 		} else if token.SubType == SignLessThanSlash {
 			return nil, fmt.Errorf("unexpected closing XML tag token: %s", token.Text)
 		} else if token.SubType != SignLabel {
-			// This is a prefix operator.
-			prec, valid := token.Precedence()
+			prec, valid := token.PrefixPrecedence()
 			if valid && prec > 0 {
-				expr, err := p.readExprPrec(prefixPrecedence, context.setInsideForm(false))
+				expr, err := p.readExprPrec(prec, context.setInsideForm(false))
 				if err != nil {
 					return nil, err
 				}
