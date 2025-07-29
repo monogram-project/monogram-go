@@ -213,7 +213,12 @@ func (t *Token) SetSeen(tokenizer *Tokenizer, seen bool) {
 }
 
 const signChars = ".*/%+-<>~!&^|?:="
-const precCharacters = ".([*/%+-<>~!&^|?:="
+
+// These roughly correspond to the precedence of the operators in the C language.
+// Note how the prefix operators sneak ahead of their infix counterparts. Blanks
+// are used to encode gaps in the precedence order.
+const precCharactersInfix = ".([                */%+-<>~!&^|?:="
+const precCharactersPrefx = "   .*/%-+<>~!&^|?:="
 
 func (t *Token) DelimiterName() string {
 	switch t.Type {
@@ -231,11 +236,18 @@ func (t *Token) DelimiterName() string {
 }
 
 const (
-	maxPrecedence    int = 999
-	prefixPrecedence int = 1
+	maxPrecedence int = 999
 )
 
-func (t *Token) Precedence() (int, bool) {
+func (t *Token) InfixPrecedence() (int, bool) {
+	return t.Precedence(true) // Use infix precedence
+}
+
+func (t *Token) PrefixPrecedence() (int, bool) {
+	return t.Precedence(false) // Use prefix precedence
+}
+
+func (t *Token) Precedence(infix bool) (int, bool) {
 	// Check if precedence is already cached
 	if t.precValid {
 		return t.precValue, !t.errFlag // Return cached result
@@ -250,7 +262,7 @@ func (t *Token) Precedence() (int, bool) {
 		return setCacheNoValidPrecedence(t) // Cache that this token has no valid precedence
 	}
 
-	P, ok := textPrecedence(t.Text)
+	P, ok := textPrecedence(t.Text, infix)
 	if !ok {
 		return setCacheNoValidPrecedence(t)
 	}
@@ -285,16 +297,22 @@ func (t *Token) Precedence() (int, bool) {
 	return P, true
 }
 
-func textPrecedence(text string) (int, bool) {
+func textPrecedence(text string, infix bool) (int, bool) {
 	// Get the first rune of the token's text
 	runes := []rune(text)
-	if len(runes) == 0 {
+	// We need at least one rune. And we use spaces to encode a non-matching character in the precedence strings.
+	// So if the first rune is a space, we can set it as a non-operator.
+	if len(runes) == 0 || runes[0] == ' ' {
 		// Invalid token with empty text
 		return 0, false
 	}
 	firstRune := runes[0]
 
 	// Find the position of the first rune in the signs string
+	precCharacters := precCharactersInfix
+	if !infix {
+		precCharacters = precCharactersPrefx
+	}
 	pos := strings.IndexRune(precCharacters, firstRune)
 	if pos == -1 {
 		// If the rune is not in the signs string
