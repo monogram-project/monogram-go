@@ -2,8 +2,7 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
-## Unreleased
-
+## [0.7.0] Added XML tags
 
 ### Changed
 
