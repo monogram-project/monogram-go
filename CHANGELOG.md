@@ -4,7 +4,10 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased
 
+
 ### Changed
+
+- Prefix operators now bind less tightly than `.` and `(` and `)`.
 
 - XML-style tags have been added to the grammar. Technically this is a change
   because it prevents the use of `<` as a prefix operator. However you can now
