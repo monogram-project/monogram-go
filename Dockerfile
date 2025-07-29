@@ -7,11 +7,13 @@ WORKDIR /app
 # Copy the Go project directory (adjust the context below if needed)
 COPY . .
 
-# Install essential tools (curl is used to install just)
-RUN apk update && apk add --no-cache curl
+# Install essential tools
+RUN apk update && apk add --no-cache wget tar jq
 
-# Install Just from its install script
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
+# Install Just (latest version) from GitHub releases
+RUN DOWNLOAD_URL=$(wget -qO- https://api.github.com/repos/casey/just/releases/latest | jq -r '.assets[] | select(.name | contains("x86_64-unknown-linux-musl.tar.gz")) | .browser_download_url') && \
+    wget -qO- "$DOWNLOAD_URL" | tar xvz && \
+    mv just /usr/local/bin/
 
 # Run the Justfile recipe to build the monogram executable
 RUN just build-for-docker
