@@ -1,10 +1,12 @@
-# Change Log for Monogram
+# Change Log for Monogram-Go
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
-## Unreleased
+## [0.7.1] XML start/end tags
 
 ### Changed
+
+- Prefix operators now bind less tightly than `.` or `(`.
 
 - XML-style tags have been added to the grammar. Technically this is a change
   because it prevents the use of `<` as a prefix operator. However you can now
