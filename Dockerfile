@@ -11,7 +11,7 @@ COPY . .
 RUN apk update && apk add --no-cache curl
 
 # Install Just from its install script
-RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | sh -s -- --to /usr/local/bin
+RUN curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to /usr/local/bin
 
 # Run the Justfile recipe to build the monogram executable
 RUN just build-for-docker
