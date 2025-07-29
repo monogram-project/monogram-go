@@ -28,6 +28,9 @@ COPY --from=builder /app/monogram /app/monogram
 # Ensure the binary is executable
 RUN chmod +x /app/monogram
 
+# Create directories for input/output file mounting
+RUN mkdir -p /app/input /app/output
+
 # Expose the port that the --test flag uses when running in a container.
 EXPOSE 8080
 
