@@ -36,6 +36,7 @@ const (
 // Subtypes for Identifier
 const (
 	IdentifierVariable uint8 = iota
+	IdentifierFormPrefix
 	IdentifierFormStart
 	IdentifierFormEnd
 	IdentifierSimpleLabel
@@ -152,7 +153,7 @@ func (t *Token) IsCompoundLabelToken(formStart *Token) bool {
 	if t2 == nil {
 		return false
 	}
-	if t2.Type != Identifier || t2.SubType != IdentifierFormStart {
+	if t2.Type != Identifier || (t2.SubType != IdentifierFormStart && t2.SubType != IdentifierFormPrefix) {
 		return false
 	}
 	if t2.Text != formStart.Text {
@@ -165,15 +166,8 @@ func (t *Token) IsLabel() bool {
 	return t.Type == Sign && t.SubType == SignLabel
 }
 
-func (t *Token) IsMacro() bool {
-	if t.Type != Identifier || t.SubType != IdentifierFormStart || t.FollowedByWhitespace {
-		return false
-	}
-	t1 := t.NextToken
-	if t1 == nil {
-		return false
-	}
-	return t1.Type == Sign && t1.SubType == SignForce
+func (t *Token) IsPrefixForm() bool {
+	return t.Type == Identifier && t.SubType == IdentifierFormPrefix
 }
 
 func (t *Token) IsTaggedString() bool {
@@ -352,7 +346,7 @@ func (t *Token) VSCodeTokenType() string {
 		switch t.SubType {
 		case IdentifierVariable:
 			return "variable"
-		case IdentifierFormStart:
+		case IdentifierFormStart, IdentifierFormPrefix:
 			// Assuming a callable-like entity
 			return "function"
 		case IdentifierFormEnd:

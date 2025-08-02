@@ -573,27 +573,28 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	case Literal:
 		return literalToExpr(token, p)
 	case Identifier:
-		if token.IsMacro() {
+		if token.IsPrefixForm() {
 			return p.readPrefixForm(context, token)
-		} else {
-			switch token.SubType {
-			case IdentifierVariable:
-				if !token.EscapeSeen {
-					if e := p.SetAsIdentifier(token); e != nil {
-						return nil, e
-					}
+		}
+		switch token.SubType {
+		case IdentifierVariable:
+			if !token.EscapeSeen {
+				if e := p.SetAsIdentifier(token); e != nil {
+					return nil, e
 				}
-				return &Node{
-					Name: NameIdentifier,
-					Options: map[string]string{
-						OptionName: token.Text,
-					},
-				}, nil
-			case IdentifierFormStart:
-				return p.readFormExpr(token, context)
-			default:
-				return nil, fmt.Errorf("unexpected identifier: %s", token.Text)
 			}
+			return &Node{
+				Name: NameIdentifier,
+				Options: map[string]string{
+					OptionName: token.Text,
+				},
+			}, nil
+		case IdentifierFormPrefix:
+			return p.readPrefixForm(context, token)
+		case IdentifierFormStart:
+			return p.readFormExpr(token, context)
+		default:
+			return nil, fmt.Errorf("unexpected identifier: %s", token.Text)
 		}
 	case OpenBracket:
 		return p.readDelimitedExpr(token, context)
@@ -920,7 +921,11 @@ func (p *Parser) readXmlElement() (*Node, error) {
 }
 
 func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
-	p.next()
+	// Consume the expected "!" token that follows the prefix form identifier
+	forceToken := p.next()
+	if !(forceToken.Type == Sign && forceToken.SubType == SignForce) {
+		return nil, fmt.Errorf("Expected '!' after prefix form '%s', but found '%s'", token.Text, forceToken.Text)
+	}
 	cxt := context.setInsideForm(true)
 	startAgain := true
 

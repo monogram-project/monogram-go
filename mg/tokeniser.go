@@ -1381,13 +1381,16 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 					Column:  token.Span.StartColumn,
 				}
 			}
-			token.SubType = IdentifierFormStart
+			token.SubType = IdentifierFormPrefix
 			is_reserved[token.Text] = true
 		}
 	}
 	for _, token := range t.tokens {
 		if token.Type != Identifier || strings.HasPrefix(token.Text, "endend") {
 			continue
+		}
+		if token.SubType == IdentifierFormPrefix {
+			continue // Already marked as a prefix
 		}
 		if strings.HasPrefix(token.Text, "end") {
 			stem := token.Text[3:]
