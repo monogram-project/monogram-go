@@ -55,7 +55,7 @@ type FormatOptions struct {
 }
 
 // setupFlags initializes a flag set with the common flag definitions.
-func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
+func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, configFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
 	fs.StringVarP(&options.Format, "format", "f", options.Format, "Output format xml|json|yaml|mermaid|dot")
 	fs.StringVarP(&options.Input, "input", "i", options.Input, "Input file (optional, defaults to stdin)")
 	fs.StringVarP(&options.Output, "output", "o", options.Output, "Output file (optional, defaults to stdout)")
@@ -67,6 +67,9 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 	fs.BoolVar(&options.CheckLiterals, "check-literals", options.CheckLiterals, "Check regexs and other literal strings for validity")
 	if optionsFile != nil {
 		fs.StringVar(optionsFile, "options-file", "", "File containing additional options")
+	}
+	if configFile != nil {
+		fs.StringVarP(configFile, "config", "c", "", "Configuration file (YAML format)")
 	}
 	if showHelp != nil {
 		fs.BoolVarP(showHelp, "help", "h", false, "Display help information")
@@ -158,6 +161,7 @@ func main() {
 	}
 
 	var optionsFile string
+	var configFile string
 	var showHelp bool
 	var classifyTokens bool
 	var showVersion bool // New variable for the --version flag
@@ -165,7 +169,7 @@ func main() {
 	openBrowserFlag := true
 
 	// Set up the main command-line flag set
-	setupFlags(pflag.CommandLine, &options, &optionsFile, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
+	setupFlags(pflag.CommandLine, &options, &optionsFile, &configFile, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
 
 	// Parse command-line flags first to check for `--options-file`
 	pflag.Parse()
@@ -179,13 +183,32 @@ func main() {
 
 		// Create a temporary FlagSet for file-based options
 		fileFlagSet := pflag.NewFlagSet("file-flags", pflag.ContinueOnError)
-		setupFlags(fileFlagSet, &options, nil, nil, nil, nil, nil, nil) // Reuse the same setup logic
+		setupFlags(fileFlagSet, &options, nil, nil, nil, nil, nil, nil, nil) // Reuse the same setup logic
 		if err := fileFlagSet.Parse(fileArgs); err != nil {
 			log.Fatalf("Error parsing options from file: %v", err)
 		}
 
 		// Re-parse the command-line arguments to ensure they override file-based options
 		pflag.Parse()
+	}
+
+	// Load configuration file if specified
+	var config *Config
+	var err error
+	if configFile != "" {
+		config, err = LoadConfig(configFile)
+		if err != nil {
+			log.Fatalf("Error loading config file: %v", err)
+		}
+
+		// Track which flags were explicitly set to avoid overriding them with config defaults
+		flagsExplicitlySet := make(map[string]bool)
+		pflag.Visit(func(flag *pflag.Flag) {
+			flagsExplicitlySet[flag.Name] = true
+		})
+
+		// Apply config defaults only for flags that weren't explicitly set
+		config.ApplyConfigDefaults(&options, flagsExplicitlySet)
 	}
 
 	if testPort != "" {
@@ -260,7 +283,7 @@ func main() {
 	newArgs[0] = execName
 	copy(newArgs[1:], os.Args[1:])
 
-	err := syscall.Exec(execName, newArgs, os.Environ())
+	err = syscall.Exec(execName, newArgs, os.Environ())
 	if err != nil {
 		log.Fatalf("Failed to execute %s: %v", execName, err)
 	}

@@ -1,0 +1,19 @@
+# Sample Monogram Configuration File
+# This file demonstrates the configuration options for the monogram tool
+
+# Regex patterns for identifier classification
+# These will be used in the future for regex-based identifier classification
+simple-label-regex: "^(if|else|while|for|case|default)$"
+compound-label-regex: "^(else-if|else-while)$"
+form-start-regex: "^(function|class|struct)$"
+form-end-regex: "^end(function|class|struct)$"
+form-prefix-regex: "^(return|break|continue)$"
+
+# Default configuration values
+# These are applied only when the corresponding command-line flag is not used
+default-format: "xml"
+default-indent: 2
+default-label: "seq"
+include-spans: false
+decimal: false
+check-literals: true
