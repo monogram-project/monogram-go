@@ -410,11 +410,8 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 	allowFlags := flagComma | flagSemicolon | flagNewline
 	closingTokenText := "end" + formStart.Text
 	context = context.setInsideForm(true)
-	// var currentPart []*Node
-	// content := []*Node{}
 	mode := alphaMode
 	prev_expr_explicitly_terminated := false
-	// currentKeyword := formStart
 	startLineCol := p.startLineCol()
 	var endLineCol LineCol
 	builder := NewFormBuilder(formStart.Text, startLineCol, p.IncludeSpans, false)
@@ -599,7 +596,6 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 	case OpenBracket:
 		return p.readDelimitedExpr(token, context)
 	case Sign:
-		// fmt.Println("Sign token:", token.Text, token.SubType)
 		if token.SubType == SignDot {
 			if !token.FollowedByWhitespace {
 				likely_tag_token := token.NextToken

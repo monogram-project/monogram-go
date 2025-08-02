@@ -50,4 +50,5 @@ classification process. The new logic will be:
         - If this identifier `else` is followed by `-if` then mark it as a IdentifierCompoundLabel.
     - Otherwise, leave it as an IdentifierVariable.
 
-Our first step is to implement the new sub-category IdentifierFormPrefix.
+Our next step is to implement the logic for simple-label-regex. This will 
+involve reading from a configuration file.

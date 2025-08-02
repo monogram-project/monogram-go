@@ -261,28 +261,6 @@ func (t *Token) Precedence(infix bool) (int, bool) {
 		return setCacheNoValidPrecedence(t)
 	}
 
-	// // Get the first rune of the token's text
-	// runes := []rune(t.Text)
-	// if len(runes) == 0 {
-	// 	// Invalid token with empty text
-	// 	return setCacheNoValidPrecedence(t)
-	// }
-	// firstRune := runes[0]
-
-	// // Find the position of the first rune in the signs string
-	// pos := strings.IndexRune(precCharacters, firstRune)
-	// if pos == -1 {
-	// 	// If the rune is not in the signs string
-	// 	return setCacheNoValidPrecedence(t)
-	// }
-
-	// // Calculate precedence
-	// P := (pos + 1) * 10
-	// if len(runes) > 1 && runes[0] == runes[1] {
-	// 	// If the first rune occurs twice in the token, subtract 1
-	// 	P--
-	// }
-
 	// Cache the precedence result and success
 	t.precValue = P
 	t.precValid = true
