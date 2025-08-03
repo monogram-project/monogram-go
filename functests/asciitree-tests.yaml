@@ -1,0 +1,108 @@
+normalize: none
+tests:
+  - name: simple_number
+    command: "{command} --format asciitree"
+    input: "42"
+    expected_output: |
+      unit
+      └─ number
+            • value: 42
+    expected_exit_status: 0
+
+  - name: simple_identifier
+    command: "{command} --format asciitree"
+    input: "hello"
+    expected_output: |
+      unit
+      └─ identifier
+            • name: hello
+    expected_exit_status: 0
+
+  - name: simple_addition
+    command: "{command} --format asciitree"
+    input: "1 + 2"
+    expected_output: |
+      unit
+      └─ operator
+         │  • name: +
+         │  • syntax: infix
+         ├─ number
+         │     • value: 1
+         └─ number
+               • value: 2
+    expected_exit_status: 0
+
+  - name: simple_subtraction
+    command: "{command} --format asciitree"
+    input: "5 - 3"
+    expected_output: |
+      unit
+      └─ operator
+         │  • name: -
+         │  • syntax: infix
+         ├─ number
+         │     • value: 5
+         └─ number
+               • value: 3
+    expected_exit_status: 0
+
+  - name: prefix_operator
+    command: "{command} --format asciitree"
+    input: "-x"
+    expected_output: |
+      unit
+      └─ operator
+         │  • name: -
+         │  • syntax: prefix
+         └─ identifier
+               • name: x
+    expected_exit_status: 0
+
+  - name: simple_string
+    command: "{command} --format asciitree"
+    input: '"hello"'
+    expected_output: |
+      unit
+      └─ string
+            • quote: double
+            • specifier: 
+            • value: hello
+    expected_exit_status: 0
+
+  - name: nested_expression
+    command: "{command} --format asciitree"
+    input: "a + b * c"
+    expected_output: |
+      unit
+      └─ operator
+         │  • name: +
+         │  • syntax: infix
+         ├─ identifier
+         │     • name: a
+         └─ operator
+            │  • name: *
+            │  • syntax: infix
+            ├─ identifier
+            │     • name: b
+            └─ identifier
+                  • name: c
+    expected_exit_status: 0
+
+  - name: multiplication_first
+    command: "{command} --format asciitree"
+    input: "x * y + z"
+    expected_output: |
+      unit
+      └─ operator
+         │  • name: +
+         │  • syntax: infix
+         ├─ operator
+         │  │  • name: *
+         │  │  • syntax: infix
+         │  ├─ identifier
+         │  │     • name: x
+         │  └─ identifier
+         │        • name: y
+         └─ identifier
+               • name: z
+    expected_exit_status: 0

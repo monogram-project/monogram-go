@@ -146,14 +146,14 @@ func walkNode(node *Node) error {
 	case NameForm:
 		_ = node.Options[OptionName]
 	}
-	
+
 	return nil
 }
 
 // CheckASTConsistency verifies that both AST APIs work on the same input
 func CheckASTConsistency(input string) error {
 	p_opts := NewParserOptions()
-	
+
 	// Test generic AST
 	node, err := p_opts.ParseToAST(input, "", false)
 	if err != nil {
@@ -163,7 +163,7 @@ func CheckASTConsistency(input string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Test strongly-typed AST
 	element, err := p_opts.ParseToElement(input, "", false)
 	if err != nil {
@@ -173,7 +173,7 @@ func CheckASTConsistency(input string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Test conversion from generic to strongly-typed
 	convertedElement, err := node.ToElement()
 	if err != nil {
@@ -183,7 +183,7 @@ func CheckASTConsistency(input string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -232,7 +232,7 @@ func TestAST(t *testing.T) {
 							t.Errorf("Cannot parse to typed AST test-case '%s' from file '%s': %v", testCase.Name, fileName, err)
 						}
 					})
-					
+
 					// Test consistency between both AST APIs
 					t.Run(testCase.Name+"_consistency", func(t *testing.T) {
 						err := CheckASTConsistency(testCase.Input)
