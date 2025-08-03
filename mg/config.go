@@ -7,35 +7,39 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// FormatOptions represents the formatting options
-type FormatOptions struct {
-	Format        string
-	Input         string
-	Output        string
-	Indent        int
-	Limit         bool
-	DefaultLabel  string
-	IncludeSpans  bool
-	Decimal       bool
-	CheckLiterals bool
+type CoreFormatOptions struct {
+	Format        string `yaml:"option-format,omitempty"`
+	Indent        int    `yaml:"option-indent,omitempty"`
+	DefaultLabel  string `yaml:"option-default-label,omitempty"`
+	IncludeSpans  bool   `yaml:"option-include-spans,omitempty"`
+	Decimal       bool   `yaml:"option-decimal,omitempty"`
+	CheckLiterals bool   `yaml:"option-check-literals,omitempty"`
 }
 
-// Config represents the configuration structure that can be loaded from YAML
-type Config struct {
+// FormatOptions represents the formatting options
+type FormatOptions struct {
+	Input  string
+	Output string
+	Limit  bool
+	CoreFormatOptions
+}
+
+type TokenClassifiers struct {
 	// Regex patterns for identifier classification
 	FormEndRegex       string `yaml:"form-end-regex,omitempty"`
 	FormStartRegex     string `yaml:"form-start-regex,omitempty"`
 	FormPrefixRegex    string `yaml:"form-prefix-regex,omitempty"`
 	SimpleLabelRegex   string `yaml:"simple-label-regex,omitempty"`
 	CompoundLabelRegex string `yaml:"compound-label-regex,omitempty"`
+}
+
+// Config represents the configuration structure that can be loaded from YAML
+type Config struct {
+	// Regex patterns for identifier classification
+	TokenClassifiers `yaml:",inline"`
 
 	// Default options that can be overridden by command line
-	DefaultFormat string `yaml:"option-format,omitempty"`
-	DefaultIndent int    `yaml:"option-indent,omitempty"`
-	DefaultLabel  string `yaml:"option-default-label,omitempty"`
-	IncludeSpans  bool   `yaml:"option-include-spans,omitempty"`
-	Decimal       bool   `yaml:"option-decimal,omitempty"`
-	CheckLiterals bool   `yaml:"option-check-literals,omitempty"`
+	CoreFormatOptions `yaml:",inline"`
 }
 
 // LoadConfig loads configuration from a YAML file
@@ -60,11 +64,11 @@ func LoadConfig(filename string) (*Config, error) {
 // ApplyConfigDefaults applies configuration defaults to FormatOptions, but only
 // for fields that haven't been explicitly set via command line flags
 func (c *Config) ApplyConfigDefaults(options *FormatOptions, flagsExplicitlySet map[string]bool) {
-	if !flagsExplicitlySet["format"] && c.DefaultFormat != "" {
-		options.Format = c.DefaultFormat
+	if !flagsExplicitlySet["format"] && c.Format != "" {
+		options.Format = c.Format
 	}
-	if !flagsExplicitlySet["indent"] && c.DefaultIndent > 0 {
-		options.Indent = c.DefaultIndent
+	if !flagsExplicitlySet["indent"] && c.Indent > 0 {
+		options.Indent = c.Indent
 	}
 	if !flagsExplicitlySet["default-label"] && c.DefaultLabel != "" {
 		options.DefaultLabel = c.DefaultLabel

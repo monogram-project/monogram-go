@@ -1,30 +1,27 @@
 package mg
 
 type ParserOptions struct {
-	colOffset          int
-	DefaultLabel       string
-	IncludeSpans       bool
-	Decimal            bool
-	CheckLiterals      bool
-	SimpleLabelRegex   string
-	CompoundLabelRegex string
-	FormStartRegex     string
-	FormEndRegex       string
-	FormPrefixRegex    string
+	colOffset int
+	CoreFormatOptions
+	*TokenClassifiers
 }
 
 func NewParserOptions() *ParserOptions {
 	return &ParserOptions{
-		colOffset:          0,
-		DefaultLabel:       "_",
-		IncludeSpans:       false,
-		Decimal:            false,
-		CheckLiterals:      false,
-		SimpleLabelRegex:   "",
-		CompoundLabelRegex: "",
-		FormStartRegex:     "",
-		FormEndRegex:       "",
-		FormPrefixRegex:    "",
+		colOffset: 0,
+		CoreFormatOptions: CoreFormatOptions{
+			DefaultLabel:  "_",
+			IncludeSpans:  false,
+			Decimal:       false,
+			CheckLiterals: false,
+		},
+		TokenClassifiers: &TokenClassifiers{
+			SimpleLabelRegex:   "",
+			CompoundLabelRegex: "",
+			FormStartRegex:     "",
+			FormEndRegex:       "",
+			FormPrefixRegex:    "",
+		},
 	}
 }
 

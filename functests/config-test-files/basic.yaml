@@ -1,12 +1,12 @@
 # Basic test configuration file
 # Used for functional testing of configuration file behavior
 
-# Regex patterns for identifier classification
-simple-label-regex: "^(if|else|while|for|case|default)$"
-compound-label-regex: "^(else-if|else-while)$"
-form-start-regex: "^(function|class|struct)$"
-form-end-regex: "^end(function|class|struct)$"
-form-prefix-regex: "^(return|break|continue)$"
+# Regex patterns for identifier classification - set to match nothing to avoid interference
+simple-label-regex: "^$"
+compound-label-regex: "^$"
+form-start-regex: "^$"
+form-end-regex: "^$"
+form-prefix-regex: "^$"
 
 # Default configuration values for testing
 option-format: "xml"

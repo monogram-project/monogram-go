@@ -122,12 +122,10 @@ var availableFormatNames = func() []string {
 	return formats
 }()
 
-func parseToAST(input string, foptions *mg.FormatOptions) (*mg.Node, error) {
+func parseToAST(input string, foptions *mg.FormatOptions, classifiers *mg.TokenClassifiers) (*mg.Node, error) {
 	p_opts := &mg.ParserOptions{
-		DefaultLabel:  foptions.DefaultLabel,
-		IncludeSpans:  foptions.IncludeSpans,
-		Decimal:       foptions.Decimal,
-		CheckLiterals: foptions.CheckLiterals,
+		CoreFormatOptions: foptions.CoreFormatOptions,
+		TokenClassifiers:  classifiers,
 	}
 	return p_opts.ParseToAST(input, foptions.Input, foptions.Limit)
 }
@@ -135,14 +133,16 @@ func parseToAST(input string, foptions *mg.FormatOptions) (*mg.Node, error) {
 func main() {
 	// Initialize the options struct
 	options := mg.FormatOptions{
-		Format:       "",
-		Input:        "",
-		Output:       "",
-		Indent:       2,
-		Limit:        false,
-		DefaultLabel: "_",
-		IncludeSpans: false,
-		Decimal:      false,
+		Input:  "",
+		Output: "",
+		Limit:  false,
+		CoreFormatOptions: mg.CoreFormatOptions{
+			Format:       "",
+			Indent:       2,
+			DefaultLabel: "_",
+			IncludeSpans: false,
+			Decimal:      false,
+		},
 	}
 
 	var configFile string
@@ -229,7 +229,7 @@ func main() {
 
 	// Handle built-in formats
 	if isBuiltInFormat {
-		err := translator.translate(inputReader, outputWriter, &options)
+		err := translator.translate(inputReader, outputWriter, &options, config)
 		if err != nil {
 			log.Fatalf("Error: Failed to translate input: %v", err)
 		}
@@ -255,19 +255,27 @@ func main() {
 	}
 }
 
-func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *mg.FormatOptions) error {
-	return translate(input, output, printAST.Fn, options)
+func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *mg.FormatOptions, config *mg.Config) error {
+	return translate(input, output, printAST.Fn, options, config)
 }
 
-func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer), options *mg.FormatOptions) error {
+func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer), options *mg.FormatOptions, config *mg.Config) error {
 	// Read the entire input as a string
 	data, err := io.ReadAll(input)
 	if err != nil {
 		return fmt.Errorf("failed to read input: %v", err)
 	}
 
+	// Get TokenClassifiers from config, or use empty if no config
+	var classifiers *mg.TokenClassifiers
+	if config != nil {
+		classifiers = &config.TokenClassifiers
+	} else {
+		classifiers = &mg.TokenClassifiers{}
+	}
+
 	// Convert the input string into an AST
-	ast, err := parseToAST(string(data), options)
+	ast, err := parseToAST(string(data), options, classifiers)
 	if err != nil {
 		return err
 	}

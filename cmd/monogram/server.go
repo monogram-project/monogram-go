@@ -236,7 +236,7 @@ var formTemplate = template.Must(template.New("form").Parse(`
 
 // startTestServer initializes an HTTP server on the specified port.
 // It adjusts the bind address depending on whether it's running inside a container.
-func startTestServer(port string, openBrowserFlag bool, options *FormatOptions) {
+func startTestServer(port string, openBrowserFlag bool, options *mg.FormatOptions) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		indexHandler(w, r, options)
 	})
@@ -260,7 +260,7 @@ func startTestServer(port string, openBrowserFlag bool, options *FormatOptions) 
 	}
 }
 
-func indexHandler(w http.ResponseWriter, _ *http.Request, options *FormatOptions) {
+func indexHandler(w http.ResponseWriter, _ *http.Request, options *mg.FormatOptions) {
 	format := "XML" // Default format
 	if options.Format != "" {
 		format = options.Format
@@ -318,15 +318,17 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Set up FormatOptions based on the form values:
 	options := mg.FormatOptions{
-		Format:        formatObject.Format,
-		Input:         "", // Not used in test mode — we’re using form data.
-		Output:        "", // Output will be captured in a buffer.
-		Indent:        indent,
-		Limit:         false,
-		DefaultLabel:  defaultLabel,
-		IncludeSpans:  includeSpans,
-		Decimal:       decimal,
-		CheckLiterals: checkLiterals,
+		Input:  "", // Not used in test mode — we’re using form data.
+		Output: "", // Output will be captured in a buffer.
+		Limit:  false,
+		CoreFormatOptions: mg.CoreFormatOptions{
+			Format:        formatObject.Format,
+			Indent:        indent,
+			DefaultLabel:  defaultLabel,
+			IncludeSpans:  includeSpans,
+			Decimal:       decimal,
+			CheckLiterals: checkLiterals,
+		},
 	}
 
 	// Create reader from input text and a bytes.Buffer for capturing output:

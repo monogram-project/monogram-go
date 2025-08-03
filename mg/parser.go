@@ -1061,10 +1061,13 @@ func (p *Parser) convertInterpolatedStringSubToken(token *Token) (*Node, error) 
 func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node, error) {
 	columnOffset := subToken.Span.StartColumn - 1
 	p_opts := &ParserOptions{
-		colOffset:    columnOffset,
-		DefaultLabel: p.UnglueOption.Text,
-		IncludeSpans: p.IncludeSpans,
-		Decimal:      p.Decimal,
+		colOffset: columnOffset,
+		CoreFormatOptions: CoreFormatOptions{
+			DefaultLabel: p.UnglueOption.Text,
+			IncludeSpans: p.IncludeSpans,
+			Decimal:      p.Decimal,
+		},
+		TokenClassifiers: &TokenClassifiers{}, // Empty classifiers for literal expressions
 	}
 	expressionNode, err := p_opts.ParseToAST(subToken.Text, "", true)
 	expressionNode.Name = NameInterpolate // The outer brackets can be repurposed!
