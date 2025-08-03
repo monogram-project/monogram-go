@@ -4,7 +4,18 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 ## Unreleased 
 
-...
+### Added
+
+- Configuration file support via `--config` (`-c`) flag. Supports YAML format with both regex patterns for identifier classification and default options. See [docs/config.md](docs/config.md) for details.
+
+### Changed
+
+- `--default-breaker` flag renamed to `--default-label` for clarity and consistency.
+- Configuration file option fields now follow `option-{commandOptionName}` naming scheme (e.g., `option-format`, `option-indent`).
+
+### Removed
+
+- Experimental `--options-file` flag has been withdrawn in favor of the new YAML configuration file system.
 
 ## [0.7.1] XML start/end tags
 
