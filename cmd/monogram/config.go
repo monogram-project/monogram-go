@@ -53,7 +53,7 @@ func (c *Config) ApplyConfigDefaults(options *FormatOptions, flagsExplicitlySet 
 	if !flagsExplicitlySet["indent"] && c.DefaultIndent > 0 {
 		options.Indent = c.DefaultIndent
 	}
-	if !flagsExplicitlySet["default-breaker"] && c.DefaultLabel != "" {
+	if !flagsExplicitlySet["default-label"] && c.DefaultLabel != "" {
 		options.DefaultLabel = c.DefaultLabel
 	}
 	if !flagsExplicitlySet["include-spans"] && c.IncludeSpans {

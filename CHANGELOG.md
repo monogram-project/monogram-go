@@ -136,9 +136,9 @@ The above example is translated into XML like this:
     # ! marks a prefix form.
     if! predicate(x) {
       action(x)
-    } else-if test(y) {     # else-if is recognised as a 'breaker'
+    } else-if test(y) {     # else-if is recognised as a 'label'
       action(y)
-    } else: {               # else: is also recognised as a 'breaker'
+    } else: {               # else: is also recognised as a 'label'
       0
     }
     ```

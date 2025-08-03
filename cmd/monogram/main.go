@@ -61,7 +61,7 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 	fs.StringVarP(&options.Output, "output", "o", options.Output, "Output file (optional, defaults to stdout)")
 	fs.IntVar(&options.Indent, "indent", options.Indent, "Number of spaces for indentation (0 for no formatting)")
 	fs.BoolVar(&options.Limit, "one", options.Limit, "Process only one monogram value and do not wrap in a unit node")
-	fs.StringVarP(&options.DefaultLabel, "default-breaker", "b", options.DefaultLabel, "Default breakers")
+	fs.StringVarP(&options.DefaultLabel, "default-label", "b", options.DefaultLabel, "Default labels")
 	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include start/end of expressions in the output")
 	fs.BoolVar(&options.Decimal, "decimal", options.Decimal, "Decode numbers integers and floats in base 10")
 	fs.BoolVar(&options.CheckLiterals, "check-literals", options.CheckLiterals, "Check regexs and other literal strings for validity")

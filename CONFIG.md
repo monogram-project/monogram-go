@@ -26,7 +26,7 @@ These options provide defaults that are applied when the corresponding command-l
 
 - `default-format`: Default output format (xml, json, yaml, mermaid, dot)
 - `default-indent`: Default indentation (number of spaces)
-- `default-label`: Default label/breaker text
+- `default-label`: Default label text
 - `include-spans`: Include source spans in output (true/false)
 - `decimal`: Decode numbers in base 10 (true/false)
 - `check-literals`: Check regex and literal string validity (true/false)
