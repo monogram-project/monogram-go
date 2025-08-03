@@ -55,7 +55,7 @@ type FormatOptions struct {
 }
 
 // setupFlags initializes a flag set with the common flag definitions.
-func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, configFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
+func setupFlags(fs *pflag.FlagSet, options *FormatOptions, configFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
 	fs.StringVarP(&options.Format, "format", "f", options.Format, "Output format xml|json|yaml|mermaid|dot")
 	fs.StringVarP(&options.Input, "input", "i", options.Input, "Input file (optional, defaults to stdin)")
 	fs.StringVarP(&options.Output, "output", "o", options.Output, "Output file (optional, defaults to stdout)")
@@ -65,9 +65,6 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include start/end of expressions in the output")
 	fs.BoolVar(&options.Decimal, "decimal", options.Decimal, "Decode numbers integers and floats in base 10")
 	fs.BoolVar(&options.CheckLiterals, "check-literals", options.CheckLiterals, "Check regexs and other literal strings for validity")
-	if optionsFile != nil {
-		fs.StringVar(optionsFile, "options-file", "", "File containing additional options")
-	}
 	if configFile != nil {
 		fs.StringVarP(configFile, "config", "c", "", "Configuration file (YAML format)")
 	}
@@ -160,7 +157,6 @@ func main() {
 		Decimal:      false,
 	}
 
-	var optionsFile string
 	var configFile string
 	var showHelp bool
 	var classifyTokens bool
@@ -169,28 +165,10 @@ func main() {
 	openBrowserFlag := true
 
 	// Set up the main command-line flag set
-	setupFlags(pflag.CommandLine, &options, &optionsFile, &configFile, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
+	setupFlags(pflag.CommandLine, &options, &configFile, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
 
-	// Parse command-line flags first to check for `--options-file`
+	// Parse command-line flags
 	pflag.Parse()
-
-	// Process options file if specified
-	if optionsFile != "" {
-		fileArgs, err := readOptionsFile(optionsFile)
-		if err != nil {
-			log.Fatalf("Error reading options file: %v", err)
-		}
-
-		// Create a temporary FlagSet for file-based options
-		fileFlagSet := pflag.NewFlagSet("file-flags", pflag.ContinueOnError)
-		setupFlags(fileFlagSet, &options, nil, nil, nil, nil, nil, nil, nil) // Reuse the same setup logic
-		if err := fileFlagSet.Parse(fileArgs); err != nil {
-			log.Fatalf("Error parsing options from file: %v", err)
-		}
-
-		// Re-parse the command-line arguments to ensure they override file-based options
-		pflag.Parse()
-	}
 
 	// Load configuration file if specified
 	var config *Config
@@ -287,19 +265,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to execute %s: %v", execName, err)
 	}
-}
-
-// readOptionsFile reads the options from the specified file and returns them as a slice of strings
-func readOptionsFile(filename string) ([]string, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	// Split the file into individual arguments (by whitespace or newlines)
-	content := string(data)
-	args := strings.Fields(content) // Splits by any whitespace (including newlines)
-	return args, nil
 }
 
 func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *FormatOptions) error {
