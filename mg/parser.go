@@ -50,6 +50,18 @@ func (p *Parser) next() *Token {
 	return tok
 }
 
+func (p *Parser) nextIf(tokenType TokenType, subType uint8) *Token {
+	tok := p.currentToken.NextToken
+	if tok.Type != tokenType || tok.SubType != subType {
+		return nil
+	}
+	p.currentToken = tok
+	if tok.isCapstone() {
+		return nil // No more tokens available.
+	}
+	return tok
+}
+
 func (p *Parser) safeNext() *Token {
 	tok := p.currentToken.NextToken
 	p.currentToken = tok
@@ -121,7 +133,7 @@ func (p *Parser) readOptExprPrec(formStart *Token, outer_prec int, context Conte
 	if token.Type == Identifier && token.SubType == IdentifierFormEnd {
 		return nil, nil
 	}
-	if token.Type == Identifier && token.SubType == IdentifierVariable && token.IsLabelToken(formStart) {
+	if token.IsLabelToken(formStart) {
 		return nil, nil
 	}
 	if token.Type == Sign && token.SubType == SignLabel {
@@ -455,7 +467,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			if e != nil {
 				return nil, e
 			}
-			p.next() // remove the ':'
+			p.nextIf(Sign, SignLabel) // remove the optional ':'.
 
 			builder.BeginNextPart(token.Text, lc34, p.startLineCol())
 			mode = betaMode
@@ -463,7 +475,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			p.SetAsCompoundLabel(token)
 			lc34 := p.endLineCol()
 			t1 := p.next() // skip the label
-			t2 := p.next() // remove the '-
+			t2 := p.next() // remove the '-'
 			t3 := p.next() // remove the form-start
 
 			builder.BeginNextPart(t1.Text+t2.Text+t3.Text, lc34, p.startLineCol())

@@ -120,19 +120,17 @@ func (t *Token) IsLabelToken(formStart *Token) bool {
 }
 
 func (t *Token) IsSimpleLabelToken() bool {
-	if t.Type != Identifier || t.SubType != IdentifierVariable {
+	if t.Type != Identifier {
 		return false
 	}
-	if t.FollowedByWhitespace {
+	if t.SubType == IdentifierSimpleLabel {
+		return true // Simple labels are always valid
+	}
+	if t.SubType != IdentifierVariable {
 		return false
 	}
-	if t.NextToken == nil {
-		return false
-	}
-	if t.NextToken.Type != Sign || t.NextToken.SubType != SignLabel {
-		return false
-	}
-	return true
+	hasFollowingSignLabel := !t.FollowedByWhitespace && t.NextToken != nil && t.NextToken.Type == Sign && t.NextToken.SubType == SignLabel
+	return hasFollowingSignLabel // Variable labels must be followed by a sign label
 }
 
 func (t *Token) IsCompoundLabelToken(formStart *Token) bool {
