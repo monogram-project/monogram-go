@@ -1,0 +1,93 @@
+# Functional tests for configuration file behavior
+normalize: xml
+tests:
+
+  - name: "Config file provides default format"
+    command: "{command} --config config-test-files/basic.yaml"
+    input: |
+      hello
+    expected_output: |
+      <unit>
+        <identifier name="hello" />
+      </unit>
+
+  - name: "Config file provides default indent"
+    command: "{command} --config config-test-files/basic.yaml --format xml"
+    input: |
+      hello
+    expected_output: |
+      <unit>
+          <identifier name="hello" />
+      </unit>
+
+  - name: "Config file provides default label"
+    command: "{command} --config config-test-files/basic.yaml --format xml --one"
+    input: |
+      if x:
+        y
+      endif
+    expected_output: |
+      <form separator="undefined" syntax="surround">
+          <part keyword="if">
+              <identifier name="x" />
+          </part>
+          <part keyword="test">
+              <identifier name="y" />
+          </part>
+      </form>
+
+  - name: "Command line overrides config file format"
+    command: "{command} --config config-test-files/basic.yaml --format json"
+    input: |
+      hello
+    expected_output: |
+      {
+        "role": "unit",
+        "children": [
+          {
+            "role": "identifier",
+            "name": "hello"
+          }
+        ]
+      }
+    normalize: json
+
+  - name: "Command line overrides config file indent"
+    command: "{command} --config config-test-files/basic.yaml --format xml --indent 2"
+    input: |
+      hello
+    expected_output: |
+      <unit>
+        <identifier name="hello" />
+      </unit>
+
+  - name: "Command line overrides config file default label"
+    command: "{command} --config config-test-files/basic.yaml --format xml --one --default-label custom"
+    input: |
+      if x:
+        y
+      endif
+    expected_output: |
+      <form separator="undefined" syntax="surround">
+          <part keyword="if">
+              <identifier name="x" />
+          </part>
+          <part keyword="custom">
+              <identifier name="y" />
+          </part>
+      </form>
+
+  - name: "Config file with include-spans enabled"
+    command: "{command} --config config-test-files/basic.yaml --format xml --include-spans"
+    input: |
+      xyz
+    expected_output: |
+      <unit span="1 1 2 1">
+          <identifier name="xyz" span="1 1 1 4" />
+      </unit>
+
+  - name: "Invalid config file path gives error"
+    command: "{command} --config nonexistent-config.yaml --format xml"
+    input: |
+      hello
+    expected_exit_status: 1
