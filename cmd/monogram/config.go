@@ -17,12 +17,12 @@ type Config struct {
 	CompoundLabelRegex string `yaml:"compound-label-regex,omitempty"`
 
 	// Default options that can be overridden by command line
-	DefaultFormat string `yaml:"default-format,omitempty"`
-	DefaultIndent int    `yaml:"default-indent,omitempty"`
-	DefaultLabel  string `yaml:"default-label,omitempty"`
-	IncludeSpans  bool   `yaml:"include-spans,omitempty"`
-	Decimal       bool   `yaml:"decimal,omitempty"`
-	CheckLiterals bool   `yaml:"check-literals,omitempty"`
+	DefaultFormat string `yaml:"option-format,omitempty"`
+	DefaultIndent int    `yaml:"option-indent,omitempty"`
+	DefaultLabel  string `yaml:"option-default-label,omitempty"`
+	IncludeSpans  bool   `yaml:"option-include-spans,omitempty"`
+	Decimal       bool   `yaml:"option-decimal,omitempty"`
+	CheckLiterals bool   `yaml:"option-check-literals,omitempty"`
 }
 
 // LoadConfig loads configuration from a YAML file

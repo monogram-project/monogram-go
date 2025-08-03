@@ -24,12 +24,12 @@ These patterns will be used for regex-based identifier classification:
 ### Default Options
 These options provide defaults that are applied when the corresponding command-line flag is not specified:
 
-- `default-format`: Default output format (xml, json, yaml, mermaid, dot)
-- `default-indent`: Default indentation (number of spaces)
-- `default-label`: Default label text
-- `include-spans`: Include source spans in output (true/false)
-- `decimal`: Decode numbers in base 10 (true/false)
-- `check-literals`: Check regex and literal string validity (true/false)
+- `option-format`: Default output format (xml, json, yaml, mermaid, dot)
+- `option-indent`: Default indentation (number of spaces)
+- `option-default-label`: Default label text
+- `option-include-spans`: Include source spans in output (true/false)
+- `option-decimal`: Decode numbers in base 10 (true/false)
+- `option-check-literals`: Check regex and literal string validity (true/false)
 
 ## Example Configuration
 
@@ -42,12 +42,12 @@ form-end-regex: "^end(function|class|struct)$"
 form-prefix-regex: "^(return|break|continue)$"
 
 # Default configuration values
-default-format: "xml"
-default-indent: 2
-default-label: "seq"
-include-spans: false
-decimal: false
-check-literals: true
+option-format: "xml"
+option-indent: 2
+option-default-label: "seq"
+option-include-spans: false
+option-decimal: false
+option-check-literals: true
 ```
 
 ## Precedence

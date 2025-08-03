@@ -11,9 +11,9 @@ form-prefix-regex: "^(return|break|continue)$"
 
 # Default configuration values
 # These are applied only when the corresponding command-line flag is not used
-default-format: "xml"
-default-indent: 2
-default-label: "seq"
-include-spans: false
-decimal: false
-check-literals: true
+option-format: "xml"
+option-indent: 2
+option-default-label: "seq"
+option-include-spans: false
+option-decimal: false
+option-check-literals: true
