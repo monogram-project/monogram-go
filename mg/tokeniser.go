@@ -10,25 +10,36 @@ import (
 )
 
 type Tokenizer struct {
-	input        string   // The input string to tokenize
-	tokens       []*Token // The array of tokens generated
-	lineNo       int      // Current line number
-	colNo        int      // Current column number
-	pos          int      // Current byte position in the input
-	NewlineSeen  bool     // New field to indicate if a newline has been seen
-	markStack    []int    // Stack of position markers
-	lineNoStack  []int    // Array to store line numbers for each token
-	lineColStack []int    // Array to store column numbers for each token
+	input              string   // The input string to tokenize
+	tokens             []*Token // The array of tokens generated
+	lineNo             int      // Current line number
+	colNo              int      // Current column number
+	pos                int      // Current byte position in the input
+	NewlineSeen        bool     // New field to indicate if a newline has been seen
+	markStack          []int    // Stack of position markers
+	lineNoStack        []int    // Array to store line numbers for each token
+	lineColStack       []int    // Array to store column numbers for each token
+	SimpleLabelRegex   string   // Regex pattern for simple labels
+	CompoundLabelRegex string   // Regex pattern for compound labels
+	FormStartRegex     string   // Regex pattern for form start keywords
+	FormEndRegex       string   // Regex pattern for form end keywords
+	FormPrefixRegex    string   // Regex pattern for form prefix keywords
 }
 
 // Create a new Tokenizer
-func NewTokenizer(input string) *Tokenizer {
+func newTokenizer(input string, offset int, simpleLabelRegex string, compoundLabelRegex string, formStartRegex string, formEndRegex string, formPrefixRegex string) *Tokenizer {
 	return &Tokenizer{
 		input:  input,
 		tokens: []*Token{},
 		lineNo: 1,
 		colNo:  1,
 		pos:    0,
+		NewlineSeen:        false,
+		SimpleLabelRegex:   simpleLabelRegex,
+		CompoundLabelRegex: compoundLabelRegex,
+		FormStartRegex:     formStartRegex,
+		FormEndRegex:       formEndRegex,
+		FormPrefixRegex:    formPrefixRegex,
 	}
 }
 
@@ -1359,15 +1370,28 @@ func isClosingQuoteChar(r rune) bool {
 func (t *Tokenizer) markReservedTokens() *MonogramError {
 	ident_exists := make(map[string]bool)
 	is_reserved := make(map[string]bool) // A subset of ident_exists
+
+	// Collect all identifiers.
 	for _, token := range t.tokens {
 		if token.Type == Identifier {
 			ident_exists[token.Text] = true
 		}
 	}
+
+	// Mark identifiers that are used as prefixes.
 	for n, token := range t.tokens {
 		if token.Type != Identifier {
 			continue
 		}
+
+		// Classify as a IdentifierLabel if simple-label-regex is specified.
+		if t.SimpleLabelRegex != "" {
+			if matched, err := regexp.MatchString(t.SimpleLabelRegex, token.Text); err == nil && matched {
+				token.SubType = IdentifierSimpleLabel
+				continue // Skip further processing for this token
+			}
+		}
+
 		var next *Token
 		if n < len(t.tokens)-1 {
 			next = t.tokens[n+1]
@@ -1385,12 +1409,14 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 			is_reserved[token.Text] = true
 		}
 	}
+
+	// Mark surround-form identifiers.
 	for _, token := range t.tokens {
 		if token.Type != Identifier || strings.HasPrefix(token.Text, "endend") {
 			continue
 		}
-		if token.SubType == IdentifierFormPrefix {
-			continue // Already marked as a prefix
+		if token.SubType != IdentifierVariable {
+			continue // Already classified
 		}
 		if strings.HasPrefix(token.Text, "end") {
 			stem := token.Text[3:]
@@ -1440,9 +1466,9 @@ func (t *Tokenizer) addFiniToken() *Token {
 	return endToken
 }
 
-func tokenizeInput(input string, colOffset int) (*Token, Span, *MonogramError) {
+func tokenizeInput(input string, colOffset int, simpleLabelRegex string, compoundLabelRegex string, formStartRegex string, formEndRegex string, formPrefixRegex string) (*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
-	tokenizer := NewTokenizer(input)
+	tokenizer := newTokenizer(input, colOffset, simpleLabelRegex, compoundLabelRegex, formStartRegex, formEndRegex, formPrefixRegex)
 
 	initToken := tokenizer.addInitToken() // Add capstone token for the start of input
 

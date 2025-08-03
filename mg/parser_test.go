@@ -6,7 +6,7 @@ import (
 )
 
 func getTokens(input string) (*Token, error) {
-	initToken, _, err := tokenizeInput(input, 0)
+	initToken, _, err := tokenizeInput(input, 0, "", "", "", "", "")
 	if err != nil {
 		return nil, fmt.Errorf("tokenizeInput error: %s", err.Message)
 	}

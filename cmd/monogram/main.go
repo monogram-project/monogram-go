@@ -42,20 +42,8 @@ import (
 // Controlled by ldflags.
 var IsBuiltForDocker = "false"
 
-type FormatOptions struct {
-	Format        string
-	Input         string
-	Output        string
-	Indent        int
-	Limit         bool
-	DefaultLabel  string
-	IncludeSpans  bool
-	Decimal       bool
-	CheckLiterals bool
-}
-
 // setupFlags initializes a flag set with the common flag definitions.
-func setupFlags(fs *pflag.FlagSet, options *FormatOptions, configFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
+func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
 	fs.StringVarP(&options.Format, "format", "f", options.Format, "Output format xml|json|yaml|mermaid|dot")
 	fs.StringVarP(&options.Input, "input", "i", options.Input, "Input file (optional, defaults to stdin)")
 	fs.StringVarP(&options.Output, "output", "o", options.Output, "Output file (optional, defaults to stdout)")
@@ -89,7 +77,7 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, configFile *string, s
 }
 
 // Define a type for the translation function
-// type translationFunc func(io.Reader, io.Writer, *FormatOptions)
+// type translationFunc func(io.Reader, io.Writer, *mg.FormatOptions)
 type translateFunc func(root *mg.Node, indentDelta string, output io.Writer)
 
 type formatHandler struct {
@@ -134,7 +122,7 @@ var availableFormatNames = func() []string {
 	return formats
 }()
 
-func parseToAST(input string, foptions *FormatOptions) (*mg.Node, error) {
+func parseToAST(input string, foptions *mg.FormatOptions) (*mg.Node, error) {
 	p_opts := &mg.ParserOptions{
 		DefaultLabel:  foptions.DefaultLabel,
 		IncludeSpans:  foptions.IncludeSpans,
@@ -146,7 +134,7 @@ func parseToAST(input string, foptions *FormatOptions) (*mg.Node, error) {
 
 func main() {
 	// Initialize the options struct
-	options := FormatOptions{
+	options := mg.FormatOptions{
 		Format:       "",
 		Input:        "",
 		Output:       "",
@@ -171,10 +159,10 @@ func main() {
 	pflag.Parse()
 
 	// Load configuration file if specified
-	var config *Config
+	var config *mg.Config
 	var err error
 	if configFile != "" {
-		config, err = LoadConfig(configFile)
+		config, err = mg.LoadConfig(configFile)
 		if err != nil {
 			log.Fatalf("Error loading config file: %v", err)
 		}
@@ -267,11 +255,11 @@ func main() {
 	}
 }
 
-func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *FormatOptions) error {
+func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *mg.FormatOptions) error {
 	return translate(input, output, printAST.Fn, options)
 }
 
-func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer), options *FormatOptions) error {
+func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer), options *mg.FormatOptions) error {
 	// Read the entire input as a string
 	data, err := io.ReadAll(input)
 	if err != nil {

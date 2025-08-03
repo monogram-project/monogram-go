@@ -1097,9 +1097,9 @@ func parseTokensToNodes(initToken *Token, limit bool, defaultLabel string, inclu
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, defaultLabel string, include_spans bool, decodeNumbers bool, checkLiterals bool, colOffset int) ([]*Node, Span, error) {
+func parseToASTArray(input string, limit bool, defaultLabel string, include_spans bool, decodeNumbers bool, checkLiterals bool, colOffset int, simpleLabelRegex string, compoundLabelRegex string, formStartRegex string, formEndRegex string, formPrefixRegex string) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
-	initToken, span, terr := tokenizeInput(input, colOffset)
+	initToken, span, terr := tokenizeInput(input, colOffset, simpleLabelRegex, compoundLabelRegex, formStartRegex, formEndRegex, formPrefixRegex)
 	if terr != nil {
 		return nil, Span{}, fmt.Errorf(terr.Message + " (line " + fmt.Sprint(terr.Line) + ", column " + fmt.Sprint(terr.Column) + ")")
 	}

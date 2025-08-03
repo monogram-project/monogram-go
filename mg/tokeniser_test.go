@@ -45,7 +45,7 @@ func TestReadNumber(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		tokenizer := NewTokenizer(c.input)
+		tokenizer := newTokenizer(c.input, 0, "", "", "", "", "")
 		token, err := tokenizer.readNumber()
 		if c.shouldError {
 			if err == nil {
@@ -84,7 +84,7 @@ func TestReadStringInterpolation(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		tokenizer := NewTokenizer(c.input)
+		tokenizer := newTokenizer(c.input, 0, "", "", "", "", "")
 		tokenizer.consume() // Consume the backslash
 		token, err := tokenizer.readStringInterpolation()
 
@@ -128,7 +128,7 @@ func TestReadStringWithoutInterpolation(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		tokenizer := NewTokenizer(c.input)
+		tokenizer := newTokenizer(c.input, 0, "", "", "", "", "")
 		token, err := tokenizer.readString(false, '"')
 
 		if c.shouldError {
@@ -169,7 +169,7 @@ func TestReadStringWithInterpolation(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		tokenizer := NewTokenizer(c.input)
+		tokenizer := newTokenizer(c.input, 0, "", "", "", "", "")
 		token, err := tokenizer.readString(false, '"')
 
 		if c.shouldError {

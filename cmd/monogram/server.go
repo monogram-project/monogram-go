@@ -15,6 +15,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/monogram-project/monogram-go/mg"
 )
 
 // Controlled by a build tag, withweb, to include or exclude web server functionality.
@@ -315,7 +317,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set up FormatOptions based on the form values:
-	options := FormatOptions{
+	options := mg.FormatOptions{
 		Format:        formatObject.Format,
 		Input:         "", // Not used in test mode — we’re using form data.
 		Output:        "", // Output will be captured in a buffer.

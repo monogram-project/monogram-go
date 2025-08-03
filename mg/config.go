@@ -1,4 +1,4 @@
-package main
+package mg
 
 import (
 	"fmt"
@@ -6,6 +6,19 @@ import (
 
 	"gopkg.in/yaml.v3"
 )
+
+// FormatOptions represents the formatting options
+type FormatOptions struct {
+	Format        string
+	Input         string
+	Output        string
+	Indent        int
+	Limit         bool
+	DefaultLabel  string
+	IncludeSpans  bool
+	Decimal       bool
+	CheckLiterals bool
+}
 
 // Config represents the configuration structure that can be loaded from YAML
 type Config struct {
