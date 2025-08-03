@@ -167,8 +167,8 @@ var formTemplate = template.Must(template.New("form").Parse(`
 			</div>
 
 			<div>
-				<label for="defaultBreaker">Default Breaker:</label>
-				<input type="text" id="defaultBreaker" name="defaultBreaker" value="{{.Breaker}}">
+				<label for="defaultLabel">Default Label:</label>
+				<input type="text" id="defaultLabel" name="defaultLabel" value="{{.DefaultLabel}}">
 			</div>
 			
 			<div>
@@ -273,7 +273,7 @@ func indexHandler(w http.ResponseWriter, _ *http.Request, options *FormatOptions
 		Decimal       bool
 		CheckLiterals bool
 		Indent        int
-		Breaker       string
+		DefaultLabel  string
 	}{
 		IsError:       false,
 		Output:        "",
@@ -284,7 +284,7 @@ func indexHandler(w http.ResponseWriter, _ *http.Request, options *FormatOptions
 		Decimal:       options.Decimal,
 		CheckLiterals: options.CheckLiterals,
 		Indent:        options.Indent,
-		Breaker:       options.DefaultLabel,
+		DefaultLabel:  options.DefaultLabel,
 	})
 }
 
@@ -297,7 +297,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	monogramInput := r.FormValue("monogramInput")
 	format := r.FormValue("format")
 	indentVal := r.FormValue("indent")
-	defaultBreaker := r.FormValue("defaultBreaker")
+	defaultLabel := r.FormValue("defaultLabel")
 	includeSpans := r.FormValue("includeSpans") == "on"
 	decimal := r.FormValue("decimal") == "on"
 	checkLiterals := r.FormValue("checkLiterals") == "on"
@@ -321,7 +321,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		Output:        "", // Output will be captured in a buffer.
 		Indent:        indent,
 		Limit:         false,
-		DefaultLabel:  defaultBreaker,
+		DefaultLabel:  defaultLabel,
 		IncludeSpans:  includeSpans,
 		Decimal:       decimal,
 		CheckLiterals: checkLiterals,
@@ -345,7 +345,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 			Decimal       bool
 			CheckLiterals bool
 			Indent        int
-			Breaker       string
+			Label         string
 		}{
 			IsError:       true,
 			Output:        err.Error(),
@@ -356,7 +356,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 			Decimal:       decimal,
 			CheckLiterals: checkLiterals,
 			Indent:        indent,
-			Breaker:       defaultBreaker,
+			Label:         defaultLabel,
 		})
 		if temp_err != nil {
 			http.Error(w, "Failed to render form: "+temp_err.Error(), http.StatusInternalServerError)
@@ -375,7 +375,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		Decimal       bool
 		CheckLiterals bool
 		Indent        int
-		Breaker       string
+		DefaultLabel  string
 	}{
 		IsError:       false,
 		Output:        outputBuffer.String(),
@@ -386,7 +386,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		Decimal:       decimal,
 		CheckLiterals: checkLiterals,
 		Indent:        indent,
-		Breaker:       defaultBreaker,
+		DefaultLabel:  defaultLabel,
 	})
 	if temp_err != nil {
 		http.Error(w, "Failed to render form: "+temp_err.Error(), http.StatusInternalServerError)
