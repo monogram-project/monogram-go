@@ -27,13 +27,13 @@ type Tokenizer struct {
 }
 
 // Create a new Tokenizer
-func newTokenizer(input string, offset int, simpleLabelRegex string, compoundLabelRegex string, formStartRegex string, formEndRegex string, formPrefixRegex string) *Tokenizer {
+func newTokenizer(input string, _ int, simpleLabelRegex string, compoundLabelRegex string, formStartRegex string, formEndRegex string, formPrefixRegex string) *Tokenizer {
 	return &Tokenizer{
-		input:  input,
-		tokens: []*Token{},
-		lineNo: 1,
-		colNo:  1,
-		pos:    0,
+		input:              input,
+		tokens:             []*Token{},
+		lineNo:             1,
+		colNo:              1,
+		pos:                0,
 		NewlineSeen:        false,
 		SimpleLabelRegex:   simpleLabelRegex,
 		CompoundLabelRegex: compoundLabelRegex,

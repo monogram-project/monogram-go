@@ -9,6 +9,6 @@ import "github.com/monogram-project/monogram-go/mg"
 var WithWeb bool = false
 
 // startTestServer starts an HTTP listener on the specified port and opens the browser.
-func startTestServer(port string, _ bool, options *mg.FormatOptions) {
+func startTestServer(port string, _ bool, options *mg.FormatOptions, config *mg.Config) {
 	// A stub
 }

@@ -236,11 +236,13 @@ var formTemplate = template.Must(template.New("form").Parse(`
 
 // startTestServer initializes an HTTP server on the specified port.
 // It adjusts the bind address depending on whether it's running inside a container.
-func startTestServer(port string, openBrowserFlag bool, options *mg.FormatOptions) {
+func startTestServer(port string, openBrowserFlag bool, options *mg.FormatOptions, config *mg.Config) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		indexHandler(w, r, options)
+		indexHandler(w, r, options, config)
 	})
-	http.HandleFunc("/translate", translateHandler)
+	http.HandleFunc("/translate", func(w http.ResponseWriter, r *http.Request) {
+		translateHandler(w, r, config)
+	})
 
 	// Default to localhost for normal execution.
 	// When running inside a container, bind to 0.0.0.0 so the server is accessible externally.
@@ -260,7 +262,7 @@ func startTestServer(port string, openBrowserFlag bool, options *mg.FormatOption
 	}
 }
 
-func indexHandler(w http.ResponseWriter, _ *http.Request, options *mg.FormatOptions) {
+func indexHandler(w http.ResponseWriter, _ *http.Request, options *mg.FormatOptions, _ *mg.Config) {
 	format := "XML" // Default format
 	if options.Format != "" {
 		format = options.Format
@@ -291,7 +293,7 @@ func indexHandler(w http.ResponseWriter, _ *http.Request, options *mg.FormatOpti
 }
 
 // translateHandler processes the form and renders the translation output.
-func translateHandler(w http.ResponseWriter, r *http.Request) {
+func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
 		return
@@ -336,7 +338,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	var outputBuffer bytes.Buffer
 
 	// Perform the translation.
-	err := formatObject.translate(inputReader, &outputBuffer, &options)
+	err := formatObject.translate(inputReader, &outputBuffer, &options, config)
 	if err != nil {
 		// Render the same form with the translation output shown:
 		temp_err := formTemplate.Execute(w, struct {

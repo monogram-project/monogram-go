@@ -178,7 +178,7 @@ func main() {
 	}
 
 	if testPort != "" {
-		startTestServer(testPort, openBrowserFlag, &options)
+		startTestServer(testPort, openBrowserFlag, &options, config)
 		os.Exit(0) // Exit after printing the version, cannot be reached at present.
 	}
 
