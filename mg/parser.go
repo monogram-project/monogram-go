@@ -1112,15 +1112,15 @@ func parseTokensToNodes(initToken *Token, limit bool, defaultLabel string, inclu
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, defaultLabel string, include_spans bool, decodeNumbers bool, checkLiterals bool, colOffset int, simpleLabelRegex string, compoundLabelRegex string, formStartRegex string, formEndRegex string, formPrefixRegex string) ([]*Node, Span, error) {
+func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreFormatOptions, classifiers *TokenClassifiers) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
-	initToken, span, terr := tokenizeInput(input, colOffset, simpleLabelRegex, compoundLabelRegex, formStartRegex, formEndRegex, formPrefixRegex)
+	initToken, span, terr := tokenizeInput(input, colOffset, classifiers)
 	if terr != nil {
 		return nil, Span{}, fmt.Errorf(terr.Message + " (line " + fmt.Sprint(terr.Line) + ", column " + fmt.Sprint(terr.Column) + ")")
 	}
 
 	// Step 2: Parse the tokens into nodes
-	nodes, err := parseTokensToNodes(initToken, limit, defaultLabel, include_spans, decodeNumbers, checkLiterals)
+	nodes, err := parseTokensToNodes(initToken, limit, coreOptions.DefaultLabel, coreOptions.IncludeSpans, coreOptions.Decimal, coreOptions.CheckLiterals)
 	if err != nil {
 		return nil, Span{}, err
 	}

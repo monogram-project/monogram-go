@@ -1,0 +1,47 @@
+{
+  "go.buildFlags": ["-tags=withweb"],
+  "gopls": {
+    "buildFlags": ["-tags=withweb"],
+    "analyses": {
+      "unusedparams": true,
+      "shadow": true,
+      "fieldalignment": false
+    },
+    "staticcheck": true,
+    "gofumpt": true
+  },
+  "go.lintTool": "golangci-lint",
+  "go.lintOnSave": "package",
+  "go.formatTool": "gofumpt",
+  "go.useLanguageServer": true,
+  "go.testFlags": ["-v", "-race"],
+  "go.testTimeout": "30s",
+  "go.coverOnSave": true,
+  "go.coverageDecorator": {
+    "type": "gutter",
+    "coveredHighlightColor": "rgba(64,128,128,0.5)",
+    "uncoveredHighlightColor": "rgba(128,64,64,0.5)"
+  },
+  "files.associations": {
+    "*.yaml": "yaml",
+    "Justfile": "makefile"
+  },
+  "yaml.schemas": {
+    "./functests/schema.json": "functests/*-tests.yaml"
+  },
+  "editor.rulers": [100, 120],
+  "editor.formatOnSave": true,
+  "[go]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "redhat.vscode-yaml",
+    "editor.tabSize": 2
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

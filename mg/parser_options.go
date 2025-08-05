@@ -27,7 +27,7 @@ func NewParserOptions() *ParserOptions {
 
 func (p_opts *ParserOptions) ParseToAST(input string, src string, limit bool) (*Node, error) {
 	// Get the array of nodes
-	nodes, span, err := parseToASTArray(input, limit, p_opts.DefaultLabel, p_opts.IncludeSpans, p_opts.Decimal, p_opts.CheckLiterals, p_opts.colOffset, p_opts.SimpleLabelRegex, p_opts.CompoundLabelRegex, p_opts.FormStartRegex, p_opts.FormEndRegex, p_opts.FormPrefixRegex)
+	nodes, span, err := parseToASTArray(input, limit, p_opts.colOffset, &p_opts.CoreFormatOptions, p_opts.TokenClassifiers)
 	if err != nil {
 		return nil, err
 	}

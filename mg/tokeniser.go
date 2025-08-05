@@ -10,36 +10,28 @@ import (
 )
 
 type Tokenizer struct {
-	input              string   // The input string to tokenize
-	tokens             []*Token // The array of tokens generated
-	lineNo             int      // Current line number
-	colNo              int      // Current column number
-	pos                int      // Current byte position in the input
-	NewlineSeen        bool     // New field to indicate if a newline has been seen
-	markStack          []int    // Stack of position markers
-	lineNoStack        []int    // Array to store line numbers for each token
-	lineColStack       []int    // Array to store column numbers for each token
-	SimpleLabelRegex   string   // Regex pattern for simple labels
-	CompoundLabelRegex string   // Regex pattern for compound labels
-	FormStartRegex     string   // Regex pattern for form start keywords
-	FormEndRegex       string   // Regex pattern for form end keywords
-	FormPrefixRegex    string   // Regex pattern for form prefix keywords
+	input            string            // The input string to tokenize
+	tokens           []*Token          // The array of tokens generated
+	lineNo           int               // Current line number
+	colNo            int               // Current column number
+	pos              int               // Current byte position in the input
+	NewlineSeen      bool              // New field to indicate if a newline has been seen
+	markStack        []int             // Stack of position markers
+	lineNoStack      []int             // Array to store line numbers for each token
+	lineColStack     []int             // Array to store column numbers for each token
+	TokenClassifiers *TokenClassifiers // Token classification patterns
 }
 
 // Create a new Tokenizer
-func newTokenizer(input string, _ int, simpleLabelRegex string, compoundLabelRegex string, formStartRegex string, formEndRegex string, formPrefixRegex string) *Tokenizer {
+func newTokenizer(input string, colOffset int, classifiers *TokenClassifiers) *Tokenizer {
 	return &Tokenizer{
-		input:              input,
-		tokens:             []*Token{},
-		lineNo:             1,
-		colNo:              1,
-		pos:                0,
-		NewlineSeen:        false,
-		SimpleLabelRegex:   simpleLabelRegex,
-		CompoundLabelRegex: compoundLabelRegex,
-		FormStartRegex:     formStartRegex,
-		FormEndRegex:       formEndRegex,
-		FormPrefixRegex:    formPrefixRegex,
+		input:            input,
+		tokens:           []*Token{},
+		lineNo:           1,
+		colNo:            1,
+		pos:              0,
+		NewlineSeen:      false,
+		TokenClassifiers: classifiers,
 	}
 }
 
@@ -1385,8 +1377,8 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 		}
 
 		// Classify as a IdentifierLabel if simple-label-regex is specified.
-		if t.SimpleLabelRegex != "" {
-			if matched, err := regexp.MatchString(t.SimpleLabelRegex, token.Text); err == nil && matched {
+		if t.TokenClassifiers != nil && t.TokenClassifiers.SimpleLabelRegex != "" {
+			if matched, err := regexp.MatchString(t.TokenClassifiers.SimpleLabelRegex, token.Text); err == nil && matched {
 				token.SubType = IdentifierSimpleLabel
 				continue // Skip further processing for this token
 			}
@@ -1466,9 +1458,9 @@ func (t *Tokenizer) addFiniToken() *Token {
 	return endToken
 }
 
-func tokenizeInput(input string, colOffset int, simpleLabelRegex string, compoundLabelRegex string, formStartRegex string, formEndRegex string, formPrefixRegex string) (*Token, Span, *MonogramError) {
+func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiers) (*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
-	tokenizer := newTokenizer(input, colOffset, simpleLabelRegex, compoundLabelRegex, formStartRegex, formEndRegex, formPrefixRegex)
+	tokenizer := newTokenizer(input, colOffset, classifiers)
 
 	initToken := tokenizer.addInitToken() // Add capstone token for the start of input
 
