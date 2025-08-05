@@ -18,7 +18,13 @@ func getParser(input string) (*Parser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("getTokens error: %w", err)
 	}
-	return NewParser(initToken, "_", false, false, true), nil
+	coreOptions := &CoreFormatOptions{
+		DefaultLabel:  "_",
+		IncludeSpans:  false,
+		Decimal:       false,
+		CheckLiterals: true,
+	}
+	return NewParser(initToken, coreOptions), nil
 }
 
 func TestParsePrefix0(t *testing.T) {

@@ -24,13 +24,13 @@ type Parser struct {
 	Idents        map[string]HowIdentsAreUsed
 }
 
-func NewParser(init_token *Token, defaultLabel string, includeSpans bool, decimal bool, checkLiterals bool) *Parser {
+func NewParser(init_token *Token, coreOptions *CoreFormatOptions) *Parser {
 	return &Parser{
 		currentToken:  init_token,
-		UnglueOption:  &Token{Type: Identifier, SubType: IdentifierVariable, Text: defaultLabel},
-		IncludeSpans:  includeSpans,
-		Decimal:       decimal,
-		CheckLiterals: checkLiterals,
+		UnglueOption:  &Token{Type: Identifier, SubType: IdentifierVariable, Text: coreOptions.DefaultLabel},
+		IncludeSpans:  coreOptions.IncludeSpans,
+		Decimal:       coreOptions.Decimal,
+		CheckLiterals: coreOptions.CheckLiterals,
 		Idents:        make(map[string]HowIdentsAreUsed),
 	}
 }
@@ -1095,8 +1095,8 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 	return expressionNode, nil
 }
 
-func parseTokensToNodes(initToken *Token, limit bool, defaultLabel string, includeSpans bool, decimal bool, checkLiterals bool) ([]*Node, error) {
-	parser := NewParser(initToken, defaultLabel, includeSpans, decimal, checkLiterals)
+func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOptions) ([]*Node, error) {
+	parser := NewParser(initToken, coreOptions)
 	nodes := []*Node{}
 	for parser.hasNext() {
 		node, err := parser.readExpr(makeContext())
@@ -1120,7 +1120,7 @@ func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreF
 	}
 
 	// Step 2: Parse the tokens into nodes
-	nodes, err := parseTokensToNodes(initToken, limit, coreOptions.DefaultLabel, coreOptions.IncludeSpans, coreOptions.Decimal, coreOptions.CheckLiterals)
+	nodes, err := parseTokensToNodes(initToken, limit, coreOptions)
 	if err != nil {
 		return nil, Span{}, err
 	}
