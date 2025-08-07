@@ -10,20 +10,20 @@ import (
 )
 
 type Tokenizer struct {
-	input            string            // The input string to tokenize
-	tokens           []*Token          // The array of tokens generated
-	lineNo           int               // Current line number
-	colNo            int               // Current column number
-	pos              int               // Current byte position in the input
-	NewlineSeen      bool              // New field to indicate if a newline has been seen
-	markStack        []int             // Stack of position markers
-	lineNoStack      []int             // Array to store line numbers for each token
-	lineColStack     []int             // Array to store column numbers for each token
-	TokenClassifiers *TokenClassifiers // Token classification patterns
+	input            string                    // The input string to tokenize
+	tokens           []*Token                  // The array of tokens generated
+	lineNo           int                       // Current line number
+	colNo            int                       // Current column number
+	pos              int                       // Current byte position in the input
+	NewlineSeen      bool                      // New field to indicate if a newline has been seen
+	markStack        []int                     // Stack of position markers
+	lineNoStack      []int                     // Array to store line numbers for each token
+	lineColStack     []int                     // Array to store column numbers for each token
+	TokenClassifiers *TokenClassifiersCompiled // Token classification patterns
 }
 
 // Create a new Tokenizer
-func newTokenizer(input string, colOffset int, classifiers *TokenClassifiers) *Tokenizer {
+func newTokenizer(input string, colOffset int, classifiers *TokenClassifiersCompiled) *Tokenizer {
 	return &Tokenizer{
 		input:            input,
 		tokens:           []*Token{},
@@ -1378,24 +1378,24 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 		if t.TokenClassifiers != nil {
 
 			// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
-			if t.TokenClassifiers.CompoundLabelRegex != "" {
-				if matched, err := regexp.MatchString(t.TokenClassifiers.CompoundLabelRegex, token.Text); err == nil && matched {
+			if t.TokenClassifiers.CompoundLabelRegexCompiled != nil {
+				if t.TokenClassifiers.CompoundLabelRegexCompiled.MatchString(token.Text) {
 					token.SubType = IdentifierCompoundLabel
 					continue // Skip further processing for this token
 				}
 			}
 
 			// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
-			if t.TokenClassifiers.SimpleLabelRegex != "" {
-				if matched, err := regexp.MatchString(t.TokenClassifiers.SimpleLabelRegex, token.Text); err == nil && matched {
+			if t.TokenClassifiers.SimpleLabelRegexCompiled != nil {
+				if t.TokenClassifiers.SimpleLabelRegexCompiled.MatchString(token.Text) {
 					token.SubType = IdentifierSimpleLabel
 					continue // Skip further processing for this token
 				}
 			}
 
 			// Classify as a IdentifierFormPrefix if form-prefix-regex is specified.
-			if t.TokenClassifiers.FormPrefixRegex != "" {
-				if matched, err := regexp.MatchString(t.TokenClassifiers.FormPrefixRegex, token.Text); err == nil && matched {
+			if t.TokenClassifiers.FormPrefixRegexCompiled != nil {
+				if t.TokenClassifiers.FormPrefixRegexCompiled.MatchString(token.Text) {
 					token.SubType = IdentifierFormPrefix
 					is_reserved[token.Text] = true
 					continue // Skip further processing for this token
@@ -1429,16 +1429,28 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 		if token.SubType != IdentifierVariable {
 			continue // Already classified
 		}
-		if strings.HasPrefix(token.Text, "end") {
-			stem := token.Text[3:]
-			if ident_exists[stem] {
-				token.SubType = IdentifierFormEnd
-			}
-		} else if is_reserved[token.Text] {
-			token.SubType = IdentifierFormStart
-		} else {
-			if ident_exists["end"+token.Text] {
+		starts_with_end := strings.HasPrefix(token.Text, "end")
+		if t.TokenClassifiers != nil && t.TokenClassifiers.FormStartRegexCompiled != nil {
+			if starts_with_end {
+				stem := token.Text[3:]
+				if t.TokenClassifiers.FormStartRegexCompiled.MatchString(stem) {
+					token.SubType = IdentifierFormEnd
+				}
+			} else if t.TokenClassifiers.FormStartRegexCompiled.MatchString(token.Text) {
 				token.SubType = IdentifierFormStart
+			}
+		} else {
+			if starts_with_end {
+				stem := token.Text[3:]
+				if ident_exists[stem] {
+					token.SubType = IdentifierFormEnd
+				}
+			} else if is_reserved[token.Text] {
+				token.SubType = IdentifierFormStart
+			} else {
+				if ident_exists["end"+token.Text] {
+					token.SubType = IdentifierFormStart
+				}
 			}
 		}
 	}
@@ -1477,7 +1489,7 @@ func (t *Tokenizer) addFiniToken() *Token {
 	return endToken
 }
 
-func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiers) (*Token, Span, *MonogramError) {
+func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCompiled) (*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
 	tokenizer := newTokenizer(input, colOffset, classifiers)
 

@@ -2,11 +2,10 @@
 # Used for functional testing of configuration file behavior
 
 # Regex patterns for identifier classification - set to match nothing to avoid interference
-simple-label-regex: "^$"
-compound-label-regex: "^$"
-form-start-regex: "^$"
-form-end-regex: "^$"
-form-prefix-regex: "^$"
+simple-label-regex: null
+compound-label-regex: null
+form-start-regex: null
+form-prefix-regex: null
 
 # Default configuration values for testing
 option-format: "xml"

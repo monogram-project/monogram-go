@@ -52,3 +52,15 @@ classification process. The new logic will be:
 
 Our next step is to implement the logic for simple-label-regex. This will 
 involve reading from a configuration file.
+
+## Collaboration Guidelines
+
+When providing technical assistance:
+
+- **Be objective and critical**: Focus on technical correctness over agreeability
+- **Challenge assumptions**: If code has clear technical flaws, point them out directly
+- **Prioritize correctness**: Don't compromise on proper implementation to avoid disagreement
+- **Think through implications**: Consider how users will actually use features in practice
+- **Be direct about problems**: If something is wrong or will cause user confusion, say so clearly
+
+The goal is to build robust, well-designed software, not to avoid technical disagreements.

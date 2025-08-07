@@ -122,10 +122,10 @@ var availableFormatNames = func() []string {
 	return formats
 }()
 
-func parseToAST(input string, foptions *mg.FormatOptions, classifiers *mg.TokenClassifiers) (*mg.Node, error) {
+func parseToAST(input string, foptions *mg.FormatOptions, classifiers *mg.TokenClassifiersCompiled) (*mg.Node, error) {
 	p_opts := &mg.ParserOptions{
-		CoreFormatOptions: foptions.CoreFormatOptions,
-		TokenClassifiers:  classifiers,
+		CoreFormatOptions:        foptions.CoreFormatOptions,
+		TokenClassifiersCompiled: classifiers,
 	}
 	return p_opts.ParseToAST(input, foptions.Input, foptions.Limit)
 }
@@ -266,12 +266,12 @@ func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string
 		return fmt.Errorf("failed to read input: %v", err)
 	}
 
-	// Get TokenClassifiers from config, or use empty if no config
-	var classifiers *mg.TokenClassifiers
+	// Get TokenClassifiersCompiled from config, or use empty if no config
+	var classifiers *mg.TokenClassifiersCompiled
 	if config != nil {
-		classifiers = &config.TokenClassifiers
+		classifiers = config.CompiledClassifiers
 	} else {
-		classifiers = &mg.TokenClassifiers{}
+		classifiers = &mg.TokenClassifiersCompiled{}
 	}
 
 	// Convert the input string into an AST

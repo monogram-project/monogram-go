@@ -1101,7 +1101,7 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 			IncludeSpans: p.IncludeSpans,
 			Decimal:      p.Decimal,
 		},
-		TokenClassifiers: &TokenClassifiers{}, // Empty classifiers for literal expressions
+		TokenClassifiersCompiled: &TokenClassifiersCompiled{}, // Empty classifiers for literal expressions
 	}
 	expressionNode, err := p_opts.ParseToAST(subToken.Text, "", true)
 	expressionNode.Name = NameInterpolate // The outer brackets can be repurposed!
@@ -1134,7 +1134,7 @@ func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOpt
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreFormatOptions, classifiers *TokenClassifiers) ([]*Node, Span, error) {
+func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreFormatOptions, classifiers *TokenClassifiersCompiled) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
 	initToken, span, terr := tokenizeInput(input, colOffset, classifiers)
 	if terr != nil {
