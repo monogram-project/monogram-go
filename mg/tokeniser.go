@@ -1375,20 +1375,31 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 		if token.Type != Identifier {
 			continue
 		}
+		if t.TokenClassifiers != nil {
 
-		// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
-		if t.TokenClassifiers != nil && t.TokenClassifiers.CompoundLabelRegex != "" {
-			if matched, err := regexp.MatchString(t.TokenClassifiers.CompoundLabelRegex, token.Text); err == nil && matched {
-				token.SubType = IdentifierCompoundLabel
-				continue // Skip further processing for this token
+			// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
+			if t.TokenClassifiers.CompoundLabelRegex != "" {
+				if matched, err := regexp.MatchString(t.TokenClassifiers.CompoundLabelRegex, token.Text); err == nil && matched {
+					token.SubType = IdentifierCompoundLabel
+					continue // Skip further processing for this token
+				}
 			}
-		}
 
-		// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
-		if t.TokenClassifiers != nil && t.TokenClassifiers.SimpleLabelRegex != "" {
-			if matched, err := regexp.MatchString(t.TokenClassifiers.SimpleLabelRegex, token.Text); err == nil && matched {
-				token.SubType = IdentifierSimpleLabel
-				continue // Skip further processing for this token
+			// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
+			if t.TokenClassifiers.SimpleLabelRegex != "" {
+				if matched, err := regexp.MatchString(t.TokenClassifiers.SimpleLabelRegex, token.Text); err == nil && matched {
+					token.SubType = IdentifierSimpleLabel
+					continue // Skip further processing for this token
+				}
+			}
+
+			// Classify as a IdentifierFormPrefix if form-prefix-regex is specified.
+			if t.TokenClassifiers.FormPrefixRegex != "" {
+				if matched, err := regexp.MatchString(t.TokenClassifiers.FormPrefixRegex, token.Text); err == nil && matched {
+					token.SubType = IdentifierFormPrefix
+					is_reserved[token.Text] = true
+					continue // Skip further processing for this token
+				}
 			}
 		}
 

@@ -940,10 +940,9 @@ func (p *Parser) readXmlElement() (*Node, error) {
 }
 
 func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
-	// Consume the expected "!" token that follows the prefix form identifier
-	forceToken := p.next()
-	if !(forceToken.Type == Sign && forceToken.SubType == SignForce) {
-		return nil, fmt.Errorf("expected '!' after prefix form '%s', but found '%s'", token.Text, forceToken.Text)
+	// Consume the optional "!" token that follows the prefix form identifier
+	if !token.FollowedByWhitespace {
+		p.nextIf(Sign, SignForce)
 	}
 	cxt := context.setInsideForm(true)
 	startAgain := true
