@@ -471,13 +471,24 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 
 			builder.BeginNextPart(token.Text, lc34, p.startLineCol())
 			mode = betaMode
+		} else if token.IsEffectivelyCompoundLabelToken() {
+			p.SetAsCompoundLabel(token)
+			lc34 := p.endLineCol()
+			t1 := p.next() // skip the label
+			if token.ContinuesLikeCompoundLabelToken(formStart) {
+				t2 := p.next() // remove the '-'
+				t3 := p.next() // remove the form-start
+				builder.BeginNextPart(t1.Text+t2.Text+t3.Text, lc34, p.startLineCol())
+			} else {
+				builder.BeginNextPart(t1.Text, lc34, p.startLineCol())
+			}
+			mode = alphaMode
 		} else if token.IsCompoundLabelToken(formStart) {
 			p.SetAsCompoundLabel(token)
 			lc34 := p.endLineCol()
 			t1 := p.next() // skip the label
 			t2 := p.next() // remove the '-'
 			t3 := p.next() // remove the form-start
-
 			builder.BeginNextPart(t1.Text+t2.Text+t3.Text, lc34, p.startLineCol())
 			mode = alphaMode
 		} else {
@@ -953,6 +964,18 @@ func (p *Parser) readPrefixForm(context Context, token *Token) (*Node, error) {
 			}
 			p.next() // Skip :
 			formBuilder.BeginNextPart(t.Text, p.endLineCol(), p.startLineCol())
+			startAgain = true
+		} else if next.IsEffectivelyCompoundLabelToken() {
+			p.SetAsCompoundLabel(token)
+			t1 := p.next() // skip the label
+			if next.ContinuesLikeCompoundLabelToken(token) {
+				t2 := p.next() // remove the '-
+				t3 := p.next() // remove the form-start
+				text := t1.Text + t2.Text + t3.Text
+				formBuilder.BeginNextPart(text, p.endLineCol(), p.startLineCol())
+			} else {
+				formBuilder.BeginNextPart(t1.Text, p.endLineCol(), p.startLineCol())
+			}
 			startAgain = true
 		} else if next.IsCompoundLabelToken(token) {
 			p.SetAsCompoundLabel(token)

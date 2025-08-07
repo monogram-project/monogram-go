@@ -116,7 +116,7 @@ func (t *Token) IsSemi() bool {
 }
 
 func (t *Token) IsLabelToken(formStart *Token) bool {
-	return t.IsSimpleLabelToken() || t.IsCompoundLabelToken(formStart)
+	return t.IsSimpleLabelToken() || t.IsCompoundLabelToken(formStart) || t.IsEffectivelyCompoundLabelToken()
 }
 
 func (t *Token) IsSimpleLabelToken() bool {
@@ -133,10 +133,18 @@ func (t *Token) IsSimpleLabelToken() bool {
 	return hasFollowingSignLabel // Variable labels must be followed by a sign label
 }
 
+func (t *Token) IsEffectivelyCompoundLabelToken() bool {
+	return t.Type == Identifier && t.SubType == IdentifierCompoundLabel
+}
+
 func (t *Token) IsCompoundLabelToken(formStart *Token) bool {
 	if t.Type != Identifier || t.SubType != IdentifierVariable {
 		return false
 	}
+	return t.ContinuesLikeCompoundLabelToken(formStart)
+}
+
+func (t *Token) ContinuesLikeCompoundLabelToken(formStart *Token) bool {
 	if t.FollowedByWhitespace {
 		return false
 	}

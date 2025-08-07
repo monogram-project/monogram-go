@@ -1376,7 +1376,15 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 			continue
 		}
 
-		// Classify as a IdentifierLabel if simple-label-regex is specified.
+		// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
+		if t.TokenClassifiers != nil && t.TokenClassifiers.CompoundLabelRegex != "" {
+			if matched, err := regexp.MatchString(t.TokenClassifiers.CompoundLabelRegex, token.Text); err == nil && matched {
+				token.SubType = IdentifierCompoundLabel
+				continue // Skip further processing for this token
+			}
+		}
+
+		// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
 		if t.TokenClassifiers != nil && t.TokenClassifiers.SimpleLabelRegex != "" {
 			if matched, err := regexp.MatchString(t.TokenClassifiers.SimpleLabelRegex, token.Text); err == nil && matched {
 				token.SubType = IdentifierSimpleLabel
