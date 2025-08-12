@@ -1370,7 +1370,7 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 		}
 	}
 
-	// Mark identifiers that are used as prefixes.
+	// Classify identifiers that can be independently classified.
 	for n, token := range t.tokens {
 		if token.Type != Identifier {
 			continue
@@ -1401,6 +1401,13 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 					continue // Skip further processing for this token
 				}
 			}
+
+			// If form-end-wildcard-regex is specified, check for a wildcard-form-end.
+			if t.TokenClassifiers.FormEndWildcardRegexCompiled != nil && t.TokenClassifiers.FormEndWildcardRegexCompiled.MatchString(token.Text) {
+				token.SubType = IdentifierFormWildcardEnd
+				continue
+			}
+
 		}
 
 		var next *Token
@@ -1429,8 +1436,10 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 		if token.SubType != IdentifierVariable {
 			continue // Already classified
 		}
+
 		starts_with_end := strings.HasPrefix(token.Text, "end")
 		if t.TokenClassifiers != nil && t.TokenClassifiers.FormStartRegexCompiled != nil {
+			// Use static classification
 			if starts_with_end {
 				stem := token.Text[3:]
 				if t.TokenClassifiers.FormStartRegexCompiled.MatchString(stem) {
@@ -1440,6 +1449,7 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 				token.SubType = IdentifierFormStart
 			}
 		} else {
+			// Otherwise use dynamic classification.
 			if starts_with_end {
 				stem := token.Text[3:]
 				if ident_exists[stem] {
@@ -1453,6 +1463,7 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 				}
 			}
 		}
+
 	}
 	return nil
 }
