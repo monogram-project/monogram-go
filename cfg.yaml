@@ -7,6 +7,7 @@ simple-label-regex: "in"
 compound-label-regex: null
 form-start-regex: "let"
 form-end-regex: null
+form-end-wildcard-regex: "end"
 form-prefix-regex: null
 
 # Default configuration values

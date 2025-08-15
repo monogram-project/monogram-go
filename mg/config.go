@@ -29,6 +29,7 @@ type FormatOptions struct {
 type TokenClassifiers struct {
 	// Regex patterns for identifier classification (raw strings from YAML)
 	FormStartRegex       *string `yaml:"form-start-regex,omitempty"`
+	FormEndRegex         *string `yaml:"form-end-regex,omitempty"`
 	FormEndWildcardRegex *string `yaml:"form-end-wildcard-regex,omitempty"`
 	FormPrefixRegex      *string `yaml:"form-prefix-regex,omitempty"`
 	SimpleLabelRegex     *string `yaml:"simple-label-regex,omitempty"`
@@ -38,6 +39,7 @@ type TokenClassifiers struct {
 type TokenClassifiersCompiled struct {
 	// Compiled regex patterns
 	FormStartRegexCompiled       *regexp.Regexp
+	FormEndRegexCompiled         *regexp.Regexp
 	FormEndWildcardRegexCompiled *regexp.Regexp
 	FormPrefixRegexCompiled      *regexp.Regexp
 	SimpleLabelRegexCompiled     *regexp.Regexp
@@ -63,6 +65,14 @@ func (tc *TokenClassifiers) CompileRegexes() (*TokenClassifiersCompiled, error) 
 		compiled.FormStartRegexCompiled, err = regexp.Compile(wrappedPattern)
 		if err != nil {
 			return nil, fmt.Errorf("failed to compile form-start-regex '%s': %w", *tc.FormStartRegex, err)
+		}
+	}
+
+	if tc.FormEndRegex != nil && *tc.FormEndRegex != "" {
+		wrappedPattern := wrapForExactMatch(*tc.FormEndRegex)
+		compiled.FormEndRegexCompiled, err = regexp.Compile(wrappedPattern)
+		if err != nil {
+			return nil, fmt.Errorf("failed to compile form-end-regex '%s': %w", *tc.FormEndRegex, err)
 		}
 	}
 

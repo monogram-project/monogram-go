@@ -1359,113 +1359,244 @@ func isClosingQuoteChar(r rune) bool {
 	return r == '\'' || r == '"' || r == '`' || r == '»'
 }
 
-func (t *Tokenizer) markReservedTokens() *MonogramError {
+func (t *Tokenizer) markFormSurroundTokens() {
 	ident_exists := make(map[string]bool)
-	is_reserved := make(map[string]bool) // A subset of ident_exists
-
-	// Collect all identifiers.
-	for _, token := range t.tokens {
-		if token.Type == Identifier {
-			ident_exists[token.Text] = true
+	is_formend := make(map[string]bool)
+	// FormEnd - Are we deciding statically or dynamically?
+	if t.TokenClassifiers == nil || t.TokenClassifiers.FormEndRegexCompiled == nil {
+		// Dynamic classification
+		// Collect all identifiers.
+		for _, token := range t.tokens {
+			if token.Type == Identifier {
+				ident_exists[token.Text] = true
+			}
 		}
-	}
-
-	// Classify identifiers that can be independently classified.
-	for n, token := range t.tokens {
-		if token.Type != Identifier {
-			continue
-		}
-		if t.TokenClassifiers != nil {
-
-			// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
-			if t.TokenClassifiers.CompoundLabelRegexCompiled != nil {
-				if t.TokenClassifiers.CompoundLabelRegexCompiled.MatchString(token.Text) {
-					token.SubType = IdentifierCompoundLabel
-					continue // Skip further processing for this token
-				}
-			}
-
-			// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
-			if t.TokenClassifiers.SimpleLabelRegexCompiled != nil {
-				if t.TokenClassifiers.SimpleLabelRegexCompiled.MatchString(token.Text) {
-					token.SubType = IdentifierSimpleLabel
-					continue // Skip further processing for this token
-				}
-			}
-
-			// Classify as a IdentifierFormPrefix if form-prefix-regex is specified.
-			if t.TokenClassifiers.FormPrefixRegexCompiled != nil {
-				if t.TokenClassifiers.FormPrefixRegexCompiled.MatchString(token.Text) {
-					token.SubType = IdentifierFormPrefix
-					is_reserved[token.Text] = true
-					continue // Skip further processing for this token
-				}
-			}
-
-			// If form-end-wildcard-regex is specified, check for a wildcard-form-end.
-			if t.TokenClassifiers.FormEndWildcardRegexCompiled != nil && t.TokenClassifiers.FormEndWildcardRegexCompiled.MatchString(token.Text) {
-				token.SubType = IdentifierFormWildcardEnd
+		for _, token := range t.tokens {
+			if token.Type != Identifier || token.SubType != IdentifierVariable {
 				continue
 			}
-
-		}
-
-		var next *Token
-		if n < len(t.tokens)-1 {
-			next = t.tokens[n+1]
-		}
-		if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
 			if strings.HasPrefix(token.Text, "end") {
-				//return fmt.Errorf("cannot use %s as an opening keyword", token.Text)
-				return &MonogramError{
-					Message: fmt.Sprintf("cannot use '%s' as an opening keyword", token.Text),
-					Line:    token.Span.StartLine,
-					Column:  token.Span.StartColumn,
-				}
-			}
-			token.SubType = IdentifierFormPrefix
-			is_reserved[token.Text] = true
-		}
-	}
-
-	// Mark surround-form identifiers.
-	for _, token := range t.tokens {
-		if token.Type != Identifier || strings.HasPrefix(token.Text, "endend") {
-			continue
-		}
-		if token.SubType != IdentifierVariable {
-			continue // Already classified
-		}
-
-		starts_with_end := strings.HasPrefix(token.Text, "end")
-		if t.TokenClassifiers != nil && t.TokenClassifiers.FormStartRegexCompiled != nil {
-			// Use static classification
-			if starts_with_end {
-				stem := token.Text[3:]
-				if t.TokenClassifiers.FormStartRegexCompiled.MatchString(stem) {
-					token.SubType = IdentifierFormEnd
-				}
-			} else if t.TokenClassifiers.FormStartRegexCompiled.MatchString(token.Text) {
-				token.SubType = IdentifierFormStart
-			}
-		} else {
-			// Otherwise use dynamic classification.
-			if starts_with_end {
 				stem := token.Text[3:]
 				if ident_exists[stem] {
 					token.SubType = IdentifierFormEnd
-				}
-			} else if is_reserved[token.Text] {
-				token.SubType = IdentifierFormStart
-			} else {
-				if ident_exists["end"+token.Text] {
-					token.SubType = IdentifierFormStart
+					is_formend[token.Text] = true
 				}
 			}
 		}
+	} else {
+		// Static classification
+		for _, token := range t.tokens {
+			if token.Type != Identifier || token.SubType != IdentifierVariable {
+				continue
+			}
+			if token.Type == Identifier && t.TokenClassifiers.FormEndRegexCompiled.MatchString(token.Text) {
+				token.SubType = IdentifierFormEnd
+				is_formend[token.Text] = true
+			}
+		}
+	}
+	// FormStart - Are we deciding statically or dynamically?
+	if t.TokenClassifiers == nil || t.TokenClassifiers.FormStartRegexCompiled == nil {
+		// Dynamic classification
+		for _, token := range t.tokens {
+			if token.Type != Identifier || token.SubType != IdentifierVariable {
+				continue
+			}
+			if !strings.HasPrefix(token.Text, "end") && is_formend["end"+token.Text] {
+				token.SubType = IdentifierFormStart
+			}
+		}
+	} else {
+		// Static classification
+		for _, token := range t.tokens {
+			if token.Type != Identifier || token.SubType != IdentifierVariable {
+				continue
+			}
+			if token.Type == Identifier && t.TokenClassifiers.FormStartRegexCompiled.MatchString(token.Text) {
+				token.SubType = IdentifierFormStart
+			}
+		}
+	}
+}
+
+func (t *Tokenizer) markFormPrefixTokens() {
+	// Are we deciding statically or dynamically?
+	if t.TokenClassifiers == nil || t.TokenClassifiers.FormPrefixRegexCompiled == nil {
+		// Dynamic classification
+		is_prefix := make(map[string]bool)
+		for _, token := range t.tokens {
+			if token.Type != Identifier || token.SubType != IdentifierVariable {
+				continue
+			}
+			if is_prefix[token.Text] {
+				token.SubType = IdentifierFormPrefix
+			} else {
+				next := token.NextToken
+				if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
+					token.SubType = IdentifierFormPrefix
+					is_prefix[token.Text] = true
+				}
+			}
+		}
+	} else {
+		// Static classification
+		for _, token := range t.tokens {
+			if token.Type != Identifier || token.SubType != IdentifierVariable {
+				continue
+			}
+			if token.Type == Identifier && t.TokenClassifiers.FormPrefixRegexCompiled.MatchString(token.Text) {
+				token.SubType = IdentifierFormPrefix
+			}
+		}
+	}
+}
+
+func (t *Tokenizer) markOtherTokens() {
+	if t.TokenClassifiers == nil {
+		return
+	}
+	for _, token := range t.tokens {
+		if token.Type != Identifier || token.SubType != IdentifierVariable {
+			continue
+		}
+
+		// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
+		if t.TokenClassifiers.CompoundLabelRegexCompiled != nil {
+			if t.TokenClassifiers.CompoundLabelRegexCompiled.MatchString(token.Text) {
+				token.SubType = IdentifierCompoundLabel
+				continue // Skip further processing for this token
+			}
+		}
+
+		// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
+		if t.TokenClassifiers.SimpleLabelRegexCompiled != nil {
+			if t.TokenClassifiers.SimpleLabelRegexCompiled.MatchString(token.Text) {
+				token.SubType = IdentifierSimpleLabel
+				continue // Skip further processing for this token
+			}
+		}
+
+		// If form-end-wildcard-regex is specified, check for a wildcard-form-end.
+		if t.TokenClassifiers.FormEndWildcardRegexCompiled != nil && t.TokenClassifiers.FormEndWildcardRegexCompiled.MatchString(token.Text) {
+			token.SubType = IdentifierFormWildcardEnd
+			continue
+		}
 
 	}
+}
+
+func (t *Tokenizer) markReservedTokens() *MonogramError {
+	t.markFormPrefixTokens()
+	t.markFormSurroundTokens()
+	t.markOtherTokens()
 	return nil
+
+	// ident_exists := make(map[string]bool)
+	// is_reserved := make(map[string]bool)
+
+	// // Collect all identifiers.
+	// for _, token := range t.tokens {
+	// 	if token.Type == Identifier {
+	// 		ident_exists[token.Text] = true
+	// 	}
+	// }
+
+	// // Classify identifiers that can be independently classified.
+	// for n, token := range t.tokens {
+	// 	if token.Type != Identifier {
+	// 		continue
+	// 	}
+	// 	if t.TokenClassifiers != nil {
+
+	// 		// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
+	// 		if t.TokenClassifiers.CompoundLabelRegexCompiled != nil {
+	// 			if t.TokenClassifiers.CompoundLabelRegexCompiled.MatchString(token.Text) {
+	// 				token.SubType = IdentifierCompoundLabel
+	// 				continue // Skip further processing for this token
+	// 			}
+	// 		}
+
+	// 		// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
+	// 		if t.TokenClassifiers.SimpleLabelRegexCompiled != nil {
+	// 			if t.TokenClassifiers.SimpleLabelRegexCompiled.MatchString(token.Text) {
+	// 				token.SubType = IdentifierSimpleLabel
+	// 				continue // Skip further processing for this token
+	// 			}
+	// 		}
+
+	// 		// Classify as a IdentifierFormPrefix if form-prefix-regex is specified.
+	// 		if t.TokenClassifiers.FormPrefixRegexCompiled != nil {
+	// 			if t.TokenClassifiers.FormPrefixRegexCompiled.MatchString(token.Text) {
+	// 				token.SubType = IdentifierFormPrefix
+	// 				is_reserved[token.Text] = true
+	// 				continue // Skip further processing for this token
+	// 			}
+	// 		}
+
+	// 		// If form-end-wildcard-regex is specified, check for a wildcard-form-end.
+	// 		if t.TokenClassifiers.FormEndWildcardRegexCompiled != nil && t.TokenClassifiers.FormEndWildcardRegexCompiled.MatchString(token.Text) {
+	// 			token.SubType = IdentifierFormWildcardEnd
+	// 			continue
+	// 		}
+
+	// 	}
+
+	// 	var next *Token
+	// 	if n < len(t.tokens)-1 {
+	// 		next = t.tokens[n+1]
+	// 	}
+	// 	if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
+	// 		if strings.HasPrefix(token.Text, "end") {
+	// 			//return fmt.Errorf("cannot use %s as an opening keyword", token.Text)
+	// 			return &MonogramError{
+	// 				Message: fmt.Sprintf("cannot use '%s' as an opening keyword", token.Text),
+	// 				Line:    token.Span.StartLine,
+	// 				Column:  token.Span.StartColumn,
+	// 			}
+	// 		}
+	// 		token.SubType = IdentifierFormPrefix
+	// 		is_reserved[token.Text] = true
+	// 	}
+	// }
+
+	// // Mark surround-form identifiers.
+	// for _, token := range t.tokens {
+	// 	if token.Type != Identifier || strings.HasPrefix(token.Text, "endend") {
+	// 		continue
+	// 	}
+	// 	if token.SubType != IdentifierVariable {
+	// 		continue // Already classified
+	// 	}
+
+	// 	starts_with_end := strings.HasPrefix(token.Text, "end")
+	// 	if t.TokenClassifiers != nil && t.TokenClassifiers.FormStartRegexCompiled != nil {
+	// 		// Use static classification
+	// 		if starts_with_end {
+	// 			stem := token.Text[3:]
+	// 			if t.TokenClassifiers.FormStartRegexCompiled.MatchString(stem) {
+	// 				token.SubType = IdentifierFormEnd
+	// 			}
+	// 		} else if t.TokenClassifiers.FormStartRegexCompiled.MatchString(token.Text) {
+	// 			token.SubType = IdentifierFormStart
+	// 		}
+	// 	} else {
+	// 		// Otherwise use dynamic classification.
+	// 		if starts_with_end {
+	// 			stem := token.Text[3:]
+	// 			if ident_exists[stem] {
+	// 				token.SubType = IdentifierFormEnd
+	// 			}
+	// 		} else if is_reserved[token.Text] {
+	// 			token.SubType = IdentifierFormStart
+	// 		} else {
+	// 			if ident_exists["end"+token.Text] {
+	// 				token.SubType = IdentifierFormStart
+	// 			}
+	// 		}
+	// 	}
+
+	// }
+	// return nil
 }
 
 // Link tokens into a singly-linked list.
@@ -1514,12 +1645,12 @@ func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCom
 
 	tokenizer.addFiniToken() // Add capstone token for the end of input
 
+	tokenizer.chainTokens()
+
 	terr = tokenizer.markReservedTokens()
 	if terr != nil {
 		return nil, Span{}, terr
 	}
-
-	tokenizer.chainTokens()
 
 	if colOffset > 0 {
 		for _, token := range tokenizer.tokens {
