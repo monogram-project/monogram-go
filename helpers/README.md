@@ -5,6 +5,7 @@ A high-performance multi-pattern regex classifier for Go using the built-in `reg
 ## Features
 
 - **High Performance**: Uses a single compiled regex with named capture groups for O(n) matching regardless of pattern count
+- **Builder Pattern**: `RegexTableBuilder` provides a convenient API that hides compilation complexity
 - **Lazy Compilation**: Defers regex compilation until classification for better performance when adding multiple patterns
 - **Type Safe**: Generic implementation supports any value type `T`
 - **Reserved Namespace**: Uses `__REGEXTABLE_` prefix to avoid conflicts with user-defined capture groups
@@ -12,7 +13,7 @@ A high-performance multi-pattern regex classifier for Go using the built-in `reg
 - **Full Match Access**: Returns both the classified value and complete submatch details
 - **Self-Contained**: Designed to be extracted into a separate library
 
-## Basic Usage
+## Quick Start (Recommended)
 
 ```go
 package main
@@ -31,75 +32,120 @@ const (
 )
 
 func main() {
-    // Create table
-    table := helpers.NewRegexTable[TokenType]()
+    // Use the builder pattern - no need to think about compilation!
+    table, err := helpers.NewRegexTableBuilder[TokenType]().
+        AddPattern(`\b(if|else|while|for)\b`, TokenKeyword).
+        AddPattern(`\b[a-zA-Z_][a-zA-Z0-9_]*\b`, TokenIdentifier).
+        AddPattern(`\b\d+\b`, TokenNumber).
+        Build()
     
-    // Add patterns (lazy compilation)
-    table.AddPattern(`if|else|while|for`, TokenKeyword)
-    table.AddPattern(`[a-zA-Z_][a-zA-Z0-9_]*`, TokenIdentifier) 
-    table.AddPattern(`\d+`, TokenNumber)
+    if err != nil {
+        panic(err) // Only fails if patterns are invalid
+    }
     
-    // Classify input (triggers compilation)
-    if value, matches, err := table.Classify("if"); err == nil {
-        fmt.Printf("Matched: %v\n", value) // TokenKeyword
-        fmt.Printf("Text: %s\n", matches[0]) // "if"
+    // Use the table
+    if value, matches, ok := table.TryClassify("if"); ok {
+        fmt.Printf("Matched: %v (%s)\n", value, matches[0])
     }
 }
 ```
 
-## Compilation Strategies
+## Builder Usage Patterns
 
-### Lazy Compilation (Default)
+### Basic Builder Usage
 
 ```go
-table := helpers.NewRegexTable[string]()
-
-// These don't compile immediately - better for bulk operations
-table.AddPattern("pattern1", "value1")
-table.AddPattern("pattern2", "value2")
-table.AddPattern("pattern3", "value3")
-
-// Compilation happens here
-result, matches, err := table.Classify("input")
+// Simple fluent interface
+table, err := helpers.NewRegexTableBuilder[string]().
+    AddPattern("hello", "greeting").
+    AddPattern("world", "place").
+    Build()
 ```
 
-### Immediate Compilation
+### Builder Chaining and Reuse
 
 ```go
-table := helpers.NewRegexTable[string]()
+// Create a base builder
+base := helpers.NewRegexTableBuilder[TokenType]().
+    AddPattern(`form\w*`, FormStart).
+    AddPattern(`end\w*`, FormEnd)
 
-// This compiles immediately - better for immediate validation
-id, err := table.AddPatternThenRecompile("pattern", "value")
-if err != nil {
-    // Handle regex compilation error immediately
-}
+// Clone and extend for different contexts  
+webBuilder := base.Clone().
+    AddPattern(`button\w*`, Button).
+    AddPattern(`input\w*`, Input)
 
-// Already compiled, no compilation overhead
-result, matches, err := table.Classify("input")
+codeBuilder := base.Clone().
+    AddPattern(`class\w*`, ClassDef).
+    AddPattern(`method\w*`, MethodDef)
+
+// Build specialized tables
+webTable, _ := webBuilder.Build()
+codeTable, _ := codeBuilder.Build()
 ```
 
-### Manual Compilation
+### Static Configuration with MustBuild
 
 ```go
-table := helpers.NewRegexTable[string]()
+// For static configs where patterns are known valid
+var GlobalTokenTable = helpers.NewRegexTableBuilder[TokenType]().
+    AddPattern(`\b(if|else|while|for)\b`, Keyword).
+    AddPattern(`\b[a-zA-Z_]\w*\b`, Identifier).
+    AddPattern(`\b\d+\b`, Number).
+    MustBuild() // Panics if patterns are invalid
 
-// Add multiple patterns
-table.AddPattern("pattern1", "value1")
-table.AddPattern("pattern2", "value2")
-
-// Manually control when compilation happens
-err := table.Recompile()
-if err != nil {
-    // Handle compilation errors
+func classifyToken(input string) TokenType {
+    value, _, _ := GlobalTokenTable.TryClassify(input)
+    return value
 }
+```
 
-// Classification uses pre-compiled regex
-result, matches, err := table.Classify("input")
+### Builder State Management
+
+```go
+builder := helpers.NewRegexTableBuilder[string]()
+
+// Add patterns
+builder.AddPattern("test1", "value1")
+builder.AddPattern("test2", "value2")
+
+fmt.Printf("Patterns: %d\n", builder.PatternCount()) // 2
+fmt.Printf("Has patterns: %t\n", builder.HasPatterns()) // true
+
+// Clear and reuse
+builder.Clear()
+fmt.Printf("Patterns after clear: %d\n", builder.PatternCount()) // 0
 ```
 
 ## API Reference
 
-### Core Methods
+### Builder Pattern (Recommended)
+
+#### `NewRegexTableBuilder[T any]() *RegexTableBuilder[T]`
+Creates a new builder for RegexTable[T].
+
+#### `AddPattern(pattern string, value T) *RegexTableBuilder[T]`
+Adds a pattern to the builder. Returns the builder for method chaining.
+
+#### `Build() (*RegexTable[T], error)`
+Creates the final RegexTable with all accumulated patterns. Compilation happens here.
+
+#### `MustBuild() *RegexTable[T]`
+Like Build but panics on error. Useful for static configurations.
+
+#### `Clone() *RegexTableBuilder[T]`
+Creates a copy of the builder with the same patterns.
+
+#### `Clear() *RegexTableBuilder[T]`
+Removes all patterns from the builder.
+
+#### `HasPatterns() bool`
+Returns true if any patterns have been added.
+
+#### `PatternCount() int`
+Returns the number of patterns added.
+
+### Direct RegexTable API
 
 #### `NewRegexTable[T any]() *RegexTable[T]`
 Creates a new empty RegexTable for values of type T.
