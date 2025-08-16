@@ -20,6 +20,10 @@ These patterns will be used for regex-based identifier classification:
 - `form-start-regex`: Pattern for form start identifiers (e.g., "function", "class")
 - `form-end-regex`: Pattern for form end identifiers (e.g., "endfunction", "endclass")
 - `form-prefix-regex`: Pattern for prefix form identifiers (e.g., "return", "break")
+- `form-surround-match`: List of regex patterns for matching paired constructs
+  that create form boundaries, each pattern having the form `{open_regex}
+  {close_regex}`. These patterns will be matched using the regexp2 engine, not
+  Go's built-in matcher, so that backrefs are available.
 
 ### Default Options
 These options provide defaults that are applied when the corresponding command-line flag is not specified:

@@ -22,9 +22,10 @@ type Parser struct {
 	Decimal       bool
 	CheckLiterals bool // Whether to check regex syntax.
 	Idents        map[string]HowIdentsAreUsed
+	Classifiers   *TokenClassifiersCompiled
 }
 
-func NewParser(init_token *Token, coreOptions *CoreFormatOptions) *Parser {
+func NewParser(init_token *Token, coreOptions *CoreFormatOptions, classifiers *TokenClassifiersCompiled) *Parser {
 	return &Parser{
 		currentToken:  init_token,
 		UnglueOption:  &Token{Type: Identifier, SubType: IdentifierVariable, Text: coreOptions.DefaultLabel},
@@ -32,6 +33,7 @@ func NewParser(init_token *Token, coreOptions *CoreFormatOptions) *Parser {
 		Decimal:       coreOptions.Decimal,
 		CheckLiterals: coreOptions.CheckLiterals,
 		Idents:        make(map[string]HowIdentsAreUsed),
+		Classifiers:   classifiers,
 	}
 }
 
@@ -420,7 +422,6 @@ const (
 
 func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) {
 	allowFlags := flagComma | flagSemicolon | flagNewline
-	closingTokenText := "end" + formStart.Text
 	context = context.setInsideForm(true)
 	mode := alphaMode
 	prev_expr_explicitly_terminated := false
@@ -429,10 +430,28 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 	builder := NewFormBuilder(formStart.Text, startLineCol, p.IncludeSpans, false)
 	for {
 		if !p.hasNext() {
-			return nil, fmt.Errorf("unexpected end of tokens (missing end of form): %s", closingTokenText)
+			return nil, fmt.Errorf("unexpected end of tokens (missing end of form): %s", formStart.Text)
 		}
 		token := p.safePeek()
-		if token.Type == Identifier && (token.SubType == IdentifierFormEnd && token.Text == closingTokenText || token.SubType == IdentifierFormWildcardEnd) {
+		if token.Type == Identifier && token.SubType == IdentifierFormEnd {
+			// Check if this is a matching form-end token
+			var isMatch bool
+			if p.Classifiers != nil && p.Classifiers.FormSurroundMatchCompiled != nil {
+				// Use regex-based matching
+				isMatch = p.Classifiers.CheckFormStartEndMatch(formStart.Text, token.Text)
+			} else {
+				// Fall back to default "end" + formStart.Text matching
+				isMatch = token.Text == "end"+formStart.Text
+			}
+			
+			if isMatch {
+				endLineCol = p.endLineCol()
+				p.next()
+				break
+			}
+		}
+		
+		if token.Type == Identifier && token.SubType == IdentifierFormWildcardEnd {
 			endLineCol = p.endLineCol()
 			p.next()
 			break
@@ -1117,8 +1136,8 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 	return expressionNode, nil
 }
 
-func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOptions) ([]*Node, error) {
-	parser := NewParser(initToken, coreOptions)
+func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOptions, classifiers *TokenClassifiersCompiled) ([]*Node, error) {
+	parser := NewParser(initToken, coreOptions, classifiers)
 	nodes := []*Node{}
 	for parser.hasNext() {
 		node, err := parser.readExpr(makeContext())
@@ -1142,7 +1161,7 @@ func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreF
 	}
 
 	// Step 2: Parse the tokens into nodes
-	nodes, err := parseTokensToNodes(initToken, limit, coreOptions)
+	nodes, err := parseTokensToNodes(initToken, limit, coreOptions, classifiers)
 	if err != nil {
 		return nil, Span{}, err
 	}

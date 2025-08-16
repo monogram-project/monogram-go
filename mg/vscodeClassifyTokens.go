@@ -46,7 +46,7 @@ func VSCodeClassifyTokens(input io.Reader, output io.Writer) {
 		Decimal:       false,
 		CheckLiterals: false,
 	}
-	parseTokensToNodes(initToken, false, coreOptions)
+	parseTokensToNodes(initToken, false, coreOptions, &TokenClassifiersCompiled{})
 
 	var classifications []TokenClassification = []TokenClassification{}
 

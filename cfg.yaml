@@ -5,10 +5,11 @@
 # These will be used in the future for regex-based identifier classification
 simple-label-regex: "in"
 compound-label-regex: null
+form-prefix-regex: null
 form-start-regex: "let"
 form-end-regex: null
 form-end-wildcard-regex: "end"
-form-prefix-regex: null
+
 
 # Default configuration values
 # These are applied only when the corresponding command-line flag is not used

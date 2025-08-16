@@ -9,6 +9,17 @@ form-start-regex: "^(function|class|struct)$"
 form-end-regex: "^end(function|class|struct)$"
 form-prefix-regex: "^(return|break|continue)$"
 
+# Form surround match patterns - list of regex patterns for matching paired constructs
+form-surround-match:
+  - "if"
+  - "while"
+  - "for"
+  - "function"
+  - "class"
+  - "struct"
+  - "try"
+  - "switch"
+
 # Default configuration values
 # These are applied only when the corresponding command-line flag is not used
 option-format: "xml"
