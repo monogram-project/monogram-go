@@ -1,12 +1,29 @@
-# RegexClassifier
+# RegexTable
 
-A high-performance multi-pattern regex classifier for Go using the built-in `regexp` package. This helper compiles multiple regex patterns into a single automaton for efficient pattern matching.
+A high-performance multi-pattern regex classifier for Go using the built-in `regexp` package. This helper compiles multiple regex pa// Method 1: Using Classify with error handling
+if value, matches, err := table.Classify(input); err != nil {
+    switch {
+    case strings.Contains(err.Error(), "no patterns configured"):
+        // Handle empty table
+    case strings.Contains(err.Error(), "no pattern matched"):
+        // Handle no match
+    default:
+        // Handle other errors
+    }
+}
+
+// Method 2: Using TryClassify for simple success/failure
+if value, matches, ok := table.TryClassify(input); ok {
+    // Handle successful match
+} else {
+    // Handle no match
+}le automaton for efficient pattern matching.
 
 ## Features
 
 - **High Performance**: Uses a single compiled regex with named capture groups for O(n) matching regardless of pattern count
 - **Type Safe**: Generic implementation supports any value type `T`
-- **Reserved Namespace**: Uses `__REGEXCLASSIFIER_` prefix to avoid conflicts with user-defined capture groups
+- **Reserved Namespace**: Uses `__REGEXTABLE_` prefix to avoid conflicts with user-defined capture groups
 - **Built-in Regexp**: Uses Go's standard `regexp` package - no external dependencies
 - **Full Match Access**: Returns both the classified value and complete submatch details
 - **Self-Contained**: Designed to be extracted into a separate library
@@ -30,16 +47,16 @@ const (
 )
 
 func main() {
-    // Create classifier
-    classifier := helpers.NewRegexClassifier[TokenType]()
+    // Create table
+    table := helpers.NewRegexTable[TokenType]()
     
     // Add patterns
-    classifier.AddPattern("keyword", `if|else|while|for`, TokenKeyword)
-    classifier.AddPattern("identifier", `[a-zA-Z_][a-zA-Z0-9_]*`, TokenIdentifier) 
-    classifier.AddPattern("number", `\d+`, TokenNumber)
+    table.AddPattern("keyword", `if|else|while|for`, TokenKeyword)
+    table.AddPattern("identifier", `[a-zA-Z_][a-zA-Z0-9_]*`, TokenIdentifier) 
+    table.AddPattern("number", `\d+`, TokenNumber)
     
     // Classify input
-    if value, matches, err := classifier.Classify("if"); err == nil {
+    if value, matches, err := table.Classify("if"); err == nil {
         fmt.Printf("Matched: %v\n", value) // TokenKeyword
         fmt.Printf("Text: %s\n", matches[0]) // "if"
     }
@@ -51,7 +68,7 @@ func main() {
 ### Core Types
 
 ```go
-type RegexClassifier[T any] struct {
+type RegexTable[T any] struct {
     // Private fields
 }
 ```
@@ -59,24 +76,24 @@ type RegexClassifier[T any] struct {
 ### Constructor
 
 ```go
-func NewRegexClassifier[T any]() *RegexClassifier[T]
+func NewRegexTable[T any]() *RegexTable[T]
 ```
 
-Creates a new empty classifier for the specified type `T`.
+Creates a new empty table for the specified type `T`.
 
 ### Methods
 
 #### AddPattern
 
 ```go
-func (rc *RegexClassifier[T]) AddPattern(name, pattern string, value T) error
+func (rt *RegexTable[T]) AddPattern(name, pattern string, value T) error
 ```
 
 Adds a regex pattern with an associated value. The `name` must be unique.
 
 **Parameters:**
 - `name`: Unique identifier for the pattern
-- `pattern`: Regular expression (regexp2 syntax)
+- `pattern`: Regular expression (Go regexp syntax)
 - `value`: Value to return when this pattern matches
 
 **Returns:** Error if name already exists or regex compilation fails.
@@ -84,15 +101,15 @@ Adds a regex pattern with an associated value. The `name` must be unique.
 #### RemovePattern
 
 ```go
-func (rc *RegexClassifier[T]) RemovePattern(name string) error
+func (rt *RegexTable[T]) RemovePattern(name string) error
 ```
 
-Removes a pattern by name and recompiles the classifier.
+Removes a pattern by name and recompiles the table.
 
 #### Classify
 
 ```go
-func (rc *RegexClassifier[T]) Classify(input string) (T, []string, error)
+func (rt *RegexTable[T]) Classify(input string) (T, []string, error)
 ```
 
 Attempts to match input against all patterns.
@@ -105,7 +122,7 @@ Attempts to match input against all patterns.
 #### TryClassify
 
 ```go
-func (rc *RegexClassifier[T]) TryClassify(input string) (T, []string, bool)
+func (rt *RegexTable[T]) TryClassify(input string) (T, []string, bool)
 ```
 
 Like `Classify` but returns a boolean instead of an error.
@@ -118,7 +135,7 @@ Like `Classify` but returns a boolean instead of an error.
 #### HasPatterns
 
 ```go
-func (rc *RegexClassifier[T]) HasPatterns() bool
+func (rt *RegexTable[T]) HasPatterns() bool
 ```
 
 Returns true if any patterns are configured.
@@ -128,10 +145,10 @@ Returns true if any patterns are configured.
 ### Using Match Details
 
 ```go
-classifier := helpers.NewRegexClassifier[string]()
-classifier.AddPattern("capture", `(\w+):(\d+)`, "key-value")
+table := helpers.NewRegexTable[string]()
+table.AddPattern("capture", `(\w+):(\d+)`, "key-value")
 
-if value, matches, err := classifier.Classify("name:42"); err == nil {
+if value, matches, err := table.Classify("name:42"); err == nil {
     fmt.Printf("Type: %s\n", value)     // "key-value"
     fmt.Printf("Full: %s\n", matches[0]) // "name:42"
     
@@ -174,21 +191,21 @@ The key advantage is that matching time is independent of the number of patterns
 
 ## Thread Safety
 
-`RegexClassifier` is **not** thread-safe for modifications (`AddPattern`, `RemovePattern`) but is safe for concurrent reads (`Classify`, `TryClassify`) once patterns are configured.
+`RegexTable` is **not** thread-safe for modifications (`AddPattern`, `RemovePattern`) but is safe for concurrent reads (`Classify`, `TryClassify`) once patterns are configured.
 
 For concurrent modification, use external synchronization:
 
 ```go
 var mu sync.RWMutex
-var classifier = helpers.NewRegexClassifier[TokenType]()
+var table = helpers.NewRegexTable[TokenType]()
 
 // Modify (exclusive)
 mu.Lock()
-classifier.AddPattern("new", `pattern`, value)
+table.AddPattern("new", `pattern`, value)
 mu.Unlock()
 
 // Read (shared)
 mu.RLock()
-value, matches, err := classifier.Classify(input)
+value, matches, err := table.Classify(input)
 mu.RUnlock()
 ```

@@ -14,21 +14,21 @@ const (
 	TokenVariable
 )
 
-func TestRegexClassifier_Basic(t *testing.T) {
-	classifier := NewRegexClassifier[TokenType]()
+func TestRegexTable_Basic(t *testing.T) {
+	table := NewRegexTable[TokenType]()
 
 	// Add some test patterns
-	err := classifier.AddPattern("form_start", `form\w*`, TokenFormStart)
+	err := table.AddPattern("form_start", `form\w*`, TokenFormStart)
 	if err != nil {
 		t.Fatalf("Failed to add form_start pattern: %v", err)
 	}
 
-	err = classifier.AddPattern("form_end", `end\w*`, TokenFormEnd)
+	err = table.AddPattern("form_end", `end\w*`, TokenFormEnd)
 	if err != nil {
 		t.Fatalf("Failed to add form_end pattern: %v", err)
 	}
 
-	err = classifier.AddPattern("simple_label", `[a-z]+:`, TokenSimpleLabel)
+	err = table.AddPattern("simple_label", `[a-z]+:`, TokenSimpleLabel)
 	if err != nil {
 		t.Fatalf("Failed to add simple_label pattern: %v", err)
 	}
@@ -49,7 +49,7 @@ func TestRegexClassifier_Basic(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.input, func(t *testing.T) {
-			value, match, err := classifier.Classify(tc.input)
+			value, match, err := table.Classify(tc.input)
 
 			if tc.shouldMatch {
 				if err != nil {
@@ -74,16 +74,16 @@ func TestRegexClassifier_Basic(t *testing.T) {
 	}
 }
 
-func TestRegexClassifier_TryClassify(t *testing.T) {
-	classifier := NewRegexClassifier[string]()
+func TestRegexTable_TryClassify(t *testing.T) {
+	table := NewRegexTable[string]()
 
-	err := classifier.AddPattern("test", `hello`, "greeting")
+	err := table.AddPattern("test", `hello`, "greeting")
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
 
 	// Test successful match
-	value, match, ok := classifier.TryClassify("hello")
+	value, match, ok := table.TryClassify("hello")
 	if !ok {
 		t.Error("Expected successful match for 'hello'")
 	}
@@ -95,7 +95,7 @@ func TestRegexClassifier_TryClassify(t *testing.T) {
 	}
 
 	// Test unsuccessful match
-	value, match, ok = classifier.TryClassify("goodbye")
+	value, match, ok = table.TryClassify("goodbye")
 	if ok {
 		t.Error("Expected unsuccessful match for 'goodbye'")
 	}
@@ -107,44 +107,44 @@ func TestRegexClassifier_TryClassify(t *testing.T) {
 	}
 }
 
-func TestRegexClassifier_RemovePattern(t *testing.T) {
-	classifier := NewRegexClassifier[int]()
+func TestRegexTable_RemovePattern(t *testing.T) {
+	table := NewRegexTable[int]()
 
-	err := classifier.AddPattern("test1", `foo`, 1)
+	err := table.AddPattern("test1", `foo`, 1)
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
 
-	err = classifier.AddPattern("test2", `bar`, 2)
+	err = table.AddPattern("test2", `bar`, 2)
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
 
 	// Verify both patterns work
-	value, _, err := classifier.Classify("foo")
+	value, _, err := table.Classify("foo")
 	if err != nil || value != 1 {
 		t.Error("Pattern test1 should match")
 	}
 
-	value, _, err = classifier.Classify("bar")
+	value, _, err = table.Classify("bar")
 	if err != nil || value != 2 {
 		t.Error("Pattern test2 should match")
 	}
 
 	// Remove first pattern
-	err = classifier.RemovePattern("test1")
+	err = table.RemovePattern("test1")
 	if err != nil {
 		t.Fatalf("Failed to remove pattern: %v", err)
 	}
 
 	// Verify first pattern no longer works
-	_, _, err = classifier.Classify("foo")
+	_, _, err = table.Classify("foo")
 	if err == nil {
 		t.Error("Pattern test1 should no longer match after removal")
 	}
 
 	// Verify second pattern still works
-	value, _, err = classifier.Classify("bar")
+	value, _, err = table.Classify("bar")
 	if err != nil || value != 2 {
 		t.Error("Pattern test2 should still match after removing test1")
 	}

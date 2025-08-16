@@ -33,19 +33,19 @@ func (t TokenType) String() string {
 }
 
 func main() {
-	// Create a new classifier for TokenType
-	classifier := helpers.NewRegexClassifier[TokenType]()
+	// Create a new table for TokenType
+	table := helpers.NewRegexTable[TokenType]()
 
 	// Add patterns for different token types
-	if err := classifier.AddPattern("form_start", `form\w*`, TokenFormStart); err != nil {
+	if err := table.AddPattern("form_start", `form\w*`, TokenFormStart); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := classifier.AddPattern("form_end", `end\w*`, TokenFormEnd); err != nil {
+	if err := table.AddPattern("form_end", `end\w*`, TokenFormEnd); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := classifier.AddPattern("simple_label", `[a-z]+:`, TokenSimpleLabel); err != nil {
+	if err := table.AddPattern("simple_label", `[a-z]+:`, TokenSimpleLabel); err != nil {
 		log.Fatal(err)
 	}
 
@@ -61,7 +61,7 @@ func main() {
 
 	fmt.Println("=== Classification Results ===")
 	for _, input := range testInputs {
-		if tokenType, matches, err := classifier.Classify(input); err == nil {
+		if tokenType, matches, err := table.Classify(input); err == nil {
 			fmt.Printf("'%s' -> %s (full match: '%s')\n",
 				input, tokenType, matches[0])
 		} else {
@@ -71,7 +71,7 @@ func main() {
 
 	fmt.Println("\n=== Using TryClassify ===")
 	for _, input := range testInputs {
-		if tokenType, matches, ok := classifier.TryClassify(input); ok {
+		if tokenType, matches, ok := table.TryClassify(input); ok {
 			fmt.Printf("'%s' -> %s (full match: '%s')\n",
 				input, tokenType, matches[0])
 		} else {
