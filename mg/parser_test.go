@@ -24,7 +24,7 @@ func getParser(input string) (*Parser, error) {
 		Decimal:       false,
 		CheckLiterals: true,
 	}
-	return NewParser(initToken, coreOptions), nil
+	return NewParser(initToken, coreOptions, &TokenClassifiersCompiled{}), nil
 }
 
 func TestParsePrefix0(t *testing.T) {
