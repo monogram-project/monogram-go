@@ -37,15 +37,15 @@ func main() {
 	table := helpers.NewRegexTable[TokenType]()
 
 	// Add patterns for different token types
-	if err := table.AddPattern("form_start", `form\w*`, TokenFormStart); err != nil {
+	if _, err := table.AddPattern(`form\w*`, TokenFormStart); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := table.AddPattern("form_end", `end\w*`, TokenFormEnd); err != nil {
+	if _, err := table.AddPattern(`end\w*`, TokenFormEnd); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := table.AddPattern("simple_label", `[a-z]+:`, TokenSimpleLabel); err != nil {
+	if _, err := table.AddPattern(`[a-z]+:`, TokenSimpleLabel); err != nil {
 		log.Fatal(err)
 	}
 

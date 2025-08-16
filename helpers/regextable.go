@@ -14,6 +14,7 @@ type RegexTable[T any] struct {
 	compiled     *regexp.Regexp
 	values       map[string]T
 	patternNames []string
+	nextID       int
 }
 
 // NewRegexTable creates a new empty RegexTable.
@@ -21,18 +22,17 @@ func NewRegexTable[T any]() *RegexTable[T] {
 	return &RegexTable[T]{
 		values:       make(map[string]T),
 		patternNames: make([]string, 0),
+		nextID:       1,
 	}
 }
 
 // AddPattern adds a new regex pattern with its associated value to the table.
-// The name must be unique and will be used to identify which pattern matched.
-// Returns an error if the name is already in use or if recompilation fails.
-func (rt *RegexTable[T]) AddPattern(name, pattern string, value T) error {
-	groupName := fmt.Sprintf("__REGEXTABLE_%s__", name)
-
-	if _, exists := rt.values[groupName]; exists {
-		return fmt.Errorf("pattern name '%s' already exists", name)
-	}
+// Returns the pattern ID (for use with RemovePattern) and an error if regex compilation fails.
+func (rt *RegexTable[T]) AddPattern(pattern string, value T) (int, error) {
+	// Auto-generate a unique internal name
+	patternID := rt.nextID
+	groupName := fmt.Sprintf("__REGEXTABLE_%d__", patternID)
+	rt.nextID++
 
 	// Create a unique capture group name with reserved prefix
 	namedPattern := fmt.Sprintf("(?P<%s>%s)", groupName, pattern)
@@ -40,16 +40,25 @@ func (rt *RegexTable[T]) AddPattern(name, pattern string, value T) error {
 	rt.patternNames = append(rt.patternNames, namedPattern)
 	rt.values[groupName] = value
 
-	return rt.recompile()
+	err := rt.recompile()
+	if err != nil {
+		// Rollback on error
+		rt.nextID--
+		rt.patternNames = rt.patternNames[:len(rt.patternNames)-1]
+		delete(rt.values, groupName)
+		return 0, err
+	}
+
+	return patternID, nil
 }
 
-// RemovePattern removes a pattern from the table by name.
+// RemovePattern removes a pattern from the table by its ID.
 // Returns an error if the pattern doesn't exist or if recompilation fails.
-func (rt *RegexTable[T]) RemovePattern(name string) error {
-	groupName := fmt.Sprintf("__REGEXTABLE_%s__", name)
+func (rt *RegexTable[T]) RemovePattern(patternID int) error {
+	groupName := fmt.Sprintf("__REGEXTABLE_%d__", patternID)
 
 	if _, exists := rt.values[groupName]; !exists {
-		return fmt.Errorf("pattern name '%s' does not exist", name)
+		return fmt.Errorf("pattern ID %d does not exist", patternID)
 	}
 
 	delete(rt.values, groupName)

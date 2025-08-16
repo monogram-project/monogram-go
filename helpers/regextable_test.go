@@ -18,17 +18,17 @@ func TestRegexTable_Basic(t *testing.T) {
 	table := NewRegexTable[TokenType]()
 
 	// Add some test patterns
-	err := table.AddPattern("form_start", `form\w*`, TokenFormStart)
+	_, err := table.AddPattern(`form\w*`, TokenFormStart)
 	if err != nil {
 		t.Fatalf("Failed to add form_start pattern: %v", err)
 	}
 
-	err = table.AddPattern("form_end", `end\w*`, TokenFormEnd)
+	_, err = table.AddPattern(`end\w*`, TokenFormEnd)
 	if err != nil {
 		t.Fatalf("Failed to add form_end pattern: %v", err)
 	}
 
-	err = table.AddPattern("simple_label", `[a-z]+:`, TokenSimpleLabel)
+	_, err = table.AddPattern(`[a-z]+:`, TokenSimpleLabel)
 	if err != nil {
 		t.Fatalf("Failed to add simple_label pattern: %v", err)
 	}
@@ -77,7 +77,7 @@ func TestRegexTable_Basic(t *testing.T) {
 func TestRegexTable_TryClassify(t *testing.T) {
 	table := NewRegexTable[string]()
 
-	err := table.AddPattern("test", `hello`, "greeting")
+	_, err := table.AddPattern(`hello`, "greeting")
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
@@ -110,15 +110,16 @@ func TestRegexTable_TryClassify(t *testing.T) {
 func TestRegexTable_RemovePattern(t *testing.T) {
 	table := NewRegexTable[int]()
 
-	err := table.AddPattern("test1", `foo`, 1)
+	id1, err := table.AddPattern(`foo`, 1)
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
 
-	err = table.AddPattern("test2", `bar`, 2)
+	id2, err := table.AddPattern(`bar`, 2)
 	if err != nil {
 		t.Fatalf("Failed to add pattern: %v", err)
 	}
+	_ = id2 // We keep this pattern for testing
 
 	// Verify both patterns work
 	value, _, err := table.Classify("foo")
@@ -132,7 +133,7 @@ func TestRegexTable_RemovePattern(t *testing.T) {
 	}
 
 	// Remove first pattern
-	err = table.RemovePattern("test1")
+	err = table.RemovePattern(id1)
 	if err != nil {
 		t.Fatalf("Failed to remove pattern: %v", err)
 	}
