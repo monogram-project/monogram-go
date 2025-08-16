@@ -17,7 +17,7 @@ const (
 func TestRegexTable_Basic(t *testing.T) {
 	table := NewRegexTable[TokenType]()
 
-	// Add some test patterns
+	// Add some test patterns using deferred compilation
 	_, err := table.AddPattern(`form\w*`, TokenFormStart)
 	if err != nil {
 		t.Fatalf("Failed to add form_start pattern: %v", err)
@@ -33,7 +33,7 @@ func TestRegexTable_Basic(t *testing.T) {
 		t.Fatalf("Failed to add simple_label pattern: %v", err)
 	}
 
-	// Test successful matches
+	// Test successful matches (compilation happens here)
 	testCases := []struct {
 		input       string
 		expected    TokenType
@@ -148,5 +148,109 @@ func TestRegexTable_RemovePattern(t *testing.T) {
 	value, _, err = table.Classify("bar")
 	if err != nil || value != 2 {
 		t.Error("Pattern test2 should still match after removing test1")
+	}
+}
+
+func TestRegexTable_LazyVsImmediateCompilation(t *testing.T) {
+	// Test lazy compilation
+	lazy := NewRegexTable[string]()
+
+	// These should succeed without compilation
+	_, err := lazy.AddPattern("valid", "value1")
+	if err != nil {
+		t.Errorf("Lazy AddPattern should succeed: %v", err)
+	}
+
+	// This should fail at classification time, not add time
+	_, err = lazy.AddPattern("[invalid", "value2") // Invalid regex
+	if err != nil {
+		t.Errorf("Lazy AddPattern should defer validation: %v", err)
+	}
+
+	// Classification should fail due to invalid regex
+	_, _, err = lazy.Classify("test")
+	if err == nil {
+		t.Error("Expected classification to fail due to invalid regex")
+	}
+
+	// Test immediate compilation
+	immediate := NewRegexTable[string]()
+
+	// Valid pattern should succeed
+	_, err = immediate.AddPatternThenRecompile("valid", "value1")
+	if err != nil {
+		t.Errorf("Immediate AddPattern should succeed: %v", err)
+	}
+
+	// Invalid pattern should fail immediately
+	_, err = immediate.AddPatternThenRecompile("[invalid", "value2") // Invalid regex
+	if err == nil {
+		t.Error("Expected immediate AddPattern to fail with invalid regex")
+	}
+}
+
+func TestRegexTable_ManualRecompile(t *testing.T) {
+	table := NewRegexTable[string]()
+
+	// Add patterns without compilation
+	_, err := table.AddPattern("hello", "greeting")
+	if err != nil {
+		t.Fatalf("Failed to add pattern: %v", err)
+	}
+
+	_, err = table.AddPattern("world", "place")
+	if err != nil {
+		t.Fatalf("Failed to add pattern: %v", err)
+	}
+
+	// Manually trigger compilation
+	err = table.Recompile()
+	if err != nil {
+		t.Fatalf("Manual recompile failed: %v", err)
+	}
+
+	// Now classification should work
+	value, _, err := table.Classify("hello")
+	if err != nil {
+		t.Fatalf("Classification failed: %v", err)
+	}
+	if value != "greeting" {
+		t.Errorf("Expected 'greeting', got '%s'", value)
+	}
+}
+
+func TestRegexTable_RemovePatternThenRecompile(t *testing.T) {
+	table := NewRegexTable[string]()
+
+	// Add patterns using immediate compilation
+	id1, err := table.AddPatternThenRecompile("hello", "greeting")
+	if err != nil {
+		t.Fatalf("Failed to add pattern: %v", err)
+	}
+
+	_, err = table.AddPatternThenRecompile("world", "place")
+	if err != nil {
+		t.Fatalf("Failed to add pattern: %v", err)
+	}
+
+	// Remove pattern with immediate recompilation
+	err = table.RemovePatternThenRecompile(id1)
+	if err != nil {
+		t.Fatalf("Failed to remove pattern: %v", err)
+	}
+
+	// Verify the pattern is gone
+	_, _, err = table.Classify("hello")
+	if err == nil {
+		t.Error("Expected hello pattern to be removed")
+	}
+
+	// Verify other pattern still works
+	value, _, err := table.Classify("world")
+	if err != nil {
+		t.Fatalf("World pattern should still work: %v", err)
+	}
+	if value != "place" {
+		t.Errorf("Expected 'place', got '%s'", value)
 	}
 }
