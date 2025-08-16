@@ -4,23 +4,29 @@ package helpers
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 )
 
-// RegexTable provides efficient multi-pattern regex classification using Go's built-in regexp.
+// RegexTable provides efficient multi-pattern regex classification using a pluggable regex engine.
 // It compiles multiple regex patterns into a single automaton for optimal performance.
 type RegexTable[T any] struct {
-	compiled       *regexp.Regexp
+	engine         RegexEngine
+	compiled       CompiledRegex
 	values         map[string]T
 	patternNames   []string
 	nextID         int
 	needsRecompile bool
 }
 
-// NewRegexTable creates a new empty RegexTable.
+// NewRegexTable creates a new empty RegexTable using the standard regex engine.
 func NewRegexTable[T any]() *RegexTable[T] {
+	return NewRegexTableWithEngine[T](NewStandardRegexEngine())
+}
+
+// NewRegexTableWithEngine creates a new empty RegexTable with a custom regex engine.
+func NewRegexTableWithEngine[T any](engine RegexEngine) *RegexTable[T] {
 	return &RegexTable[T]{
+		engine:         engine,
 		values:         make(map[string]T),
 		patternNames:   make([]string, 0),
 		nextID:         1,
@@ -37,8 +43,8 @@ func (rt *RegexTable[T]) AddPattern(pattern string, value T) (int, error) {
 	groupName := fmt.Sprintf("__REGEXTABLE_%d__", patternID)
 	rt.nextID++
 
-	// Create a unique capture group name with reserved prefix
-	namedPattern := fmt.Sprintf("(?P<%s>%s)", groupName, pattern)
+	// Create a unique capture group name using the engine's syntax
+	namedPattern := rt.engine.FormatNamedGroup(groupName, pattern)
 
 	rt.patternNames = append(rt.patternNames, namedPattern)
 	rt.values[groupName] = value
@@ -117,7 +123,7 @@ func (rt *RegexTable[T]) Recompile() error {
 	unionPattern := "^(?:" + strings.Join(rt.patternNames, "|") + ")"
 
 	var err error
-	rt.compiled, err = regexp.Compile(unionPattern)
+	rt.compiled, err = rt.engine.Compile(unionPattern)
 	if err != nil {
 		return fmt.Errorf("failed to compile union regex: %w", err)
 	}

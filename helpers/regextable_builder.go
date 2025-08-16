@@ -8,6 +8,7 @@ import (
 // It accumulates patterns and builds the final RegexTable with a single compilation step.
 type RegexTableBuilder[T any] struct {
 	patterns []patternEntry[T]
+	engine   RegexEngine
 }
 
 // patternEntry holds a pattern and its associated value during building
@@ -16,10 +17,16 @@ type patternEntry[T any] struct {
 	value   T
 }
 
-// NewRegexTableBuilder creates a new builder for RegexTable[T].
+// NewRegexTableBuilder creates a new builder for RegexTable[T] using the standard regex engine.
 func NewRegexTableBuilder[T any]() *RegexTableBuilder[T] {
+	return NewRegexTableBuilderWithEngine[T](NewStandardRegexEngine())
+}
+
+// NewRegexTableBuilderWithEngine creates a new builder for RegexTable[T] with a custom regex engine.
+func NewRegexTableBuilderWithEngine[T any](engine RegexEngine) *RegexTableBuilder[T] {
 	return &RegexTableBuilder[T]{
 		patterns: make([]patternEntry[T], 0),
+		engine:   engine,
 	}
 }
 
@@ -36,7 +43,7 @@ func (b *RegexTableBuilder[T]) AddPattern(pattern string, value T) *RegexTableBu
 // Build creates the final RegexTable with all accumulated patterns.
 // This is when compilation and validation occur.
 func (b *RegexTableBuilder[T]) Build() (*RegexTable[T], error) {
-	table := NewRegexTable[T]()
+	table := NewRegexTableWithEngine[T](b.engine)
 
 	// Add all patterns to the table (using lazy compilation)
 	for _, entry := range b.patterns {
@@ -53,9 +60,7 @@ func (b *RegexTableBuilder[T]) Build() (*RegexTable[T], error) {
 	}
 
 	return table, nil
-}
-
-// MustBuild is like Build but panics on error. Useful for static configurations
+} // MustBuild is like Build but panics on error. Useful for static configurations
 // where patterns are known to be valid.
 func (b *RegexTableBuilder[T]) MustBuild() *RegexTable[T] {
 	table, err := b.Build()
@@ -81,9 +86,9 @@ func (b *RegexTableBuilder[T]) Clear() *RegexTableBuilder[T] {
 	return b
 }
 
-// Clone creates a copy of the builder with the same patterns.
+// Clone creates a copy of the builder with the same patterns and engine.
 func (b *RegexTableBuilder[T]) Clone() *RegexTableBuilder[T] {
-	clone := NewRegexTableBuilder[T]()
+	clone := NewRegexTableBuilderWithEngine[T](b.engine)
 	clone.patterns = make([]patternEntry[T], len(b.patterns))
 	copy(clone.patterns, b.patterns)
 	return clone

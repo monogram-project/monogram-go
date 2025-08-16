@@ -12,6 +12,7 @@ A high-performance multi-pattern regex classifier for Go using the built-in `reg
 - **Built-in Regexp**: Uses Go's standard `regexp` package - no external dependencies
 - **Full Match Access**: Returns both the classified value and complete submatch details
 - **Self-Contained**: Designed to be extracted into a separate library
+- **Pluggable Regex Engines**: Supports different regex engines with varying named capture group syntaxes
 
 ## Quick Start (Recommended)
 
@@ -122,7 +123,10 @@ fmt.Printf("Patterns after clear: %d\n", builder.PatternCount()) // 0
 ### Builder Pattern (Recommended)
 
 #### `NewRegexTableBuilder[T any]() *RegexTableBuilder[T]`
-Creates a new builder for RegexTable[T].
+Creates a new builder for RegexTable[T] using the standard Go regex engine.
+
+#### `NewRegexTableBuilderWithEngine[T any](engine RegexEngine) *RegexTableBuilder[T]`
+Creates a new builder using a custom regex engine.
 
 #### `AddPattern(pattern string, value T) *RegexTableBuilder[T]`
 Adds a pattern to the builder. Returns the builder for method chaining.
@@ -134,7 +138,7 @@ Creates the final RegexTable with all accumulated patterns. Compilation happens 
 Like Build but panics on error. Useful for static configurations.
 
 #### `Clone() *RegexTableBuilder[T]`
-Creates a copy of the builder with the same patterns.
+Creates a copy of the builder with the same patterns and engine.
 
 #### `Clear() *RegexTableBuilder[T]`
 Removes all patterns from the builder.
@@ -148,7 +152,10 @@ Returns the number of patterns added.
 ### Direct RegexTable API
 
 #### `NewRegexTable[T any]() *RegexTable[T]`
-Creates a new empty RegexTable for values of type T.
+Creates a new empty RegexTable for values of type T using the standard Go regex engine.
+
+#### `NewRegexTableWithEngine[T any](engine RegexEngine) *RegexTable[T]`
+Creates a new empty RegexTable using a custom regex engine.
 
 #### `AddPattern(pattern string, value T) (int, error)`
 Adds a regex pattern with its associated value to the table. Returns the pattern ID for later removal.
@@ -249,6 +256,65 @@ RegexTable compiles all patterns into a single union regex like:
 This provides O(n) matching performance regardless of the number of patterns, as opposed to O(n*m) when testing patterns individually.
 
 ## Advanced Usage
+
+### Custom Regex Engines
+
+The `RegexTable` supports different regex engines through the `RegexEngine` interface. This allows you to use regex engines with different named capture group syntaxes:
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/monogram-project/monogram-go/helpers"
+)
+
+func main() {
+    // Standard Go engine: (?P<name>pattern)
+    goTable := helpers.NewRegexTableBuilder[string]().
+        AddPattern("test.*", "match").
+        MustBuild()
+
+    // .NET-style engine: (?<name>pattern)  
+    dotNetEngine := helpers.NewDotNetRegexEngine()
+    dotNetTable := helpers.NewRegexTableBuilderWithEngine[string](dotNetEngine).
+        AddPattern("test.*", "match").
+        MustBuild()
+
+    // Both tables work identically from the user's perspective
+    value, _, found := goTable.TryLookup("testing")    // Returns "match", true
+    value, _, found = dotNetTable.TryLookup("testing") // Returns "match", true
+
+    // Show the different internal regex formats
+    fmt.Printf("Go style:      %s\n", helpers.NewStandardRegexEngine().FormatNamedGroup("test", "pattern"))
+    fmt.Printf(".NET style:    %s\n", dotNetEngine.FormatNamedGroup("test", "pattern"))
+}
+```
+
+### Implementing Custom Regex Engines
+
+```go
+// Example: Python-style regex engine
+type PythonRegexEngine struct{}
+
+func (e *PythonRegexEngine) Compile(pattern string) (helpers.CompiledRegex, error) {
+    // Wrap Go's regex with your engine's interface
+    compiled, err := regexp.Compile(pattern)
+    if err != nil {
+        return nil, err
+    }
+    return &helpers.StandardCompiledRegex{compiled}, nil
+}
+
+func (e *PythonRegexEngine) FormatNamedGroup(groupName, pattern string) string {
+    return fmt.Sprintf("(?P<%s>%s)", groupName, pattern) // Python uses same as Go
+}
+
+// Use your custom engine
+pythonTable := helpers.NewRegexTableBuilderWithEngine[string](&PythonRegexEngine{}).
+    AddPattern("test.*", "match").
+    MustBuild()
+```
 
 ### Complex Pattern Matching
 
