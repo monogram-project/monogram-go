@@ -49,7 +49,7 @@ func TestRegexTable_Basic(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.input, func(t *testing.T) {
-			value, match, err := table.Classify(tc.input)
+			value, match, err := table.Lookup(tc.input)
 
 			if tc.shouldMatch {
 				if err != nil {
@@ -74,7 +74,7 @@ func TestRegexTable_Basic(t *testing.T) {
 	}
 }
 
-func TestRegexTable_TryClassify(t *testing.T) {
+func TestRegexTable_TryLookup(t *testing.T) {
 	table := NewRegexTable[string]()
 
 	_, err := table.AddPattern(`hello`, "greeting")
@@ -83,7 +83,7 @@ func TestRegexTable_TryClassify(t *testing.T) {
 	}
 
 	// Test successful match
-	value, match, ok := table.TryClassify("hello")
+	value, match, ok := table.TryLookup("hello")
 	if !ok {
 		t.Error("Expected successful match for 'hello'")
 	}
@@ -95,7 +95,7 @@ func TestRegexTable_TryClassify(t *testing.T) {
 	}
 
 	// Test unsuccessful match
-	value, match, ok = table.TryClassify("goodbye")
+	value, match, ok = table.TryLookup("goodbye")
 	if ok {
 		t.Error("Expected unsuccessful match for 'goodbye'")
 	}
@@ -122,12 +122,12 @@ func TestRegexTable_RemovePattern(t *testing.T) {
 	_ = id2 // We keep this pattern for testing
 
 	// Verify both patterns work
-	value, _, err := table.Classify("foo")
+	value, _, err := table.Lookup("foo")
 	if err != nil || value != 1 {
 		t.Error("Pattern test1 should match")
 	}
 
-	value, _, err = table.Classify("bar")
+	value, _, err = table.Lookup("bar")
 	if err != nil || value != 2 {
 		t.Error("Pattern test2 should match")
 	}
@@ -139,13 +139,13 @@ func TestRegexTable_RemovePattern(t *testing.T) {
 	}
 
 	// Verify first pattern no longer works
-	_, _, err = table.Classify("foo")
+	_, _, err = table.Lookup("foo")
 	if err == nil {
 		t.Error("Pattern test1 should no longer match after removal")
 	}
 
 	// Verify second pattern still works
-	value, _, err = table.Classify("bar")
+	value, _, err = table.Lookup("bar")
 	if err != nil || value != 2 {
 		t.Error("Pattern test2 should still match after removing test1")
 	}
@@ -168,9 +168,9 @@ func TestRegexTable_LazyVsImmediateCompilation(t *testing.T) {
 	}
 
 	// Classification should fail due to invalid regex
-	_, _, err = lazy.Classify("test")
+	_, _, err = lazy.Lookup("test")
 	if err == nil {
-		t.Error("Expected classification to fail due to invalid regex")
+		t.Error("Expected lookup to fail due to invalid regex")
 	}
 
 	// Test immediate compilation
@@ -209,10 +209,10 @@ func TestRegexTable_ManualRecompile(t *testing.T) {
 		t.Fatalf("Manual recompile failed: %v", err)
 	}
 
-	// Now classification should work
-	value, _, err := table.Classify("hello")
+	// Now lookup should work
+	value, _, err := table.Lookup("hello")
 	if err != nil {
-		t.Fatalf("Classification failed: %v", err)
+		t.Fatalf("Lookup failed: %v", err)
 	}
 	if value != "greeting" {
 		t.Errorf("Expected 'greeting', got '%s'", value)
@@ -240,13 +240,13 @@ func TestRegexTable_RemovePatternThenRecompile(t *testing.T) {
 	}
 
 	// Verify the pattern is gone
-	_, _, err = table.Classify("hello")
+	_, _, err = table.Lookup("hello")
 	if err == nil {
 		t.Error("Expected hello pattern to be removed")
 	}
 
 	// Verify other pattern still works
-	value, _, err := table.Classify("world")
+	value, _, err := table.Lookup("world")
 	if err != nil {
 		t.Fatalf("World pattern should still work: %v", err)
 	}

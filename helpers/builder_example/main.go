@@ -64,9 +64,9 @@ func main() {
 		"unknown123", // should not match (has numbers in identifier)
 	}
 
-	fmt.Println("\n=== Classification Results ===")
+	fmt.Println("\n=== Lookup Results ===")
 	for _, input := range testInputs {
-		if tokenType, matches, ok := table.TryClassify(input); ok {
+		if tokenType, matches, ok := table.TryLookup(input); ok {
 			fmt.Printf("'%s' -> %s (matched: '%s')\n", input, tokenType, matches[0])
 		} else {
 			fmt.Printf("'%s' -> No match\n", input)
@@ -104,7 +104,7 @@ func main() {
 	fmt.Println("\nWeb table:")
 	webInputs := []string{"form", "button", "input", "class"}
 	for _, input := range webInputs {
-		if value, _, ok := webTable.TryClassify(input); ok {
+		if value, _, ok := webTable.TryLookup(input); ok {
 			fmt.Printf("  '%s' -> %s\n", input, value)
 		} else {
 			fmt.Printf("  '%s' -> No match\n", input)
@@ -114,7 +114,7 @@ func main() {
 	fmt.Println("\nCode table:")
 	codeInputs := []string{"form", "class", "method", "button"}
 	for _, input := range codeInputs {
-		if value, _, ok := codeTable.TryClassify(input); ok {
+		if value, _, ok := codeTable.TryLookup(input); ok {
 			fmt.Printf("  '%s' -> %s\n", input, value)
 		} else {
 			fmt.Printf("  '%s' -> No match\n", input)
@@ -131,7 +131,7 @@ func main() {
 
 	fmt.Println("✓ Static table built with MustBuild")
 
-	if value, _, ok := staticTable.TryClassify("config_file"); ok {
+	if value, _, ok := staticTable.TryLookup("config_file"); ok {
 		fmt.Printf("'config_file' -> %s\n", value)
 	}
 }

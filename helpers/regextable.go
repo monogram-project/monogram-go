@@ -30,7 +30,7 @@ func NewRegexTable[T any]() *RegexTable[T] {
 
 // AddPattern adds a new regex pattern with its associated value to the table.
 // Returns the pattern ID (for use with RemovePattern) and an error if regex compilation fails.
-// This method defers recompilation until Classify is called for better performance.
+// This method defers recompilation until Lookup is called for better performance.
 func (rt *RegexTable[T]) AddPattern(pattern string, value T) (int, error) {
 	// Auto-generate a unique internal name
 	patternID := rt.nextID
@@ -66,7 +66,7 @@ func (rt *RegexTable[T]) AddPatternThenRecompile(pattern string, value T) (int, 
 }
 
 // RemovePattern removes a pattern from the table by its ID.
-// This method defers recompilation until Classify is called for better performance.
+// This method defers recompilation until Lookup is called for better performance.
 func (rt *RegexTable[T]) RemovePattern(patternID int) error {
 	groupName := fmt.Sprintf("__REGEXTABLE_%d__", patternID)
 
@@ -134,10 +134,10 @@ func (rt *RegexTable[T]) ensureCompiled() error {
 	return nil
 }
 
-// Classify attempts to match the input string against all registered patterns.
+// Lookup attempts to match the input string against all registered patterns.
 // Returns the value, submatch slice, and error. If no patterns match, returns zero value, nil, error.
 // This method automatically recompiles the regex if patterns have been added/removed since last compilation.
-func (rt *RegexTable[T]) Classify(input string) (T, []string, error) {
+func (rt *RegexTable[T]) Lookup(input string) (T, []string, error) {
 	var zero T
 
 	err := rt.ensureCompiled()
@@ -167,10 +167,10 @@ func (rt *RegexTable[T]) Classify(input string) (T, []string, error) {
 	return zero, nil, fmt.Errorf("internal error: match found but no capture group matched")
 }
 
-// TryClassify is like Classify but returns a boolean success indicator instead of an error.
+// TryLookup is like Lookup but returns a boolean success indicator instead of an error.
 // This is useful when you want to check if something matches without handling errors.
 // This method automatically recompiles the regex if patterns have been added/removed since last compilation.
-func (rt *RegexTable[T]) TryClassify(input string) (T, []string, bool) {
-	value, matches, err := rt.Classify(input)
+func (rt *RegexTable[T]) TryLookup(input string) (T, []string, bool) {
+	value, matches, err := rt.Lookup(input)
 	return value, matches, err == nil
 }

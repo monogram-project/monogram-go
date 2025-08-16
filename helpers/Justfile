@@ -30,10 +30,6 @@ clean:
 run-builder-example:
     cd builder_example && go run main.go
 
-# Run the basic example (if it exists)
-run-example:
-    cd example && go run main.go
-
 # Format all Go code
 fmt:
     go fmt ./...

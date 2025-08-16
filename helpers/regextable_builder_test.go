@@ -32,7 +32,7 @@ func TestRegexTableBuilder_Basic(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		value, _, ok := table.TryClassify(tc.input)
+		value, _, ok := table.TryLookup(tc.input)
 		if tc.shouldMatch {
 			if !ok {
 				t.Errorf("Expected match for '%s'", tc.input)
@@ -77,7 +77,7 @@ func TestRegexTableBuilder_MustBuild(t *testing.T) {
 		AddPattern("test", 42).
 		MustBuild()
 
-	value, _, ok := table.TryClassify("test")
+	value, _, ok := table.TryLookup("test")
 	if !ok || value != 42 {
 		t.Error("MustBuild should create working table")
 	}
@@ -159,13 +159,13 @@ func TestRegexTableBuilder_Clone(t *testing.T) {
 	}
 
 	// Original should not have test3
-	_, _, ok := originalTable.TryClassify("test3")
+	_, _, ok := originalTable.TryLookup("test3")
 	if ok {
 		t.Error("Original table should not have test3 pattern")
 	}
 
 	// Clone should have test3
-	value, _, ok := cloneTable.TryClassify("test3")
+	value, _, ok := cloneTable.TryLookup("test3")
 	if !ok || value != "value3" {
 		t.Error("Clone table should have test3 pattern")
 	}
@@ -180,10 +180,10 @@ func TestRegexTableBuilder_EmptyBuild(t *testing.T) {
 		t.Fatalf("Building empty table should not fail: %v", err)
 	}
 
-	// Empty table should return error on classification
-	_, _, err = table.Classify("anything")
+	// Empty table should return error on lookup
+	_, _, err = table.Lookup("anything")
 	if err == nil {
-		t.Error("Empty table should return error on classify")
+		t.Error("Empty table should return error on lookup")
 	}
 }
 
@@ -207,18 +207,18 @@ func TestRegexTableBuilder_ReuseAfterBuild(t *testing.T) {
 	}
 
 	// Both tables should work
-	value1, _, ok := table1.TryClassify("test1")
+	value1, _, ok := table1.TryLookup("test1")
 	if !ok || value1 != "value1" {
 		t.Error("First table should work")
 	}
 
 	// Second table should have both patterns
-	value1, _, ok = table2.TryClassify("test1")
+	value1, _, ok = table2.TryLookup("test1")
 	if !ok || value1 != "value1" {
 		t.Error("Second table should have first pattern")
 	}
 
-	value2, _, ok := table2.TryClassify("test2")
+	value2, _, ok := table2.TryLookup("test2")
 	if !ok || value2 != "value2" {
 		t.Error("Second table should have second pattern")
 	}
