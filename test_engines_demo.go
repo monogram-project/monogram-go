@@ -23,7 +23,7 @@ func (e *DotNetRegexEngine) FormatNamedGroup(groupName, pattern string) string {
 }
 
 func main() {
-	fmt.Println("=== RegexTable Engine Abstraction Demo ===\n")
+	fmt.Println("=== RegexTable Engine Abstraction Demo ===")
 
 	// Create tables with different engines
 	goTable := helpers.NewRegexTableBuilder[string]().
