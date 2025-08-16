@@ -1,6 +1,6 @@
 # Adding regexp2 Engine Support
 
-This guide explains how to integrate Microsoft's `regexp2` library as an alternative regex engine for RegexTable. The `regexp2` library provides .NET-compatible regular expressions with advanced features like lookbehind, named groups, and other functionality not available in Go's standard `regexp` package.
+This guide explains how to integrate Doug Clark's `regexp2` library as an alternative regex engine for RegexTable. The `regexp2` library provides .NET-compatible regular expressions with advanced features like lookbehind, named groups, and other functionality not available in Go's standard `regexp` package.
 
 ## Important: External Integration Only
 
