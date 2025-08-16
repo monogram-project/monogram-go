@@ -1134,6 +1134,12 @@ func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOpt
 	parser := NewParser(initToken, coreOptions, classifiers)
 	nodes := []*Node{}
 	for parser.hasNext() {
+		if parser.nextIf(Punctuation, PunctuationSemicolon) != nil {
+			continue
+		}
+		if parser.nextIf(Punctuation, PunctuationComma) != nil {
+			return nil, fmt.Errorf("comma not permitted at the top level")
+		}
 		node, err := parser.readExpr(makeContext())
 		if err != nil {
 			return nil, err
