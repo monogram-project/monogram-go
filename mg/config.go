@@ -29,24 +29,22 @@ type FormatOptions struct {
 
 type TokenClassifiers struct {
 	// Regex patterns for identifier classification (raw strings from YAML)
-	FormStartRegex       *string  `yaml:"form-start-regex,omitempty"`
-	FormEndRegex         *string  `yaml:"form-end-regex,omitempty"`
-	FormEndWildcardRegex *string  `yaml:"form-end-wildcard-regex,omitempty"`
-	FormPrefixRegex      *string  `yaml:"form-prefix-regex,omitempty"`
-	SimpleLabelRegex     *string  `yaml:"simple-label-regex,omitempty"`
-	CompoundLabelRegex   *string  `yaml:"compound-label-regex,omitempty"`
-	FormSurroundMatch    []string `yaml:"form-surround-match,omitempty"`
+	FormStartRegex     *string  `yaml:"form-start-regex,omitempty"`
+	FormEndRegex       *string  `yaml:"form-end-regex,omitempty"`
+	FormPrefixRegex    *string  `yaml:"form-prefix-regex,omitempty"`
+	SimpleLabelRegex   *string  `yaml:"simple-label-regex,omitempty"`
+	CompoundLabelRegex *string  `yaml:"compound-label-regex,omitempty"`
+	FormSurroundMatch  []string `yaml:"form-surround-match,omitempty"`
 }
 
 type TokenClassifiersCompiled struct {
 	// Compiled regex patterns
-	FormStartRegexCompiled       *regexp.Regexp
-	FormEndRegexCompiled         *regexp.Regexp
-	FormEndWildcardRegexCompiled *regexp.Regexp
-	FormPrefixRegexCompiled      *regexp.Regexp
-	SimpleLabelRegexCompiled     *regexp.Regexp
-	CompoundLabelRegexCompiled   *regexp.Regexp
-	FormSurroundMatchCompiled    *regexp2.Regexp
+	FormStartRegexCompiled     *regexp.Regexp
+	FormEndRegexCompiled       *regexp.Regexp
+	FormPrefixRegexCompiled    *regexp.Regexp
+	SimpleLabelRegexCompiled   *regexp.Regexp
+	CompoundLabelRegexCompiled *regexp.Regexp
+	FormSurroundMatchCompiled  *regexp2.Regexp
 }
 
 // MatchesFormSurroundPattern checks if the given text matches any of the form-surround-match patterns
@@ -92,14 +90,6 @@ func (tc *TokenClassifiers) CompileRegexes() (*TokenClassifiersCompiled, error) 
 		compiled.FormEndRegexCompiled, err = regexp.Compile(wrappedPattern)
 		if err != nil {
 			return nil, fmt.Errorf("failed to compile form-end-regex '%s': %w", *tc.FormEndRegex, err)
-		}
-	}
-
-	if tc.FormEndWildcardRegex != nil && *tc.FormEndWildcardRegex != "" {
-		wrappedPattern := wrapForExactMatch(*tc.FormEndWildcardRegex)
-		compiled.FormEndWildcardRegexCompiled, err = regexp.Compile(wrappedPattern)
-		if err != nil {
-			return nil, fmt.Errorf("failed to compile form-end-wildcard-regex '%s': %w", *tc.FormEndWildcardRegex, err)
 		}
 	}
 

@@ -1,0 +1,27 @@
+# Configuration file for testing form-surround-match feature
+# Tests regex-based form start/end matching
+
+# Form surround match patterns
+form-surround-match:
+  - "if endif"
+  - "while endwhile"
+  - "for endfor"
+  - "begin end"
+  - "[a-z]+ end"  # Any lowercase word followed by "end"
+
+# Need these patterns to classify tokens as form-start and form-end
+form-start-regex: "if|while|for|begin|loop"
+form-end-regex: "endif|endwhile|endfor|end"
+
+# Other regex patterns set to null to avoid interference
+simple-label-regex: null
+compound-label-regex: null
+form-prefix-regex: null
+
+# Default configuration values
+option-format: "xml"
+option-indent: 2
+option-default-label: "_"
+option-include-spans: false
+option-decimal: false
+option-check-literals: true

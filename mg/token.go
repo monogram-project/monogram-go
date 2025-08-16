@@ -39,7 +39,6 @@ const (
 	IdentifierFormPrefix
 	IdentifierFormStart
 	IdentifierFormEnd
-	IdentifierFormWildcardEnd
 	IdentifierSimpleLabel
 	IdentifierCompoundLabel
 )
@@ -334,7 +333,7 @@ func (t *Token) VSCodeTokenType() string {
 		case IdentifierFormStart, IdentifierFormPrefix:
 			// Assuming a callable-like entity
 			return "function"
-		case IdentifierFormEnd, IdentifierFormWildcardEnd:
+		case IdentifierFormEnd:
 			// End markers can be styled as keywords
 			return "keyword"
 		case IdentifierSimpleLabel, IdentifierCompoundLabel:

@@ -132,7 +132,7 @@ func (p *Parser) readOptExprPrec(formStart *Token, outer_prec int, context Conte
 	if token.Type == CloseBracket {
 		return nil, nil
 	}
-	if token.Type == Identifier && (token.SubType == IdentifierFormEnd || token.SubType == IdentifierFormWildcardEnd) {
+	if token.Type == Identifier && token.SubType == IdentifierFormEnd {
 		return nil, nil
 	}
 	if token.IsLabelToken(formStart) {
@@ -443,18 +443,12 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 				// Fall back to default "end" + formStart.Text matching
 				isMatch = token.Text == "end"+formStart.Text
 			}
-			
+
 			if isMatch {
 				endLineCol = p.endLineCol()
 				p.next()
 				break
 			}
-		}
-		
-		if token.Type == Identifier && token.SubType == IdentifierFormWildcardEnd {
-			endLineCol = p.endLineCol()
-			p.next()
-			break
 		}
 
 		if mode == alphaMode {

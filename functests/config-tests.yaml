@@ -86,6 +86,69 @@ tests:
           <identifier name="xyz" span="1 1 1 4" />
       </unit>
 
+  - name: "Form surround match - exact pattern matching"
+    command: "{command} --config config-test-files/form-surround-match.yaml --format xml --one"
+    input: |
+      if x endif
+    expected_output: |
+      <form separator="undefined" syntax="surround">
+        <part keyword="if">
+          <identifier name="x" />
+        </part>
+      </form>
+
+  - name: "Form surround match - while endwhile pattern"
+    command: "{command} --config config-test-files/form-surround-match.yaml --format xml --one"
+    input: |
+      while condition endwhile
+    expected_output: |
+      <form separator="undefined" syntax="surround">
+        <part keyword="while">
+          <identifier name="condition" />
+        </part>
+      </form>
+
+  - name: "Form surround match - begin end pattern"
+    command: "{command} --config config-test-files/form-surround-match.yaml --format xml --one"
+    input: |
+      begin code end
+    expected_output: |
+      <form separator="undefined" syntax="surround">
+        <part keyword="begin">
+          <identifier name="code" />
+        </part>
+      </form>
+
+  - name: "Form surround match - regex pattern with wildcard"
+    command: "{command} --config config-test-files/form-surround-match.yaml --format xml --one"
+    input: |
+      loop something end
+    expected_output: |
+      <form separator="undefined" syntax="surround">
+        <part keyword="loop">
+          <identifier name="something" />
+        </part>
+      </form>
+
+  - name: "Form surround match - multiple patterns in same input"
+    command: "{command} --config config-test-files/form-surround-match.yaml --format xml"
+    input: |
+      if x endif
+      while y endwhile
+    expected_output: |
+      <unit>
+        <form separator="undefined" syntax="surround">
+          <part keyword="if">
+            <identifier name="x" />
+          </part>
+        </form>
+        <form separator="undefined" syntax="surround">
+          <part keyword="while">
+            <identifier name="y" />
+          </part>
+        </form>
+      </unit>
+
   - name: "Invalid config file path gives error"
     command: "{command} --config nonexistent-config.yaml --format xml"
     input: |

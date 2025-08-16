@@ -8,7 +8,6 @@ compound-label-regex: null
 form-prefix-regex: null
 form-start-regex: "let"
 form-end-regex: null
-form-end-wildcard-regex: "end"
 
 
 # Default configuration values

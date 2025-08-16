@@ -1476,12 +1476,6 @@ func (t *Tokenizer) markOtherTokens() {
 			}
 		}
 
-		// If form-end-wildcard-regex is specified, check for a wildcard-form-end.
-		if t.TokenClassifiers.FormEndWildcardRegexCompiled != nil && t.TokenClassifiers.FormEndWildcardRegexCompiled.MatchString(token.Text) {
-			token.SubType = IdentifierFormWildcardEnd
-			continue
-		}
-
 	}
 }
 
@@ -1531,12 +1525,6 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 	// 				is_reserved[token.Text] = true
 	// 				continue // Skip further processing for this token
 	// 			}
-	// 		}
-
-	// 		// If form-end-wildcard-regex is specified, check for a wildcard-form-end.
-	// 		if t.TokenClassifiers.FormEndWildcardRegexCompiled != nil && t.TokenClassifiers.FormEndWildcardRegexCompiled.MatchString(token.Text) {
-	// 			token.SubType = IdentifierFormWildcardEnd
-	// 			continue
 	// 		}
 
 	// 	}
