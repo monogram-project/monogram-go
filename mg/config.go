@@ -46,12 +46,27 @@ type TokenClassifiersCompiled struct {
 	FormSurroundMatchTable  *regexptable.RegexpTable[bool]
 }
 
-// MatchesFormSurroundPattern checks if the given text matches any of the form-surround-match patterns
+// MatchesFormSurroundPattern checks if the given text matches any of the
+// form-surround-match patterns. As a workaround for backrefs, which are not
+// supported by stdlib.regexp, all captured groups must be equal for a match to
+// be valid.
 func (tcc *TokenClassifiersCompiled) MatchesFormSurroundPattern(text string) bool {
 	if tcc.FormSurroundMatchTable == nil {
 		return false
 	}
-	_, _, ok := tcc.FormSurroundMatchTable.TryLookup(text)
+	_, x, ok := tcc.FormSurroundMatchTable.TryLookup(text)
+
+	if ok && len(x) > 1 {
+		// All captured matches must be equal.
+		for n, m := range x {
+			if n == 0 {
+				continue
+			}
+			if m != x[0] {
+				return false
+			}
+		}
+	}
 	return ok
 }
 
