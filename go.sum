@@ -18,6 +18,8 @@ github.com/onsi/ginkgo/v2 v2.20.2 h1:7NVCeyIWROIAheY21RLS+3j2bb52W0W82tkberYytp4
 github.com/onsi/ginkgo/v2 v2.20.2/go.mod h1:K9gyxPIlb+aIvnZ8bd9Ak+YP18w3APlR+5coaZoE2ag=
 github.com/onsi/gomega v1.34.2 h1:pNCwDkzrsv7MS9kpaQvVb1aVLahQXyJ/Tv5oAZMI3i8=
 github.com/onsi/gomega v1.34.2/go.mod h1:v1xfxRgk0KIsG+QOdm7p8UosrOzPYRo60fd3B/1Dukc=
+github.com/sfkleach/regexptable v0.1.2 h1:YSi9/PI44TQog5hAZAYvyBEDpGJKEB976Rm6AnwP/Ws=
+github.com/sfkleach/regexptable v0.1.2/go.mod h1:+BhzzZzN/fQM/Fu/fGPy2Pn67kUjs1WyyH3qowYktDw=
 github.com/spf13/pflag v1.0.6 h1:jFzHGLGAlb3ruxLB8MhbI6A8+AQX/2eW4qeyNZXNp2o=
 github.com/spf13/pflag v1.0.6/go.mod h1:McXfInJRrz4CZXVZOBLb0bTZqETkiAhM9Iw0y3An2Bg=
 github.com/thediveo/go-asciitree v1.0.2 h1:V/w9cd0FdPqDx7f/CJEIoQ8oeXPoPUoBpFsWG4p7Sho=

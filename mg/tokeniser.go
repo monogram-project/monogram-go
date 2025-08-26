@@ -1363,7 +1363,7 @@ func (t *Tokenizer) markFormSurroundTokens() {
 	ident_exists := make(map[string]bool)
 	is_formend := make(map[string]bool)
 	// FormEnd - Are we deciding statically or dynamically?
-	if t.TokenClassifiers == nil || t.TokenClassifiers.FormEndRegexCompiled == nil {
+	if t.TokenClassifiers == nil || t.TokenClassifiers.FormEndRegexTable == nil {
 		// Dynamic classification
 		// Collect all identifiers.
 		for _, token := range t.tokens {
@@ -1389,14 +1389,14 @@ func (t *Tokenizer) markFormSurroundTokens() {
 			if token.Type != Identifier || token.SubType != IdentifierVariable {
 				continue
 			}
-			if token.Type == Identifier && t.TokenClassifiers.FormEndRegexCompiled.MatchString(token.Text) {
+			if token.Type == Identifier && t.TokenClassifiers.MatchesFormEnd(token.Text) {
 				token.SubType = IdentifierFormEnd
 				is_formend[token.Text] = true
 			}
 		}
 	}
 	// FormStart - Are we deciding statically or dynamically?
-	if t.TokenClassifiers == nil || t.TokenClassifiers.FormStartRegexCompiled == nil {
+	if t.TokenClassifiers == nil || t.TokenClassifiers.FormStartRegexTable == nil {
 		// Dynamic classification
 		for _, token := range t.tokens {
 			if token.Type != Identifier || token.SubType != IdentifierVariable {
@@ -1412,7 +1412,7 @@ func (t *Tokenizer) markFormSurroundTokens() {
 			if token.Type != Identifier || token.SubType != IdentifierVariable {
 				continue
 			}
-			if token.Type == Identifier && t.TokenClassifiers.FormStartRegexCompiled.MatchString(token.Text) {
+			if token.Type == Identifier && t.TokenClassifiers.MatchesFormStart(token.Text) {
 				token.SubType = IdentifierFormStart
 			}
 		}
@@ -1421,7 +1421,7 @@ func (t *Tokenizer) markFormSurroundTokens() {
 
 func (t *Tokenizer) markFormPrefixTokens() {
 	// Are we deciding statically or dynamically?
-	if t.TokenClassifiers == nil || t.TokenClassifiers.FormPrefixRegexCompiled == nil {
+	if t.TokenClassifiers == nil || t.TokenClassifiers.FormPrefixRegexTable == nil {
 		// Dynamic classification
 		is_prefix := make(map[string]bool)
 		for _, token := range t.tokens {
@@ -1444,7 +1444,7 @@ func (t *Tokenizer) markFormPrefixTokens() {
 			if token.Type != Identifier || token.SubType != IdentifierVariable {
 				continue
 			}
-			if token.Type == Identifier && t.TokenClassifiers.FormPrefixRegexCompiled.MatchString(token.Text) {
+			if token.Type == Identifier && t.TokenClassifiers.MatchesFormPrefix(token.Text) {
 				token.SubType = IdentifierFormPrefix
 			}
 		}
@@ -1461,19 +1461,15 @@ func (t *Tokenizer) markOtherTokens() {
 		}
 
 		// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
-		if t.TokenClassifiers.CompoundLabelRegexCompiled != nil {
-			if t.TokenClassifiers.CompoundLabelRegexCompiled.MatchString(token.Text) {
-				token.SubType = IdentifierCompoundLabel
-				continue // Skip further processing for this token
-			}
+		if t.TokenClassifiers.MatchesCompoundLabel(token.Text) {
+			token.SubType = IdentifierCompoundLabel
+			continue // Skip further processing for this token
 		}
 
 		// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
-		if t.TokenClassifiers.SimpleLabelRegexCompiled != nil {
-			if t.TokenClassifiers.SimpleLabelRegexCompiled.MatchString(token.Text) {
-				token.SubType = IdentifierSimpleLabel
-				continue // Skip further processing for this token
-			}
+		if t.TokenClassifiers.MatchesSimpleLabel(token.Text) {
+			token.SubType = IdentifierSimpleLabel
+			continue // Skip further processing for this token
 		}
 
 	}

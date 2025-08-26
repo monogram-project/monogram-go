@@ -1157,7 +1157,7 @@ func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreF
 	// Step 1: Tokenize the input
 	initToken, span, terr := tokenizeInput(input, colOffset, classifiers)
 	if terr != nil {
-		return nil, Span{}, fmt.Errorf(terr.Message + " (line " + fmt.Sprint(terr.Line) + ", column " + fmt.Sprint(terr.Column) + ")")
+		return nil, Span{}, fmt.Errorf("%s (line %d, column %d)", terr.Message, terr.Line, terr.Column)
 	}
 
 	// Step 2: Parse the tokens into nodes

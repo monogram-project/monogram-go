@@ -1,6 +1,6 @@
 module github.com/monogram-project/monogram-go
 
-go 1.23.8
+go 1.24.2
 
 require (
 	github.com/chzyer/readline v1.5.1
@@ -11,5 +11,6 @@ require (
 
 require (
 	github.com/dlclark/regexp2 v1.11.5 // indirect
+	github.com/sfkleach/regexptable v0.1.2 // indirect
 	golang.org/x/sys v0.24.0 // indirect
 )

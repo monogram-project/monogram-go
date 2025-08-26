@@ -3,10 +3,10 @@ package mg
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/dlclark/regexp2"
+	"github.com/sfkleach/regexptable"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,23 +28,23 @@ type FormatOptions struct {
 }
 
 type TokenClassifiers struct {
-	// Regex patterns for identifier classification (raw strings from YAML)
-	FormStartRegex     *string  `yaml:"form-start-regex,omitempty"`
-	FormEndRegex       *string  `yaml:"form-end-regex,omitempty"`
-	FormPrefixRegex    *string  `yaml:"form-prefix-regex,omitempty"`
-	SimpleLabelRegex   *string  `yaml:"simple-label-regex,omitempty"`
-	CompoundLabelRegex *string  `yaml:"compound-label-regex,omitempty"`
+	// Regex patterns for identifier classification (arrays of strings from YAML)
+	FormStartRegex     []string `yaml:"form-start-regex,omitempty"`
+	FormEndRegex       []string `yaml:"form-end-regex,omitempty"`
+	FormPrefixRegex    []string `yaml:"form-prefix-regex,omitempty"`
+	SimpleLabelRegex   []string `yaml:"simple-label-regex,omitempty"`
+	CompoundLabelRegex []string `yaml:"compound-label-regex,omitempty"`
 	FormSurroundMatch  []string `yaml:"form-surround-match,omitempty"`
 }
 
 type TokenClassifiersCompiled struct {
-	// Compiled regex patterns
-	FormStartRegexCompiled     *regexp.Regexp
-	FormEndRegexCompiled       *regexp.Regexp
-	FormPrefixRegexCompiled    *regexp.Regexp
-	SimpleLabelRegexCompiled   *regexp.Regexp
-	CompoundLabelRegexCompiled *regexp.Regexp
-	FormSurroundMatchCompiled  *regexp2.Regexp
+	// Compiled regex tables using regexptable
+	FormStartRegexTable       *regexptable.RegexpTable[bool]
+	FormEndRegexTable         *regexptable.RegexpTable[bool]
+	FormPrefixRegexTable      *regexptable.RegexpTable[bool]
+	SimpleLabelRegexTable     *regexptable.RegexpTable[bool]
+	CompoundLabelRegexTable   *regexptable.RegexpTable[bool]
+	FormSurroundMatchCompiled *regexp2.Regexp
 }
 
 // MatchesFormSurroundPattern checks if the given text matches any of the form-surround-match patterns
@@ -63,60 +63,127 @@ func (tcc *TokenClassifiersCompiled) CheckFormStartEndMatch(startToken, endToken
 	return tcc.MatchesFormSurroundPattern(testString)
 }
 
-// wrapForExactMatch wraps a regex pattern for exact matching
-func wrapForExactMatch(pattern string) string {
-	// Check if pattern is already anchored at both ends.
-	if strings.HasPrefix(pattern, "^(?:") && strings.HasSuffix(pattern, ")$") {
-		return pattern // Already anchored, don't modify
+// MatchesFormStart checks if the identifier matches any form-start patterns
+func (tcc *TokenClassifiersCompiled) MatchesFormStart(identifier string) bool {
+	if tcc.FormStartRegexTable == nil {
+		return false
 	}
-	return "^(?:" + pattern + ")$"
+	_, _, ok := tcc.FormStartRegexTable.TryLookup(identifier)
+	return ok
 }
 
-// CompileRegexes converts TokenClassifiers to TokenClassifiersCompiled
+// MatchesFormEnd checks if the identifier matches any form-end patterns
+func (tcc *TokenClassifiersCompiled) MatchesFormEnd(identifier string) bool {
+	if tcc.FormEndRegexTable == nil {
+		return false
+	}
+	_, _, ok := tcc.FormEndRegexTable.TryLookup(identifier)
+	return ok
+}
+
+// MatchesFormPrefix checks if the identifier matches any form-prefix patterns
+func (tcc *TokenClassifiersCompiled) MatchesFormPrefix(identifier string) bool {
+	if tcc.FormPrefixRegexTable == nil {
+		return false
+	}
+	_, _, ok := tcc.FormPrefixRegexTable.TryLookup(identifier)
+	return ok
+}
+
+// MatchesSimpleLabel checks if the identifier matches any simple-label patterns
+func (tcc *TokenClassifiersCompiled) MatchesSimpleLabel(identifier string) bool {
+	if tcc.SimpleLabelRegexTable == nil {
+		return false
+	}
+	_, _, ok := tcc.SimpleLabelRegexTable.TryLookup(identifier)
+	return ok
+}
+
+// MatchesCompoundLabel checks if the identifier matches any compound-label patterns
+func (tcc *TokenClassifiersCompiled) MatchesCompoundLabel(identifier string) bool {
+	if tcc.CompoundLabelRegexTable == nil {
+		return false
+	}
+	_, _, ok := tcc.CompoundLabelRegexTable.TryLookup(identifier)
+	return ok
+}
+
+// CompileRegexes converts TokenClassifiers to TokenClassifiersCompiled using RegexpTableBuilder
 func (tc *TokenClassifiers) CompileRegexes() (*TokenClassifiersCompiled, error) {
 	compiled := &TokenClassifiersCompiled{}
 	var err error
 
-	if tc.FormStartRegex != nil && *tc.FormStartRegex != "" {
-		wrappedPattern := wrapForExactMatch(*tc.FormStartRegex)
-		compiled.FormStartRegexCompiled, err = regexp.Compile(wrappedPattern)
+	// Build FormStartRegexTable
+	if len(tc.FormStartRegex) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range tc.FormStartRegex {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
+			}
+		}
+		compiled.FormStartRegexTable, err = builder.Build(true, true) // Exact matching
 		if err != nil {
-			return nil, fmt.Errorf("failed to compile form-start-regex '%s': %w", *tc.FormStartRegex, err)
+			return nil, fmt.Errorf("failed to compile form-start-regex patterns: %w", err)
 		}
 	}
 
-	if tc.FormEndRegex != nil && *tc.FormEndRegex != "" {
-		wrappedPattern := wrapForExactMatch(*tc.FormEndRegex)
-		compiled.FormEndRegexCompiled, err = regexp.Compile(wrappedPattern)
+	// Build FormEndRegexTable
+	if len(tc.FormEndRegex) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range tc.FormEndRegex {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
+			}
+		}
+		compiled.FormEndRegexTable, err = builder.Build(true, true) // Exact matching
 		if err != nil {
-			return nil, fmt.Errorf("failed to compile form-end-regex '%s': %w", *tc.FormEndRegex, err)
+			return nil, fmt.Errorf("failed to compile form-end-regex patterns: %w", err)
 		}
 	}
 
-	if tc.FormPrefixRegex != nil && *tc.FormPrefixRegex != "" {
-		wrappedPattern := wrapForExactMatch(*tc.FormPrefixRegex)
-		compiled.FormPrefixRegexCompiled, err = regexp.Compile(wrappedPattern)
+	// Build FormPrefixRegexTable
+	if len(tc.FormPrefixRegex) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range tc.FormPrefixRegex {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
+			}
+		}
+		compiled.FormPrefixRegexTable, err = builder.Build(true, true) // Exact matching
 		if err != nil {
-			return nil, fmt.Errorf("failed to compile form-prefix-regex '%s': %w", *tc.FormPrefixRegex, err)
+			return nil, fmt.Errorf("failed to compile form-prefix-regex patterns: %w", err)
 		}
 	}
 
-	if tc.SimpleLabelRegex != nil && *tc.SimpleLabelRegex != "" {
-		wrappedPattern := wrapForExactMatch(*tc.SimpleLabelRegex)
-		compiled.SimpleLabelRegexCompiled, err = regexp.Compile(wrappedPattern)
+	// Build SimpleLabelRegexTable
+	if len(tc.SimpleLabelRegex) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range tc.SimpleLabelRegex {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
+			}
+		}
+		compiled.SimpleLabelRegexTable, err = builder.Build(true, true) // Exact matching
 		if err != nil {
-			return nil, fmt.Errorf("failed to compile simple-label-regex '%s': %w", *tc.SimpleLabelRegex, err)
+			return nil, fmt.Errorf("failed to compile simple-label-regex patterns: %w", err)
 		}
 	}
 
-	if tc.CompoundLabelRegex != nil && *tc.CompoundLabelRegex != "" {
-		wrappedPattern := wrapForExactMatch(*tc.CompoundLabelRegex)
-		compiled.CompoundLabelRegexCompiled, err = regexp.Compile(wrappedPattern)
+	// Build CompoundLabelRegexTable
+	if len(tc.CompoundLabelRegex) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range tc.CompoundLabelRegex {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
+			}
+		}
+		compiled.CompoundLabelRegexTable, err = builder.Build(true, true) // Exact matching
 		if err != nil {
-			return nil, fmt.Errorf("failed to compile compound-label-regex '%s': %w", *tc.CompoundLabelRegex, err)
+			return nil, fmt.Errorf("failed to compile compound-label-regex patterns: %w", err)
 		}
 	}
 
+	// Handle FormSurroundMatch (unchanged for now)
 	if len(tc.FormSurroundMatch) > 0 {
 		// Build a single alternation pattern from all the start/end pairs
 		var alternatives []string

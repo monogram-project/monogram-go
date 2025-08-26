@@ -10,8 +10,17 @@ form-surround-match:
   - "[a-z]+ end"  # Any lowercase word followed by "end"
 
 # Need these patterns to classify tokens as form-start and form-end
-form-start-regex: "if|while|for|begin|loop"
-form-end-regex: "endif|endwhile|endfor|end"
+form-start-regex: 
+  - if
+  - while
+  - for
+  - begin
+  - loop
+form-end-regex: 
+  - endif
+  - endwhile
+  - endfor
+  - end
 
 # Other regex patterns set to null to avoid interference
 simple-label-regex: null

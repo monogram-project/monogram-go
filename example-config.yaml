@@ -2,23 +2,40 @@
 # This file demonstrates the configuration options for the monogram tool
 
 # Regex patterns for identifier classification
-# These will be used in the future for regex-based identifier classification
-simple-label-regex: "^(if|else|while|for|case|default)$"
-compound-label-regex: "^(else-if|else-while)$"
-form-start-regex: "^(function|class|struct)$"
-form-end-regex: "^end(function|class|struct)$"
-form-prefix-regex: "^(return|break|continue)$"
+# Arrays of regex patterns that will be compiled using regexptable for efficient matching
+simple-label-regex: 
+  - if
+  - else
+  - while
+  - for
+  - case
+  - default
+compound-label-regex: 
+  - else-if
+  - else-while
+form-start-regex: 
+  - function
+  - class
+  - struct
+form-end-regex: 
+  - endfunction
+  - endclass
+  - endstruct
+form-prefix-regex: 
+  - return
+  - break
+  - continue
 
 # Form surround match patterns - list of regex patterns for matching paired constructs
 form-surround-match:
-  - "if"
-  - "while"
-  - "for"
-  - "function"
-  - "class"
-  - "struct"
-  - "try"
-  - "switch"
+  - "if endif"
+  - "while endwhile"
+  - "for endfor"
+  - "function endfunction"
+  - "class endclass"
+  - "struct endstruct"
+  - "try endtry"
+  - "switch endswitch"
 
 # Default configuration values
 # These are applied only when the corresponding command-line flag is not used
