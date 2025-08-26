@@ -5,7 +5,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dlclark/regexp2"
 	"github.com/sfkleach/regexptable"
 	"gopkg.in/yaml.v3"
 )
@@ -39,21 +38,21 @@ type TokenClassifiers struct {
 
 type TokenClassifiersCompiled struct {
 	// Compiled regex tables using regexptable
-	FormStartRegexTable       *regexptable.RegexpTable[bool]
-	FormEndRegexTable         *regexptable.RegexpTable[bool]
-	FormPrefixRegexTable      *regexptable.RegexpTable[bool]
-	SimpleLabelRegexTable     *regexptable.RegexpTable[bool]
-	CompoundLabelRegexTable   *regexptable.RegexpTable[bool]
-	FormSurroundMatchCompiled *regexp2.Regexp
+	FormStartRegexTable     *regexptable.RegexpTable[bool]
+	FormEndRegexTable       *regexptable.RegexpTable[bool]
+	FormPrefixRegexTable    *regexptable.RegexpTable[bool]
+	SimpleLabelRegexTable   *regexptable.RegexpTable[bool]
+	CompoundLabelRegexTable *regexptable.RegexpTable[bool]
+	FormSurroundMatchTable  *regexptable.RegexpTable[bool]
 }
 
 // MatchesFormSurroundPattern checks if the given text matches any of the form-surround-match patterns
 func (tcc *TokenClassifiersCompiled) MatchesFormSurroundPattern(text string) bool {
-	if tcc.FormSurroundMatchCompiled == nil {
+	if tcc.FormSurroundMatchTable == nil {
 		return false
 	}
-	matched, err := tcc.FormSurroundMatchCompiled.MatchString(text)
-	return err == nil && matched
+	_, _, ok := tcc.FormSurroundMatchTable.TryLookup(text)
+	return ok
 }
 
 // CheckFormStartEndMatch checks if a form-start and form-end token pair match
@@ -183,10 +182,9 @@ func (tc *TokenClassifiers) CompileRegexes() (*TokenClassifiersCompiled, error) 
 		}
 	}
 
-	// Handle FormSurroundMatch (unchanged for now)
+	// Build FormSurroundMatchTable
 	if len(tc.FormSurroundMatch) > 0 {
-		// Build a single alternation pattern from all the start/end pairs
-		var alternatives []string
+		builder := regexptable.NewRegexpTableBuilder[bool]()
 		for i, pattern := range tc.FormSurroundMatch {
 			if pattern == "" {
 				continue
@@ -205,17 +203,13 @@ func (tc *TokenClassifiers) CompileRegexes() (*TokenClassifiersCompiled, error) 
 				return nil, fmt.Errorf("form-surround-match pattern %d '%s' has empty start or end regex", i, pattern)
 			}
 
-			// Use the pattern directly as it already has the format "start end"
-			alternatives = append(alternatives, pattern)
+			// Add the pattern directly as it already has the format "start end"
+			builder.AddPattern(pattern, true)
 		}
 
-		if len(alternatives) > 0 {
-			// Combine all alternatives into a single pattern and wrap for exact matching
-			combinedPattern := "^(?:" + strings.Join(alternatives, "|") + ")$"
-			compiled.FormSurroundMatchCompiled, err = regexp2.Compile(combinedPattern, regexp2.None)
-			if err != nil {
-				return nil, fmt.Errorf("failed to compile form-surround-match patterns '%s': %w", combinedPattern, err)
-			}
+		compiled.FormSurroundMatchTable, err = builder.Build(true, true) // Exact matching
+		if err != nil {
+			return nil, fmt.Errorf("failed to compile form-surround-match patterns: %w", err)
 		}
 	}
 

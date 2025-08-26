@@ -16,6 +16,7 @@ form-start-regex:
   - for
   - begin
   - loop
+
 form-end-regex: 
   - endif
   - endwhile

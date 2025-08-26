@@ -436,7 +436,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 		if token.Type == Identifier && token.SubType == IdentifierFormEnd {
 			// Check if this is a matching form-end token
 			var isMatch bool
-			if p.Classifiers != nil && p.Classifiers.FormSurroundMatchCompiled != nil {
+			if p.Classifiers != nil && p.Classifiers.FormSurroundMatchTable != nil {
 				// Use regex-based matching
 				isMatch = p.Classifiers.CheckFormStartEndMatch(formStart.Text, token.Text)
 			} else {
