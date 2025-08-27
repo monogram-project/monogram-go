@@ -22,8 +22,8 @@ type Tokenizer struct {
 	TokenClassifiers *TokenClassifiersCompiled // Token classification patterns
 }
 
-// Create a new Tokenizer
-func newTokenizer(input string, colOffset int, classifiers *TokenClassifiersCompiled) *Tokenizer {
+// Create a new Tokenizer.
+func newTokenizer(input string, classifiers *TokenClassifiersCompiled) *Tokenizer {
 	return &Tokenizer{
 		input:            input,
 		tokens:           []*Token{},
@@ -1617,7 +1617,7 @@ func (t *Tokenizer) addFiniToken() *Token {
 
 func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCompiled) (*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
-	tokenizer := newTokenizer(input, colOffset, classifiers)
+	tokenizer := newTokenizer(input, classifiers)
 
 	initToken := tokenizer.addInitToken() // Add capstone token for the start of input
 
