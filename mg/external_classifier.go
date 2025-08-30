@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -44,6 +45,9 @@ func NewExternalClassifier(command string) (*ExternalClassifier, error) {
 
 	cmd := exec.Command(parts[0], parts[1:]...)
 
+	// Connect subprocess stderr to parent stderr so debug output is visible
+	cmd.Stderr = os.Stderr
+
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create stdin pipe: %w", err)
@@ -83,9 +87,8 @@ func (ec *ExternalClassifier) ProcessBatch() error {
 		return fmt.Errorf("batch has already been processed")
 	}
 
-	// Create a channel to collect responses and an error channel
+	// Create a channel to collect responses
 	responseChan := make(chan string, len(ec.tokenTexts))
-	errorChan := make(chan error, 1)
 
 	// Start a goroutine to continuously drain the output
 	go func() {
@@ -94,17 +97,10 @@ func (ec *ExternalClassifier) ProcessBatch() error {
 		for i := 0; i < len(ec.tokenTexts); i++ {
 			responseBytes, _, err := ec.reader.ReadLine()
 			if err != nil {
-				select {
-				case errorChan <- fmt.Errorf("failed to read response %d from external classifier: %w", i+1, err):
-				default:
-				}
+				// Error will be handled when the channel is closed
 				return
 			}
-			select {
-			case responseChan <- string(responseBytes):
-			default:
-				return
-			}
+			responseChan <- string(responseBytes)
 		}
 	}()
 
@@ -123,28 +119,17 @@ func (ec *ExternalClassifier) ProcessBatch() error {
 
 	// Collect all responses
 	for i := 0; i < len(ec.tokenTexts); i++ {
-		select {
-		case response, ok := <-responseChan:
-			if !ok {
-				// Channel closed, check for error
-				select {
-				case err := <-errorChan:
-					return err
-				default:
-					return fmt.Errorf("response channel closed unexpectedly at response %d", i+1)
-				}
-			}
-
-			classification, err := parseClassificationResponse(response)
-			if err != nil {
-				return fmt.Errorf("failed to parse response %d from external classifier: %w", i+1, err)
-			}
-
-			ec.classifications = append(ec.classifications, classification)
-
-		case err := <-errorChan:
-			return err
+		response, ok := <-responseChan
+		if !ok {
+			return fmt.Errorf("response channel closed unexpectedly at response %d", i+1)
 		}
+
+		classification, err := parseClassificationResponse(response)
+		if err != nil {
+			return fmt.Errorf("failed to parse response %d from external classifier: %w", i+1, err)
+		}
+
+		ec.classifications = append(ec.classifications, classification)
 	}
 
 	ec.processed = true
