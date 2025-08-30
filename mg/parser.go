@@ -10,7 +10,7 @@ type HowIdentsAreUsed uint8
 
 const (
 	NotUsedYet HowIdentsAreUsed = iota
-	UsedAsIdentifier
+	UsedAsVariable
 	UsedAsLabel
 )
 
@@ -574,10 +574,10 @@ func (p *Parser) numberOptions(text string) (map[string]string, error) {
 }
 
 func (p *Parser) SetAsSimpleLabel(token *Token) error {
-	token.SubType = IdentifierSimpleLabel
-	if p.Idents[token.Text] == UsedAsIdentifier {
+	if p.Idents[token.Text] == UsedAsVariable {
 		return fmt.Errorf("identifier used as label: %s", token.Text)
 	}
+	token.SubType = IdentifierSimpleLabel
 	p.Idents[token.Text] = UsedAsLabel
 	return nil
 }
@@ -587,12 +587,13 @@ func (p *Parser) SetAsCompoundLabel(token *Token) error {
 	return nil
 }
 
-func (p *Parser) SetAsIdentifier(token *Token) error {
+func (p *Parser) SetAsVariable(token *Token) error {
 	text := token.Text
 	if p.Idents[text] == UsedAsLabel {
 		return fmt.Errorf("labels used as identifier: %s", text)
 	}
-	p.Idents[text] = UsedAsIdentifier
+	p.Idents[text] = UsedAsVariable
+	token.SubType = IdentifierVariable
 	return nil
 }
 
@@ -610,11 +611,16 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 			return p.readPrefixForm(context, token)
 		}
 		switch token.SubType {
-		case IdentifierVariable:
+		case IdentifierUnclassified, IdentifierVariable:
 			if !token.EscapeSeen {
-				if e := p.SetAsIdentifier(token); e != nil {
+				if e := p.SetAsVariable(token); e != nil {
 					return nil, e
 				}
+			} else {
+				// This token was escaped, so is a variable BUT might be
+				// used as a label elsewhere, so we cannot setAsVariable
+				// globally.
+				token.SubType = IdentifierVariable
 			}
 			return &Node{
 				Name: NameIdentifier,
@@ -769,7 +775,7 @@ func (p *Parser) readTagExpr() (bool, *Node, error) {
 	if token == nil {
 		return false, nil, fmt.Errorf("unexpected end of input while reading tag expression")
 	}
-	if token.Type == Identifier && token.SubType == IdentifierVariable {
+	if token.Type == Identifier && (token.SubType == IdentifierVariable || token.SubType == IdentifierUnclassified) {
 		return false, &Node{
 			Name:    NameTag,
 			Options: map[string]string{OptionName: token.Text},
@@ -838,8 +844,7 @@ func (p *Parser) readAttrExpr() (*Node, error) {
 }
 
 func (p *Parser) readXmlElement() (*Node, error) {
-	// The initial `<` has been consumed at this point. Using precedence 0 to read the element
-	// forces the use of brackets for any non-trivial element names.
+	// The initial `<` has been consumed at this point.
 	_, element_name, err := p.readTagExpr()
 	if err != nil {
 		return nil, err

@@ -1330,7 +1330,7 @@ func (t *Tokenizer) readIdentifier() (*Token, *MonogramError) {
 	}
 
 	// Add the identifier token with the new field
-	token := t.addTokenLineCol(Identifier, IdentifierVariable, text.String(), startLineCol)
+	token := t.addTokenLineCol(Identifier, IdentifierUnclassified, text.String(), startLineCol)
 	token.EscapeSeen = escSeen
 	t.markFollowedByWhitespace(token)
 	return token, nil
@@ -1372,7 +1372,7 @@ func (t *Tokenizer) markFormSurroundTokens() {
 			}
 		}
 		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierVariable {
+			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 				continue
 			}
 			if strings.HasPrefix(token.Text, "end") {
@@ -1386,7 +1386,7 @@ func (t *Tokenizer) markFormSurroundTokens() {
 	} else {
 		// Static classification
 		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierVariable {
+			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 				continue
 			}
 			if token.Type == Identifier && t.TokenClassifiers.MatchesFormEnd(token.Text) {
@@ -1399,7 +1399,7 @@ func (t *Tokenizer) markFormSurroundTokens() {
 	if t.TokenClassifiers == nil || t.TokenClassifiers.FormStartRegexTable == nil {
 		// Dynamic classification
 		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierVariable {
+			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 				continue
 			}
 			if !strings.HasPrefix(token.Text, "end") && is_formend["end"+token.Text] {
@@ -1409,7 +1409,7 @@ func (t *Tokenizer) markFormSurroundTokens() {
 	} else {
 		// Static classification
 		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierVariable {
+			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 				continue
 			}
 			if token.Type == Identifier && t.TokenClassifiers.MatchesFormStart(token.Text) {
@@ -1425,7 +1425,7 @@ func (t *Tokenizer) markFormPrefixTokens() {
 		// Dynamic classification
 		is_prefix := make(map[string]bool)
 		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierVariable {
+			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 				continue
 			}
 			if is_prefix[token.Text] {
@@ -1441,7 +1441,7 @@ func (t *Tokenizer) markFormPrefixTokens() {
 	} else {
 		// Static classification
 		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierVariable {
+			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 				continue
 			}
 			if token.Type == Identifier && t.TokenClassifiers.MatchesFormPrefix(token.Text) {
@@ -1456,7 +1456,7 @@ func (t *Tokenizer) markOtherTokens() {
 		return
 	}
 	for _, token := range t.tokens {
-		if token.Type != Identifier || token.SubType != IdentifierVariable {
+		if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 			continue
 		}
 
