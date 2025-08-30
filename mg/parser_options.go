@@ -4,6 +4,7 @@ type ParserOptions struct {
 	colOffset int
 	CoreFormatOptions
 	*TokenClassifiersCompiled
+	ExternalClassifier *ExternalClassifier
 }
 
 func NewParserOptions() *ParserOptions {
@@ -23,7 +24,7 @@ func NewParserOptions() *ParserOptions {
 
 func (p_opts *ParserOptions) ParseToAST(input string, src string, limit bool) (*Node, error) {
 	// Get the array of nodes
-	nodes, span, err := parseToASTArray(input, limit, p_opts.colOffset, &p_opts.CoreFormatOptions, p_opts.TokenClassifiersCompiled)
+	nodes, span, err := parseToASTArray(input, limit, p_opts.colOffset, &p_opts.CoreFormatOptions, p_opts.TokenClassifiersCompiled, p_opts.ExternalClassifier)
 	if err != nil {
 		return nil, err
 	}

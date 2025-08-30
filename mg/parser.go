@@ -1158,9 +1158,9 @@ func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOpt
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreFormatOptions, classifiers *TokenClassifiersCompiled) ([]*Node, Span, error) {
+func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreFormatOptions, classifiers *TokenClassifiersCompiled, externalClassifier *ExternalClassifier) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
-	initToken, span, terr := tokenizeInput(input, colOffset, classifiers)
+	initToken, span, terr := tokenizeInput(input, colOffset, classifiers, externalClassifier)
 	if terr != nil {
 		return nil, Span{}, fmt.Errorf("%s (line %d, column %d)", terr.Message, terr.Line, terr.Column)
 	}

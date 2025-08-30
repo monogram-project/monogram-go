@@ -236,12 +236,12 @@ var formTemplate = template.Must(template.New("form").Parse(`
 
 // startTestServer initializes an HTTP server on the specified port.
 // It adjusts the bind address depending on whether it's running inside a container.
-func startTestServer(port string, openBrowserFlag bool, options *mg.FormatOptions, config *mg.Config) {
+func startTestServer(port string, openBrowserFlag bool, options *mg.FormatOptions, config *mg.Config, useClassifier string) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		indexHandler(w, r, options, config)
 	})
 	http.HandleFunc("/translate", func(w http.ResponseWriter, r *http.Request) {
-		translateHandler(w, r, config)
+		translateHandler(w, r, config, useClassifier)
 	})
 
 	// Default to localhost for normal execution.
@@ -293,7 +293,7 @@ func indexHandler(w http.ResponseWriter, _ *http.Request, options *mg.FormatOpti
 }
 
 // translateHandler processes the form and renders the translation output.
-func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config) {
+func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config, useClassifier string) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
 		return
@@ -338,7 +338,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config)
 	var outputBuffer bytes.Buffer
 
 	// Perform the translation.
-	err := formatObject.translate(inputReader, &outputBuffer, &options, config)
+	err := formatObject.translate(inputReader, &outputBuffer, &options, config, useClassifier)
 	if err != nil {
 		// Render the same form with the translation output shown:
 		temp_err := formTemplate.Execute(w, struct {

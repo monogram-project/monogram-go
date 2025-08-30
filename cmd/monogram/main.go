@@ -43,7 +43,7 @@ import (
 var IsBuiltForDocker = "false"
 
 // setupFlags initializes a flag set with the common flag definitions.
-func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
+func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string, useClassifier *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
 	fs.StringVarP(&options.Format, "format", "f", options.Format, "Output format xml|json|yaml|mermaid|dot")
 	fs.StringVarP(&options.Input, "input", "i", options.Input, "Input file (optional, defaults to stdin)")
 	fs.StringVarP(&options.Output, "output", "o", options.Output, "Output file (optional, defaults to stdout)")
@@ -55,6 +55,9 @@ func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string
 	fs.BoolVar(&options.CheckLiterals, "check-literals", options.CheckLiterals, "Check regexs and other literal strings for validity")
 	if configFile != nil {
 		fs.StringVarP(configFile, "config", "c", "", "Configuration file (YAML format)")
+	}
+	if useClassifier != nil {
+		fs.StringVar(useClassifier, "use-classifier", "", "External command to use for token classification")
 	}
 	if showHelp != nil {
 		fs.BoolVarP(showHelp, "help", "h", false, "Display help information")
@@ -122,10 +125,11 @@ var availableFormatNames = func() []string {
 	return formats
 }()
 
-func parseToAST(input string, foptions *mg.FormatOptions, classifiers *mg.TokenClassifiersCompiled) (*mg.Node, error) {
+func parseToAST(input string, foptions *mg.FormatOptions, classifiers *mg.TokenClassifiersCompiled, externalClassifier *mg.ExternalClassifier) (*mg.Node, error) {
 	p_opts := &mg.ParserOptions{
 		CoreFormatOptions:        foptions.CoreFormatOptions,
 		TokenClassifiersCompiled: classifiers,
+		ExternalClassifier:       externalClassifier,
 	}
 	return p_opts.ParseToAST(input, foptions.Input, foptions.Limit)
 }
@@ -146,6 +150,7 @@ func main() {
 	}
 
 	var configFile string
+	var useClassifier string
 	var showHelp bool
 	var classifyTokens bool
 	var showVersion bool // New variable for the --version flag
@@ -153,10 +158,15 @@ func main() {
 	openBrowserFlag := true
 
 	// Set up the main command-line flag set
-	setupFlags(pflag.CommandLine, &options, &configFile, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
+	setupFlags(pflag.CommandLine, &options, &configFile, &useClassifier, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
 
 	// Parse command-line flags
 	pflag.Parse()
+
+	// Check that --config and --use-classifier are mutually exclusive
+	if configFile != "" && useClassifier != "" {
+		log.Fatalf("Error: --config and --use-classifier options are mutually exclusive")
+	}
 
 	// Load configuration file if specified
 	var config *mg.Config
@@ -178,7 +188,7 @@ func main() {
 	}
 
 	if testPort != "" {
-		startTestServer(testPort, openBrowserFlag, &options, config)
+		startTestServer(testPort, openBrowserFlag, &options, config, useClassifier)
 		os.Exit(0) // Exit after printing the version, cannot be reached at present.
 	}
 
@@ -229,7 +239,7 @@ func main() {
 
 	// Handle built-in formats
 	if isBuiltInFormat {
-		err := translator.translate(inputReader, outputWriter, &options, config)
+		err := translator.translate(inputReader, outputWriter, &options, config, useClassifier)
 		if err != nil {
 			log.Fatalf("Error: Failed to translate input: %v", err)
 		}
@@ -255,11 +265,11 @@ func main() {
 	}
 }
 
-func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *mg.FormatOptions, config *mg.Config) error {
-	return translate(input, output, printAST.Fn, options, config)
+func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *mg.FormatOptions, config *mg.Config, useClassifier string) error {
+	return translate(input, output, printAST.Fn, options, config, useClassifier)
 }
 
-func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer), options *mg.FormatOptions, config *mg.Config) error {
+func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer), options *mg.FormatOptions, config *mg.Config, useClassifier string) error {
 	// Read the entire input as a string
 	data, err := io.ReadAll(input)
 	if err != nil {
@@ -268,14 +278,27 @@ func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string
 
 	// Get TokenClassifiersCompiled from config, or use empty if no config
 	var classifiers *mg.TokenClassifiersCompiled
-	if config != nil {
+	var externalClassifier *mg.ExternalClassifier
+
+	if useClassifier != "" {
+		// Create external classifier
+		var err error
+		externalClassifier, err = mg.NewExternalClassifier(useClassifier)
+		if err != nil {
+			log.Fatalf("Error creating external classifier: %v", err)
+		}
+		defer externalClassifier.Close()
+
+		// Use empty classifiers when using external classifier
+		classifiers = &mg.TokenClassifiersCompiled{}
+	} else if config != nil {
 		classifiers = config.CompiledClassifiers
 	} else {
 		classifiers = &mg.TokenClassifiersCompiled{}
 	}
 
 	// Convert the input string into an AST
-	ast, err := parseToAST(string(data), options, classifiers)
+	ast, err := parseToAST(string(data), options, classifiers, externalClassifier)
 	if err != nil {
 		return err
 	}

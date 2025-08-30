@@ -7,6 +7,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/sfkleach/regexptable"
 )
 
 type Tokenizer struct {
@@ -1615,7 +1617,7 @@ func (t *Tokenizer) addFiniToken() *Token {
 	return endToken
 }
 
-func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCompiled) (*Token, Span, *MonogramError) {
+func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCompiled, externalClassifier *ExternalClassifier) (*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
 	tokenizer := newTokenizer(input, classifiers)
 
@@ -1631,9 +1633,17 @@ func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCom
 
 	tokenizer.chainTokens()
 
-	terr = tokenizer.markReservedTokens()
-	if terr != nil {
-		return nil, Span{}, terr
+	// Apply external classification if provided, otherwise use internal classification
+	if externalClassifier != nil {
+		terr = tokenizer.applyExternalClassification(externalClassifier)
+		if terr != nil {
+			return nil, Span{}, terr
+		}
+	} else {
+		terr = tokenizer.markReservedTokens()
+		if terr != nil {
+			return nil, Span{}, terr
+		}
 	}
 
 	if colOffset > 0 {
@@ -1648,4 +1658,156 @@ func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCom
 
 	// Return the list of tokens
 	return initToken, Span{1, 1, tokenizer.lineNo, tokenizer.colNo}, nil
+}
+
+// applyExternalClassification applies external classification to all relevant tokens
+func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) *MonogramError {
+	// Collect tokens that need classification and build a mapping
+	var tokensToClassify []*Token
+
+	// First pass: collect tokens and send them to the external classifier
+	for _, token := range t.tokens {
+		// Only classify identifiers and signs
+		if token.Type == Identifier || token.Type == Sign {
+			classifier.AddToken(token.Text)
+			tokensToClassify = append(tokensToClassify, token)
+		}
+	}
+
+	// Process the batch
+	if err := classifier.ProcessBatch(); err != nil {
+		return &MonogramError{
+			Message: fmt.Sprintf("external classifier batch processing error: %v", err),
+			Line:    1,
+			Column:  1,
+		}
+	}
+
+	// Check if we have any tokens to classify
+	if len(tokensToClassify) == 0 {
+		return nil
+	}
+
+	// Build FormSurroundMatchTable on the fly
+	var builder *regexptable.RegexpTableBuilder[bool]
+
+	// Apply classifications to tokens
+	for i, token := range tokensToClassify {
+		classification, err := classifier.GetClassification(i)
+		if err != nil {
+			return &MonogramError{
+				Message: fmt.Sprintf("external classifier error getting classification %d/%d: %v", i, len(tokensToClassify), err),
+				Line:    token.Span.StartLine,
+				Column:  token.Span.StartColumn,
+			}
+		}
+
+		// Collect form-start patterns for FormSurroundMatchTable
+		if classification.Role == "S" && len(classification.EndTokens) > 0 {
+			if builder == nil {
+				builder = regexptable.NewRegexpTableBuilder[bool]()
+			}
+
+			// Create pattern in format "start end" for each end token
+			startPattern := regexp.QuoteMeta(token.Text)
+			for _, endToken := range classification.EndTokens {
+				if endToken != "" {
+					endPattern := regexp.QuoteMeta(endToken)
+					pattern := startPattern + " " + endPattern
+					builder.AddPattern(pattern, true)
+				}
+			}
+		}
+
+		// Apply the classification to the token
+		if err := t.applyClassificationToToken(token, classification); err != nil {
+			return err
+		}
+	}
+
+	// Build FormSurroundMatchTable if we have form-start patterns
+	if builder != nil {
+		if t.TokenClassifiers == nil {
+			t.TokenClassifiers = &TokenClassifiersCompiled{}
+		}
+
+		var err error
+		t.TokenClassifiers.FormSurroundMatchTable, err = builder.Build(true, true) // Exact matching
+		if err != nil {
+			return &MonogramError{
+				Message: fmt.Sprintf("failed to compile form-surround-match patterns: %v", err),
+				Line:    1,
+				Column:  1,
+			}
+		}
+	}
+
+	return nil
+}
+
+// applyClassificationToToken applies a single classification result to a token
+func (t *Tokenizer) applyClassificationToToken(token *Token, classification *ExternalTokenClassification) *MonogramError {
+	switch classification.Role {
+	case "V": // Variable
+		if token.Type == Identifier {
+			token.SubType = IdentifierVariable
+		}
+
+	case "P": // Prefix form
+		if token.Type == Identifier {
+			token.SubType = IdentifierFormPrefix
+		}
+
+	case "S": // Form-start
+		if token.Type == Identifier {
+			token.SubType = IdentifierFormStart
+			// End tokens are handled in applyExternalClassification via FormSurroundMatchTable
+		}
+
+	case "E": // Form-end
+		if token.Type == Identifier {
+			token.SubType = IdentifierFormEnd
+		}
+
+	case "O": // Operator
+		if token.Type == Sign {
+			token.SubType = SignOperator
+			// Set precedence in the cached precedence
+			token.cachedPrecedence = OperatorPrecedence{
+				isInitialised:     true,
+				canBePrefix:       classification.PrefixPrec > 0,
+				canBeInfix:        classification.InfixPrec > 0,
+				canBePostfix:      classification.PostfixPrec > 0,
+				prefixPrecedence:  OpPrec(classification.PrefixPrec),
+				infixPrecedence:   OpPrec(classification.InfixPrec),
+				postfixPrecedence: OpPrec(classification.PostfixPrec),
+			}
+		}
+
+	case "L": // Simple label
+		if token.Type == Identifier {
+			token.SubType = IdentifierSimpleLabel
+		}
+
+	case "C": // Compound label
+		if token.Type == Identifier {
+			token.SubType = IdentifierCompoundLabel
+		}
+
+	case "X": // Exception
+		return &MonogramError{
+			Message: fmt.Sprintf("external classifier exception: %s", classification.ExceptionReason),
+			Line:    token.Span.StartLine,
+			Column:  token.Span.StartColumn,
+		}
+
+	default:
+		return &MonogramError{
+			Message: fmt.Sprintf("unknown classification role from external classifier: %s", classification.Role),
+			Line:    token.Span.StartLine,
+			Column:  token.Span.StartColumn,
+		}
+	}
+
+	return nil
 }
