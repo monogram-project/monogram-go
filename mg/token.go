@@ -5,6 +5,7 @@ import (
 )
 
 type TokenType int
+type OpPrec uint16
 
 const (
 	// Major Types
@@ -70,6 +71,16 @@ const (
 	SignOperator
 )
 
+type OperatorPrecedence struct {
+	isInitialised     bool
+	canBePrefix       bool
+	canBeInfix        bool
+	canBePostfix      bool
+	prefixPrecedence  OpPrec
+	infixPrecedence   OpPrec
+	postfixPrecedence OpPrec
+}
+
 type Token struct {
 	Type                 TokenType // The type of token (Sign, Bracket, etc.)
 	SubType              uint8     // The specific subtype of the token (if any)
@@ -86,9 +97,7 @@ type Token struct {
 	SubTokens []*Token // Subtokens for interpolated string tokens
 
 	// Cache for precedence
-	precValue int  // Cached precedence value
-	precValid bool // Indicates if the precedence has been computed
-	errFlag   bool // Cached error flag for precedence validity
+	cachedPrecedence OperatorPrecedence
 }
 
 func (t *Token) SpanString() string {
@@ -236,82 +245,93 @@ func (t *Token) DelimiterName() string {
 }
 
 const (
-	maxPrecedence int = 999
+	maxPrecedence OpPrec = 65535
 )
 
-func (t *Token) InfixPrecedence() (int, bool) {
+func (t *Token) InfixPrecedence() (OpPrec, bool) {
 	return t.Precedence(true) // Use infix precedence
 }
 
-func (t *Token) PrefixPrecedence() (int, bool) {
+func (t *Token) PrefixPrecedence() (OpPrec, bool) {
 	return t.Precedence(false) // Use prefix precedence
 }
 
-func (t *Token) Precedence(infix bool) (int, bool) {
+func (t *Token) Precedence(infix bool) (OpPrec, bool) {
 	// Check if precedence is already cached
-	if t.precValid {
-		return t.precValue, !t.errFlag // Return cached result
+	if t.cachedPrecedence.isInitialised {
+		if infix {
+			return t.cachedPrecedence.infixPrecedence, t.cachedPrecedence.canBeInfix // Return cached result
+		}
+		return t.cachedPrecedence.prefixPrecedence, t.cachedPrecedence.canBePrefix // Return cached result
 	}
 
 	// Precedence is only meaningful for Signs and Brackets
 	if t.Type != Sign && t.Type != OpenBracket {
-		return setCacheNoValidPrecedence(t) // Cache that this token has no valid precedence
+		return 0, false
 	}
 
 	if t.Type == Sign && (t.SubType == SignLessThanSlash || t.SubType == SignSlashGreaterThan) {
-		return setCacheNoValidPrecedence(t) // Cache that this token has no valid precedence
+		return 0, false
 	}
 
-	P, ok := textPrecedence(t.Text, infix)
-	if !ok {
-		return setCacheNoValidPrecedence(t)
-	}
+	P1, ok1, P2, ok2, P3, ok3 := textPrecedence(t.Text)
 
 	// Cache the precedence result and success
-	t.precValue = P
-	t.precValid = true
-	t.errFlag = false // Cache success (no error)
+	t.cachedPrecedence = OperatorPrecedence{
+		isInitialised:     true,
+		prefixPrecedence:  P1,
+		infixPrecedence:   P2,
+		postfixPrecedence: P3,
+		canBePrefix:       ok1,
+		canBeInfix:        ok2,
+		canBePostfix:      ok3,
+	}
 
-	return P, true
+	if infix {
+		return P2, ok2
+	}
+	return P1, ok1
 }
 
-func textPrecedence(text string, infix bool) (int, bool) {
+// Note that a precedence of 0 is reserved for non-operators.
+func textPrecedence(text string) (OpPrec, bool, OpPrec, bool, OpPrec, bool) {
 	// Get the first rune of the token's text
 	runes := []rune(text)
 	// We need at least one rune. And we use spaces to encode a non-matching character in the precedence strings.
 	// So if the first rune is a space, we can set it as a non-operator.
 	if len(runes) == 0 || runes[0] == ' ' {
 		// Invalid token with empty text
-		return 0, false
+		return 0, false, 0, false, 0, false
 	}
 	firstRune := runes[0]
 
-	// Find the position of the first rune in the signs string
-	precCharacters := precCharactersInfix
-	if !infix {
-		precCharacters = precCharactersPrefx
-	}
-	pos := strings.IndexRune(precCharacters, firstRune)
-	if pos == -1 {
-		// If the rune is not in the signs string
-		return 0, false
+	// Find the position of the first rune in the signs string.
+	posInfix := strings.IndexRune(precCharactersInfix, firstRune)
+	posPrefx := strings.IndexRune(precCharactersPrefx, firstRune)
+
+	if posInfix == -1 && posPrefx == -1 {
+		// If the rune is not in either signs string.
+		return 0, false, 0, false, 0, false
 	}
 
 	// Calculate precedence
-	P := (pos + 1) * 10
-	if len(runes) > 1 && runes[0] == runes[1] {
+	doubled := len(runes) > 1 && runes[0] == runes[1]
+
+	// Smallest precedence is 9.
+	Pinfix := (posInfix + 1) * 10
+	if doubled {
 		// If the first rune occurs twice in the token, subtract 1
-		P--
+		Pinfix--
 	}
 
-	return P, true
-}
+	// Smallest precedence is 9.
+	Pprefix := (posPrefx + 1) * 10
+	if doubled {
+		// If the first rune occurs twice in the token, subtract 1
+		Pprefix--
+	}
 
-func setCacheNoValidPrecedence(t *Token) (int, bool) {
-	t.precValue = 0
-	t.precValid = true
-	t.errFlag = true
-	return 0, false
+	return (OpPrec)(Pprefix), posPrefx != -1, (OpPrec)(Pinfix), posInfix != -1, 0, false
 }
 
 // VSCodeTokenType maps the token's type and subtype to a VSCode semantic token type.

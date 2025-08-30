@@ -121,7 +121,7 @@ func (p *Parser) readArguments(subType uint8, context Context) (string, *Node, e
 	return sep, node, nil
 }
 
-func (p *Parser) readOptExprPrec(formStart *Token, outer_prec int, context Context) (*Node, error) {
+func (p *Parser) readOptExprPrec(formStart *Token, outer_prec OpPrec, context Context) (*Node, error) {
 	if !p.hasNext() {
 		return nil, nil
 	}
@@ -147,7 +147,7 @@ func (p *Parser) readOptExprPrec(formStart *Token, outer_prec int, context Conte
 	return p.readExprPrec(outer_prec, context)
 }
 
-func (p *Parser) readExprPrec(outer_prec int, context Context) (*Node, error) {
+func (p *Parser) readExprPrec(outer_prec OpPrec, context Context) (*Node, error) {
 	startLineCol := p.startLineCol()
 	lhs, err := p.readPrimaryExpr(context)
 	if err != nil {
