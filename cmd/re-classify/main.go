@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/sfkleach/regexptable"
@@ -92,7 +93,9 @@ func (ce *ClassifierEngine) BuildFormStartEndMappings(tokens []string, config *C
 	// Step 5: Build EndTokenTable from all collected end tokens
 	endTableBuilder := regexptable.NewRegexpTableBuilder[bool]()
 	for endToken := range endTokensSet {
-		endTableBuilder.AddPattern(endToken, true)
+		// Escape the end token since it should be matched literally, not as a regex
+		escapedEndToken := regexp.QuoteMeta(endToken)
+		endTableBuilder.AddPattern(escapedEndToken, true)
 	}
 	ce.config.EndTokenTable, err = endTableBuilder.Build(true, true)
 	if err != nil {
