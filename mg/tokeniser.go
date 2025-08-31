@@ -1702,6 +1702,15 @@ func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) 
 			}
 		}
 
+		// Check for missing closing keywords
+		if classification.Role == "S" && len(classification.EndTokens) == 0 {
+			return &MonogramError{
+				Message: fmt.Sprintf("missing closing token for form-start token '%s'", token.Text),
+				Line:    token.Span.StartLine,
+				Column:  token.Span.StartColumn,
+			}
+		}
+
 		// Collect form-start patterns for FormSurroundMatchTable
 		if classification.Role == "S" && len(classification.EndTokens) > 0 {
 			if builder == nil {

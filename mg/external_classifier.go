@@ -169,11 +169,11 @@ func parseClassificationResponse(response string) (*ExternalTokenClassification,
 			return nil, fmt.Errorf("prefix form classification should have no additional fields, got: %s", response)
 		}
 
-	case "S": // Form-start - followed by possible end tokens
-		if len(fields) < 2 {
-			return nil, fmt.Errorf("form-start classification must specify end tokens, got: %s", response)
+	case "S": // Form-start - optionally followed by end tokens
+		if len(fields) > 1 {
+			classification.EndTokens = fields[1:]
 		}
-		classification.EndTokens = fields[1:]
+		// If len(fields) == 1, EndTokens remains empty (nil slice)
 
 	case "E": // Form-end - no additional fields
 		if len(fields) != 1 {

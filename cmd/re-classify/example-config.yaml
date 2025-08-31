@@ -1,0 +1,73 @@
+# Example configuration file for re-classify tool
+# This shows the new field names and operator configuration
+
+# Form patterns (note the 'regexp' suffix instead of 'regex')
+form-start-regexp:
+  - if
+  - while
+  - for
+  - begin
+
+form-end-regexp:
+  - endif
+  - endwhile
+  - endfor
+  - end
+
+form-prefix-regexp:
+  - return
+  - break
+  - continue
+
+simple-label-regexp:
+  - else
+  - case
+  - default
+
+compound-label-regexp:
+  - "else-if"
+  - "case-[a-zA-Z]+"
+
+# Form surround matching (unchanged from original format)
+form-surround-match:
+  - "if endif"
+  - "while endwhile"  
+  - "for endfor"
+  - "begin end"
+
+# New operator configuration with precedence values
+operator-regexp:
+  - pattern: "\\+"
+    prefix-prec: 7
+    infix-prec: 6
+    postfix-prec: 0
+    
+  - pattern: "-"
+    prefix-prec: 7
+    infix-prec: 6
+    postfix-prec: 0
+    
+  - pattern: "\\*"
+    prefix-prec: 0
+    infix-prec: 7
+    postfix-prec: 0
+    
+  - pattern: "/"
+    prefix-prec: 0
+    infix-prec: 7
+    postfix-prec: 0
+    
+  - pattern: "="
+    prefix-prec: 0
+    infix-prec: 1
+    postfix-prec: 0
+    
+  - pattern: "\\+\\+"
+    prefix-prec: 8
+    infix-prec: 0
+    postfix-prec: 8
+    
+  - pattern: "--"
+    prefix-prec: 8
+    infix-prec: 0
+    postfix-prec: 8

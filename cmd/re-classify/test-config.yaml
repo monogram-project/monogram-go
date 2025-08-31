@@ -1,0 +1,18 @@
+# Simple test configuration for re-classify tool
+form-start-regexp:
+  - if
+  - while
+
+form-end-regexp:
+  - endif
+  - endwhile
+
+form-surround-match:
+  - "if endif"
+  - "while endwhile"
+
+operator-regexp:
+  - pattern: "="
+    prefix-prec: 0
+    infix-prec: 1
+    postfix-prec: 0

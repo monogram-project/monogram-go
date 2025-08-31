@@ -48,7 +48,10 @@ clean:
 
 # This is a recipe to build all the binaries that we can in order to
 # test the build process. It is not intended to be run in production.
-build-all: build-full build-mini build-for-docker build-calc
+build-all: build-full build-mini build-for-docker build-calc build-re-classify
+
+build-re-classify:
+    go build -o re-classify ./cmd/re-classify
 
 build-calc:
     # Build the calculator executable
