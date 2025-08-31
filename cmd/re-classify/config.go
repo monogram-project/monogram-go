@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/sfkleach/regexptable"
@@ -36,7 +35,6 @@ type ClassifierConfig struct {
 	FormPrefixRegexp    []string `yaml:"form-prefix-regexp,omitempty"`
 	SimpleLabelRegexp   []string `yaml:"simple-label-regexp,omitempty"`
 	CompoundLabelRegexp []string `yaml:"compound-label-regexp,omitempty"`
-	FormSurroundMatch   []string `yaml:"form-surround-match,omitempty"`
 
 	// Operator configurations with precedence values
 	OperatorRegexp []OperatorConfig `yaml:"operator-regexp,omitempty"`
@@ -48,23 +46,21 @@ type CompiledSurroundRegexp struct {
 	EndSubsts    []string // End substitution patterns
 }
 
-// CompiledClassifierConfig holds compiled regex patterns
+// CompiledClassifierConfig holds compiled RegexpTable patterns
 type CompiledClassifierConfig struct {
 	// New efficient start token recognizer - maps start patterns to end substitution lists
-	StartTokenTable   *regexptable.RegexpTable[[]string] // For quick lookup of valid end substitutions
-	EndTokenTable     *regexptable.RegexpTable[bool]     // For quick lookup of valid end tokens
-	FormSurroundMatch []*regexptable.RegexpTable[bool]   // Compiled form-surround-match patterns
+	StartTokenTable *regexptable.RegexpTable[[]string] // For quick lookup of valid end substitutions
+	EndTokenTable   *regexptable.RegexpTable[bool]     // For quick lookup of valid end tokens
 
-	// Legacy compiled patterns (for backward compatibility)
-	FormPrefixRegexp    []*regexp.Regexp
-	SimpleLabelRegexp   []*regexp.Regexp
-	CompoundLabelRegexp []*regexp.Regexp
-	OperatorConfigs     []CompiledOperatorConfig
+	// All patterns now use RegexpTables for performance
+	FormPrefixRegexpTable    *regexptable.RegexpTable[bool]
+	SimpleLabelRegexpTable   *regexptable.RegexpTable[bool]
+	CompoundLabelRegexpTable *regexptable.RegexpTable[bool]
+	OperatorRegexpTable      *regexptable.RegexpTable[CompiledOperatorConfig]
 }
 
 // CompiledOperatorConfig holds a compiled operator configuration
 type CompiledOperatorConfig struct {
-	Pattern     *regexp.Regexp
 	PrefixPrec  uint16
 	InfixPrec   uint16
 	PostfixPrec uint16
@@ -86,66 +82,77 @@ func LoadClassifierConfig(filename string) (*ClassifierConfig, error) {
 	return &config, nil
 }
 
-// CompileRegexes compiles all regex patterns in the configuration
+// CompileRegexes compiles static regex patterns in the configuration using RegexpTables
+// Note: StartTokenTable and EndTokenTable are built dynamically during token analysis
 func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) {
 	compiled := &CompiledClassifierConfig{}
 	var err error
 
-	// Build start token recognizer using RegexpTableBuilder
-	if len(cc.SurroundRegexp) > 0 {
-		builder := regexptable.NewRegexpTableBuilder[[]string]()
+	// NOTE: StartTokenTable and EndTokenTable are NOT built here
+	// They are built dynamically in BuildFormStartEndMappings based on actual input tokens
 
-		for _, surroundConfig := range cc.SurroundRegexp {
-			if surroundConfig.Start != "" {
-				// Add pattern to the table builder with the end substitutions as the value
-				builder.AddPattern(surroundConfig.Start, surroundConfig.End)
+	// Build form-prefix-regexp table
+	if len(cc.FormPrefixRegexp) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range cc.FormPrefixRegexp {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
 			}
 		}
-
-		// Build the table with exact matching (anchored)
-		compiled.StartTokenTable, err = builder.Build(true, true)
+		compiled.FormPrefixRegexpTable, err = builder.Build(true, true)
 		if err != nil {
-			return nil, fmt.Errorf("failed to build start token table: %w", err)
+			return nil, fmt.Errorf("failed to build form-prefix-regexp table: %w", err)
 		}
 	}
 
-	// Compile form-prefix-regexp patterns
-	compiled.FormPrefixRegexp, err = compileRegexpList(cc.FormPrefixRegexp, "form-prefix-regexp")
-	if err != nil {
-		return nil, err
-	}
-
-	// Compile simple-label-regexp patterns
-	compiled.SimpleLabelRegexp, err = compileRegexpList(cc.SimpleLabelRegexp, "simple-label-regexp")
-	if err != nil {
-		return nil, err
-	}
-
-	// Compile compound-label-regexp patterns
-	compiled.CompoundLabelRegexp, err = compileRegexpList(cc.CompoundLabelRegexp, "compound-label-regexp")
-	if err != nil {
-		return nil, err
-	}
-
-	// Note: FormSurroundMatch will be populated dynamically during token analysis
-
-	// Compile operator-regexp patterns
-	for i, opConfig := range cc.OperatorRegexp {
-		compiledOp := CompiledOperatorConfig{
-			PrefixPrec:  opConfig.PrefixPrec,
-			InfixPrec:   opConfig.InfixPrec,
-			PostfixPrec: opConfig.PostfixPrec,
-			EndTokens:   opConfig.EndTokens,
-		}
-
-		if opConfig.Pattern != "" {
-			compiledOp.Pattern, err = regexp.Compile("^" + opConfig.Pattern + "$")
-			if err != nil {
-				return nil, fmt.Errorf("failed to compile operator-regexp pattern %d '%s': %w", i, opConfig.Pattern, err)
+	// Build simple-label-regexp table
+	if len(cc.SimpleLabelRegexp) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range cc.SimpleLabelRegexp {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
 			}
 		}
+		compiled.SimpleLabelRegexpTable, err = builder.Build(true, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build simple-label-regexp table: %w", err)
+		}
+	}
 
-		compiled.OperatorConfigs = append(compiled.OperatorConfigs, compiledOp)
+	// Build compound-label-regexp table
+	if len(cc.CompoundLabelRegexp) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range cc.CompoundLabelRegexp {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
+			}
+		}
+		compiled.CompoundLabelRegexpTable, err = builder.Build(true, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build compound-label-regexp table: %w", err)
+		}
+	}
+
+	// Build operator-regexp table
+	if len(cc.OperatorRegexp) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[CompiledOperatorConfig]()
+		for i, opConfig := range cc.OperatorRegexp {
+			if opConfig.Pattern != "" {
+				compiledOp := CompiledOperatorConfig{
+					PrefixPrec:  opConfig.PrefixPrec,
+					InfixPrec:   opConfig.InfixPrec,
+					PostfixPrec: opConfig.PostfixPrec,
+					EndTokens:   opConfig.EndTokens,
+				}
+				builder.AddPattern(opConfig.Pattern, compiledOp)
+			} else {
+				return nil, fmt.Errorf("operator-regexp pattern %d is empty", i)
+			}
+		}
+		compiled.OperatorRegexpTable, err = builder.Build(true, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build operator-regexp table: %w", err)
+		}
 	}
 
 	return compiled, nil
@@ -154,61 +161,4 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 // simpleSubstitute performs simple $0 substitution
 func simpleSubstitute(pattern, matchText string) string {
 	return strings.ReplaceAll(pattern, "$0", matchText)
-}
-
-// compileRegexpList compiles a list of regex patterns with anchors
-func compileRegexpList(patterns []string, fieldName string) ([]*regexp.Regexp, error) {
-	var compiled []*regexp.Regexp
-
-	for i, pattern := range patterns {
-		if pattern == "" {
-			continue
-		}
-
-		// Add anchors to ensure exact matching
-		anchoredPattern := "^" + pattern + "$"
-		regex, err := regexp.Compile(anchoredPattern)
-		if err != nil {
-			return nil, fmt.Errorf("failed to compile %s pattern %d '%s': %w", fieldName, i, pattern, err)
-		}
-		compiled = append(compiled, regex)
-	}
-
-	return compiled, nil
-}
-
-// MatchesAny checks if the given text matches any of the compiled regexes
-func MatchesAny(text string, regexes []*regexp.Regexp) bool {
-	for _, regex := range regexes {
-		if regex.MatchString(text) {
-			return true
-		}
-	}
-	return false
-}
-
-// MatchesFormSurroundPattern checks if the given text matches any form-surround-match pattern
-func (ccc *CompiledClassifierConfig) MatchesFormSurroundPattern(startToken, endToken string) bool {
-	testString := startToken + " " + endToken
-	for _, table := range ccc.FormSurroundMatch {
-		if table != nil {
-			_, _, ok := table.TryLookup(testString)
-			if ok {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// FindOperatorConfig returns the first matching operator configuration for the given text
-func (ccc *CompiledClassifierConfig) FindOperatorConfig(text string) *CompiledOperatorConfig {
-	for _, opConfig := range ccc.OperatorConfigs {
-		if opConfig.Pattern != nil {
-			if opConfig.Pattern.MatchString(text) {
-				return &opConfig
-			}
-		}
-	}
-	return nil
 }
