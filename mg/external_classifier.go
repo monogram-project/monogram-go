@@ -16,9 +16,9 @@ type ExternalClassifier struct {
 	stdin           io.WriteCloser
 	stdout          io.ReadCloser
 	reader          *bufio.Reader
-	tokenTexts      []string                       // Collect token texts for batch processing
-	classifications []*ExternalTokenClassification // Store results from batch processing
-	processed       bool                           // Flag to track if batch processing is complete
+	tokenTexts      []string                                // Track order for batch processing
+	classifications map[string]*ExternalTokenClassification // Store results from batch processing
+	processed       bool                                    // Flag to track if batch processing is complete
 }
 
 // ExternalTokenClassification represents the classification result from the external classifier
@@ -71,14 +71,19 @@ func NewExternalClassifier(command string) (*ExternalClassifier, error) {
 		stdout:          stdout,
 		reader:          bufio.NewReader(stdout),
 		tokenTexts:      make([]string, 0),
-		classifications: make([]*ExternalTokenClassification, 0),
+		classifications: make(map[string]*ExternalTokenClassification),
 		processed:       false,
 	}, nil
 }
 
-// AddToken adds a token to the batch for processing
+// AddToken adds a token to the batch for processing (only if not already added)
 func (ec *ExternalClassifier) AddToken(token string) {
-	ec.tokenTexts = append(ec.tokenTexts, token)
+	// Only add if we haven't seen this token before
+	if _, exists := ec.classifications[token]; !exists {
+		ec.tokenTexts = append(ec.tokenTexts, token)
+		// Reserve space in the map (will be filled during ProcessBatch)
+		ec.classifications[token] = nil
+	}
 }
 
 // ProcessBatch sends all collected tokens to the external classifier and reads all responses
@@ -117,7 +122,7 @@ func (ec *ExternalClassifier) ProcessBatch() error {
 	}
 	ec.stdin = nil
 
-	// Collect all responses
+	// Collect all responses and store in map
 	for i := 0; i < len(ec.tokenTexts); i++ {
 		response, ok := <-responseChan
 		if !ok {
@@ -129,22 +134,25 @@ func (ec *ExternalClassifier) ProcessBatch() error {
 			return fmt.Errorf("failed to parse response %d from external classifier: %w", i+1, err)
 		}
 
-		ec.classifications = append(ec.classifications, classification)
+		// Store the classification using the token text as key
+		tokenText := ec.tokenTexts[i]
+		ec.classifications[tokenText] = classification
 	}
 
 	ec.processed = true
 	return nil
 }
 
-// GetClassification returns the classification for the token at the given index
-func (ec *ExternalClassifier) GetClassification(index int) (*ExternalTokenClassification, error) {
+// GetClassification returns the classification for the given token text
+func (ec *ExternalClassifier) GetClassification(tokenText string) (*ExternalTokenClassification, error) {
 	if !ec.processed {
 		return nil, fmt.Errorf("batch has not been processed yet")
 	}
-	if index < 0 || index >= len(ec.classifications) {
-		return nil, fmt.Errorf("index %d out of range", index)
+	classification, exists := ec.classifications[tokenText]
+	if !exists {
+		return nil, fmt.Errorf("no classification found for token '%s'", tokenText)
 	}
-	return ec.classifications[index], nil
+	return classification, nil
 }
 
 // parseClassificationResponse parses the response from the external classifier

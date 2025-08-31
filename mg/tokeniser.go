@@ -1662,10 +1662,9 @@ func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCom
 
 // applyExternalClassification applies external classification to all relevant tokens
 func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) *MonogramError {
-	// Collect tokens that need classification and build a mapping
+	// Step 1: Collect tokens and send unique token texts to classifier
 	var tokensToClassify []*Token
 
-	// First pass: collect tokens and send them to the external classifier
 	for _, token := range t.tokens {
 		// Only classify identifiers and signs
 		if token.Type == Identifier || token.Type == Sign {
@@ -1674,7 +1673,12 @@ func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) 
 		}
 	}
 
-	// Process the batch
+	// Check if we have any tokens to classify
+	if len(tokensToClassify) == 0 {
+		return nil
+	}
+
+	// Step 2: Process the batch
 	if err := classifier.ProcessBatch(); err != nil {
 		return &MonogramError{
 			Message: fmt.Sprintf("external classifier batch processing error: %v", err),
@@ -1683,20 +1687,15 @@ func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) 
 		}
 	}
 
-	// Check if we have any tokens to classify
-	if len(tokensToClassify) == 0 {
-		return nil
-	}
-
 	// Build FormSurroundMatchTable on the fly
 	var builder *regexptable.RegexpTableBuilder[bool]
 
-	// Apply classifications to tokens
-	for i, token := range tokensToClassify {
-		classification, err := classifier.GetClassification(i)
+	// Step 3: Apply classifications to all tokens using the map
+	for _, token := range tokensToClassify {
+		classification, err := classifier.GetClassification(token.Text)
 		if err != nil {
 			return &MonogramError{
-				Message: fmt.Sprintf("external classifier error getting classification %d/%d: %v", i, len(tokensToClassify), err),
+				Message: fmt.Sprintf("external classifier error getting classification for token '%s': %v", token.Text, err),
 				Line:    token.Span.StartLine,
 				Column:  token.Span.StartColumn,
 			}
