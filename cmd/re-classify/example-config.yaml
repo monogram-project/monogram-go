@@ -1,19 +1,16 @@
 # Example configuration file for re-classify tool
-# This shows the new field names and operator configuration
+# This shows the new surround-regexp configuration and operator settings
 
-# Form patterns (note the 'regexp' suffix instead of 'regex')
-form-start-regexp:
-  - if
-  - while
-  - for
-  - begin
+# New surround regex patterns with substitution
+surround-regexp:
+  - start: if|while|for
+    end: [end$0, $0_end]  # e.g., "if" -> "endif" or "if_end"
+  - start: begin
+    end: [end, finish]    # "begin" -> "end" or "finish"
+  - start: function|proc
+    end: [end$0, $0_done] # e.g., "function" -> "endfunction" or "function_done"
 
-form-end-regexp:
-  - endif
-  - endwhile
-  - endfor
-  - end
-
+# Legacy form patterns (for backward compatibility)
 form-prefix-regexp:
   - return
   - break
@@ -28,33 +25,26 @@ compound-label-regexp:
   - "else-if"
   - "case-[a-zA-Z]+"
 
-# Form surround matching (unchanged from original format)
-form-surround-match:
-  - "if endif"
-  - "while endwhile"  
-  - "for endfor"
-  - "begin end"
-
-# New operator configuration with precedence values
+# Operator configuration with precedence values
 operator-regexp:
   - pattern: "\\+"
-    prefix-prec: 7
+    prefix-prec: 6
     infix-prec: 6
     postfix-prec: 0
     
   - pattern: "-"
-    prefix-prec: 7
+    prefix-prec: 6
     infix-prec: 6
     postfix-prec: 0
     
   - pattern: "\\*"
     prefix-prec: 0
-    infix-prec: 7
+    infix-prec: 5
     postfix-prec: 0
     
   - pattern: "/"
     prefix-prec: 0
-    infix-prec: 7
+    infix-prec: 5
     postfix-prec: 0
     
   - pattern: "="

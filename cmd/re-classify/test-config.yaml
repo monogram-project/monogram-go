@@ -1,15 +1,9 @@
 # Simple test configuration for re-classify tool
-form-start-regexp:
-  - if
-  - while
 
-form-end-regexp:
-  - endif
-  - endwhile
+surround-regexp:
+  - start: if|while
+    end: [end$0, $0_end]
 
-form-surround-match:
-  - "if endif"
-  - "while endwhile"
 
 operator-regexp:
   - pattern: "="

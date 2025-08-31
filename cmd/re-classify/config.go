@@ -3,10 +3,18 @@ package main
 import (
 	"fmt"
 	"os"
+	"regexp"
+	"strings"
 
-	"github.com/dlclark/regexp2"
+	"github.com/sfkleach/regexptable"
 	"gopkg.in/yaml.v3"
 )
+
+// SurroundRegexpConfig represents a start/end pair with regex substitution
+type SurroundRegexpConfig struct {
+	Start string   `yaml:"start"`
+	End   []string `yaml:"end"`
+}
 
 // OperatorConfig represents operator configuration with three precedence values
 type OperatorConfig struct {
@@ -19,7 +27,10 @@ type OperatorConfig struct {
 
 // ClassifierConfig represents the configuration structure for the re-classify tool
 type ClassifierConfig struct {
-	// Regex patterns for identifier classification
+	// New surround regex patterns with substitution
+	SurroundRegexp []SurroundRegexpConfig `yaml:"surround-regexp,omitempty"`
+
+	// Legacy regex patterns for identifier classification (for backward compatibility)
 	FormStartRegexp     []string `yaml:"form-start-regexp,omitempty"`
 	FormEndRegexp       []string `yaml:"form-end-regexp,omitempty"`
 	FormPrefixRegexp    []string `yaml:"form-prefix-regexp,omitempty"`
@@ -31,20 +42,29 @@ type ClassifierConfig struct {
 	OperatorRegexp []OperatorConfig `yaml:"operator-regexp,omitempty"`
 }
 
+// CompiledSurroundRegexp holds a compiled surround regex configuration
+type CompiledSurroundRegexp struct {
+	StartPattern string   // Original pattern for reference
+	EndSubsts    []string // End substitution patterns
+}
+
 // CompiledClassifierConfig holds compiled regex patterns
 type CompiledClassifierConfig struct {
-	FormStartRegexp     []*regexp2.Regexp
-	FormEndRegexp       []*regexp2.Regexp
-	FormPrefixRegexp    []*regexp2.Regexp
-	SimpleLabelRegexp   []*regexp2.Regexp
-	CompoundLabelRegexp []*regexp2.Regexp
-	FormSurroundMatch   []*regexp2.Regexp
+	// New efficient start token recognizer - maps start patterns to end substitution lists
+	StartTokenTable   *regexptable.RegexpTable[[]string] // For quick lookup of valid end substitutions
+	EndTokenTable     *regexptable.RegexpTable[bool]     // For quick lookup of valid end tokens
+	FormSurroundMatch []*regexptable.RegexpTable[bool]   // Compiled form-surround-match patterns
+
+	// Legacy compiled patterns (for backward compatibility)
+	FormPrefixRegexp    []*regexp.Regexp
+	SimpleLabelRegexp   []*regexp.Regexp
+	CompoundLabelRegexp []*regexp.Regexp
 	OperatorConfigs     []CompiledOperatorConfig
 }
 
 // CompiledOperatorConfig holds a compiled operator configuration
 type CompiledOperatorConfig struct {
-	Pattern     *regexp2.Regexp
+	Pattern     *regexp.Regexp
 	PrefixPrec  uint16
 	InfixPrec   uint16
 	PostfixPrec uint16
@@ -71,16 +91,22 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 	compiled := &CompiledClassifierConfig{}
 	var err error
 
-	// Compile form-start-regexp patterns
-	compiled.FormStartRegexp, err = compileRegexpList(cc.FormStartRegexp, "form-start-regexp")
-	if err != nil {
-		return nil, err
-	}
+	// Build start token recognizer using RegexpTableBuilder
+	if len(cc.SurroundRegexp) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[[]string]()
 
-	// Compile form-end-regexp patterns
-	compiled.FormEndRegexp, err = compileRegexpList(cc.FormEndRegexp, "form-end-regexp")
-	if err != nil {
-		return nil, err
+		for _, surroundConfig := range cc.SurroundRegexp {
+			if surroundConfig.Start != "" {
+				// Add pattern to the table builder with the end substitutions as the value
+				builder.AddPattern(surroundConfig.Start, surroundConfig.End)
+			}
+		}
+
+		// Build the table with exact matching (anchored)
+		compiled.StartTokenTable, err = builder.Build(true, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build start token table: %w", err)
+		}
 	}
 
 	// Compile form-prefix-regexp patterns
@@ -101,11 +127,7 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 		return nil, err
 	}
 
-	// Compile form-surround-match patterns
-	compiled.FormSurroundMatch, err = compileRegexpList(cc.FormSurroundMatch, "form-surround-match")
-	if err != nil {
-		return nil, err
-	}
+	// Note: FormSurroundMatch will be populated dynamically during token analysis
 
 	// Compile operator-regexp patterns
 	for i, opConfig := range cc.OperatorRegexp {
@@ -117,7 +139,7 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 		}
 
 		if opConfig.Pattern != "" {
-			compiledOp.Pattern, err = regexp2.Compile("^"+opConfig.Pattern+"$", 0)
+			compiledOp.Pattern, err = regexp.Compile("^" + opConfig.Pattern + "$")
 			if err != nil {
 				return nil, fmt.Errorf("failed to compile operator-regexp pattern %d '%s': %w", i, opConfig.Pattern, err)
 			}
@@ -129,9 +151,14 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 	return compiled, nil
 }
 
+// simpleSubstitute performs simple $0 substitution
+func simpleSubstitute(pattern, matchText string) string {
+	return strings.ReplaceAll(pattern, "$0", matchText)
+}
+
 // compileRegexpList compiles a list of regex patterns with anchors
-func compileRegexpList(patterns []string, fieldName string) ([]*regexp2.Regexp, error) {
-	var compiled []*regexp2.Regexp
+func compileRegexpList(patterns []string, fieldName string) ([]*regexp.Regexp, error) {
+	var compiled []*regexp.Regexp
 
 	for i, pattern := range patterns {
 		if pattern == "" {
@@ -140,7 +167,7 @@ func compileRegexpList(patterns []string, fieldName string) ([]*regexp2.Regexp, 
 
 		// Add anchors to ensure exact matching
 		anchoredPattern := "^" + pattern + "$"
-		regex, err := regexp2.Compile(anchoredPattern, 0)
+		regex, err := regexp.Compile(anchoredPattern)
 		if err != nil {
 			return nil, fmt.Errorf("failed to compile %s pattern %d '%s': %w", fieldName, i, pattern, err)
 		}
@@ -151,10 +178,9 @@ func compileRegexpList(patterns []string, fieldName string) ([]*regexp2.Regexp, 
 }
 
 // MatchesAny checks if the given text matches any of the compiled regexes
-func MatchesAny(text string, regexes []*regexp2.Regexp) bool {
+func MatchesAny(text string, regexes []*regexp.Regexp) bool {
 	for _, regex := range regexes {
-		match, err := regex.MatchString(text)
-		if err == nil && match {
+		if regex.MatchString(text) {
 			return true
 		}
 	}
@@ -164,15 +190,22 @@ func MatchesAny(text string, regexes []*regexp2.Regexp) bool {
 // MatchesFormSurroundPattern checks if the given text matches any form-surround-match pattern
 func (ccc *CompiledClassifierConfig) MatchesFormSurroundPattern(startToken, endToken string) bool {
 	testString := startToken + " " + endToken
-	return MatchesAny(testString, ccc.FormSurroundMatch)
+	for _, table := range ccc.FormSurroundMatch {
+		if table != nil {
+			_, _, ok := table.TryLookup(testString)
+			if ok {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // FindOperatorConfig returns the first matching operator configuration for the given text
 func (ccc *CompiledClassifierConfig) FindOperatorConfig(text string) *CompiledOperatorConfig {
 	for _, opConfig := range ccc.OperatorConfigs {
 		if opConfig.Pattern != nil {
-			match, err := opConfig.Pattern.MatchString(text)
-			if err == nil && match {
+			if opConfig.Pattern.MatchString(text) {
 				return &opConfig
 			}
 		}
