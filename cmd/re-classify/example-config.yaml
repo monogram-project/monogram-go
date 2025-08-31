@@ -4,11 +4,11 @@
 # New surround regex patterns with substitution
 surround-regexp:
   - start: if|while|for
-    end: [end$0, $0_end]  # e.g., "if" -> "endif" or "if_end"
+    endings: [end$0, $0_end]  # e.g., "if" -> "endif" or "if_end"
   - start: begin
-    end: [end, finish]    # "begin" -> "end" or "finish"
+    endings: [end, finish]    # "begin" -> "end" or "finish"
   - start: function|proc
-    end: [end$0, $0_done] # e.g., "function" -> "endfunction" or "function_done"
+    endings: [end$0, $0_done] # e.g., "function" -> "endfunction" or "function_done"
 
 # Legacy form patterns (for backward compatibility)
 form-prefix-regexp:

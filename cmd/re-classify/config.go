@@ -9,10 +9,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// SurroundRegexpConfig represents a start/end pair with regex substitution
+// SurroundRegexpConfig represents a start/endings pair with regex substitution
 type SurroundRegexpConfig struct {
-	Start string   `yaml:"start"`
-	End   []string `yaml:"end"`
+	Start   string   `yaml:"start"`
+	End     string   `yaml:"end"`
+	Endings []string `yaml:"endings"`
 }
 
 // OperatorConfig represents operator configuration with three precedence values
@@ -46,11 +47,17 @@ type CompiledSurroundRegexp struct {
 	EndSubsts    []string // End substitution patterns
 }
 
+// StartTokenInfo holds information about a start token including its serial number and endings
+type StartTokenInfo struct {
+	SerialNumber int      // Serial number for this start/end/endings group
+	Endings      []string // End substitution patterns
+}
+
 // CompiledClassifierConfig holds compiled RegexpTable patterns
 type CompiledClassifierConfig struct {
-	// New efficient start token recognizer - maps start patterns to end substitution lists
-	StartTokenTable *regexptable.RegexpTable[[]string] // For quick lookup of valid end substitutions
-	EndTokenTable   *regexptable.RegexpTable[bool]     // For quick lookup of valid end tokens
+	// New efficient start token recognizer - maps start patterns to start token info
+	StartTokenTable *regexptable.RegexpTable[StartTokenInfo] // For quick lookup of serial number and end substitutions
+	EndTokenTable   *regexptable.RegexpTable[int]            // For quick lookup of end tokens mapping to serial numbers
 
 	// All patterns now use RegexpTables for performance
 	FormPrefixRegexpTable    *regexptable.RegexpTable[bool]
@@ -158,7 +165,18 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 	return compiled, nil
 }
 
-// simpleSubstitute performs simple $0 substitution
+// substitutePattern performs substitution using capture groups
+// groups[0] is the full match ($0), groups[1] is first capture group ($1), etc.
+func substitutePattern(pattern string, groups []string) string {
+	result := pattern
+	for i, group := range groups {
+		placeholder := fmt.Sprintf("$%d", i)
+		result = strings.ReplaceAll(result, placeholder, group)
+	}
+	return result
+}
+
+// simpleSubstitute performs simple $0 substitution (legacy function for backward compatibility)
 func simpleSubstitute(pattern, matchText string) string {
 	return strings.ReplaceAll(pattern, "$0", matchText)
 }
