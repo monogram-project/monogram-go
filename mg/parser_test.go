@@ -18,7 +18,7 @@ func getParser(input string) (*Parser, error) {
 	if err != nil {
 		return nil, fmt.Errorf("getTokens error: %w", err)
 	}
-	coreOptions := &CoreFormatOptions{
+	coreOptions := &ConfigurableOptions{
 		DefaultLabel:  "_",
 		IncludeSpans:  false,
 		Decimal:       false,

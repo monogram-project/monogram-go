@@ -2,14 +2,14 @@ package mg
 
 type ParserOptions struct {
 	colOffset int
-	CoreFormatOptions
+	ConfigurableOptions
 	ExternalClassifier *ExternalClassifier
 }
 
 func NewParserOptions() *ParserOptions {
 	return &ParserOptions{
 		colOffset: 0,
-		CoreFormatOptions: CoreFormatOptions{
+		ConfigurableOptions: ConfigurableOptions{
 			DefaultLabel:  "_",
 			IncludeSpans:  false,
 			Decimal:       false,
@@ -20,7 +20,7 @@ func NewParserOptions() *ParserOptions {
 
 func (p_opts *ParserOptions) ParseToAST(input string, src string, limit bool) (*Node, error) {
 	// Get the array of nodes
-	nodes, span, err := parseToASTArray(input, limit, p_opts.colOffset, &p_opts.CoreFormatOptions, p_opts.ExternalClassifier)
+	nodes, span, err := parseToASTArray(input, limit, p_opts.colOffset, &p_opts.ConfigurableOptions, p_opts.ExternalClassifier)
 	if err != nil {
 		return nil, err
 	}

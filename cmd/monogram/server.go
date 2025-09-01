@@ -323,7 +323,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config,
 		Input:  "", // Not used in test mode — we’re using form data.
 		Output: "", // Output will be captured in a buffer.
 		Limit:  false,
-		CoreFormatOptions: mg.CoreFormatOptions{
+		ConfigurableOptions: mg.ConfigurableOptions{
 			Format:        formatObject.Format,
 			Indent:        indent,
 			DefaultLabel:  defaultLabel,

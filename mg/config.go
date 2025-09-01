@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type CoreFormatOptions struct {
+type ConfigurableOptions struct {
 	Format        string `yaml:"option-format,omitempty"`
 	Indent        int    `yaml:"option-indent,omitempty"`
 	DefaultLabel  string `yaml:"option-default-label,omitempty"`
@@ -22,13 +22,15 @@ type FormatOptions struct {
 	Input  string
 	Output string
 	Limit  bool
-	CoreFormatOptions
+	ConfigurableOptions
 }
 
-// Config represents the configuration structure that can be loaded from YAML
+// Config represents the configuration structure that can be loaded from YAML.
+// At present this is the same as the CoreFormatOptions but may in the future
+// include additional fields.
 type Config struct {
 	// Default options that can be overridden by command line
-	CoreFormatOptions `yaml:",inline"`
+	ConfigurableOptions `yaml:",inline"`
 }
 
 // LoadConfig loads configuration from a YAML file

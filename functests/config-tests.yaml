@@ -63,15 +63,6 @@ tests:
         <identifier name="hello" />
       </unit>
 
-  - name: "Command line can override config file use-classifier"
-    command: "{command} --config config-test-files/with-classifier.yaml --format xml --use-classifier="
-    input: |
-      hello
-    expected_output: |
-      <unit>
-        <identifier name="hello" />
-      </unit>
-
   - name: "Invalid config file path gives error"
     command: "{command} --config nonexistent-config.yaml --format xml"
     input: |

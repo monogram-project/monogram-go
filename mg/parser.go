@@ -24,7 +24,7 @@ type Parser struct {
 	Idents        map[string]HowIdentsAreUsed
 }
 
-func NewParser(init_token *Token, coreOptions *CoreFormatOptions) *Parser {
+func NewParser(init_token *Token, coreOptions *ConfigurableOptions) *Parser {
 	return &Parser{
 		currentToken:  init_token,
 		UnglueOption:  &Token{Type: Identifier, SubType: IdentifierVariable, Text: coreOptions.DefaultLabel},
@@ -1106,7 +1106,7 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 	columnOffset := subToken.Span.StartColumn - 1
 	p_opts := &ParserOptions{
 		colOffset: columnOffset,
-		CoreFormatOptions: CoreFormatOptions{
+		ConfigurableOptions: ConfigurableOptions{
 			DefaultLabel: p.UnglueOption.Text,
 			IncludeSpans: p.IncludeSpans,
 			Decimal:      p.Decimal,
@@ -1126,7 +1126,7 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 	return expressionNode, nil
 }
 
-func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOptions) ([]*Node, error) {
+func parseTokensToNodes(initToken *Token, limit bool, coreOptions *ConfigurableOptions) ([]*Node, error) {
 	parser := NewParser(initToken, coreOptions)
 	nodes := []*Node{}
 	for parser.hasNext() {
@@ -1149,7 +1149,7 @@ func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOpt
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreFormatOptions, externalClassifier *ExternalClassifier) ([]*Node, Span, error) {
+func parseToASTArray(input string, limit bool, colOffset int, coreOptions *ConfigurableOptions, externalClassifier *ExternalClassifier) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
 	initToken, span, terr := tokenizeInput(input, colOffset, externalClassifier)
 	if terr != nil {

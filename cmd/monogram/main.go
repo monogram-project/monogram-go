@@ -125,8 +125,8 @@ var availableFormatNames = func() []string {
 
 func parseToAST(input string, foptions *mg.FormatOptions, externalClassifier *mg.ExternalClassifier) (*mg.Node, error) {
 	p_opts := &mg.ParserOptions{
-		CoreFormatOptions:  foptions.CoreFormatOptions,
-		ExternalClassifier: externalClassifier,
+		ConfigurableOptions: foptions.ConfigurableOptions,
+		ExternalClassifier:  externalClassifier,
 	}
 	return p_opts.ParseToAST(input, foptions.Input, foptions.Limit)
 }
@@ -137,7 +137,7 @@ func main() {
 		Input:  "",
 		Output: "",
 		Limit:  false,
-		CoreFormatOptions: mg.CoreFormatOptions{
+		ConfigurableOptions: mg.ConfigurableOptions{
 			Format:       "",
 			Indent:       2,
 			DefaultLabel: "_",

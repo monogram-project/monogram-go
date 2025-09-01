@@ -1362,123 +1362,59 @@ func isClosingQuoteChar(r rune) bool {
 func (t *Tokenizer) markFormSurroundTokens() {
 	ident_exists := make(map[string]bool)
 	is_formend := make(map[string]bool)
-	// FormEnd - Are we deciding statically or dynamically?
-	if t.TokenClassifiers == nil || t.TokenClassifiers.FormEndRegexTable == nil {
-		// Dynamic classification
-		// Collect all identifiers.
-		for _, token := range t.tokens {
-			if token.Type == Identifier {
-				ident_exists[token.Text] = true
-			}
-		}
-		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
-				continue
-			}
-			if strings.HasPrefix(token.Text, "end") {
-				stem := token.Text[3:]
-				if ident_exists[stem] {
-					token.SubType = IdentifierFormEnd
-					is_formend[token.Text] = true
-				}
-			}
-		}
-	} else {
-		// Static classification
-		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
-				continue
-			}
-			if token.Type == Identifier && t.TokenClassifiers.MatchesFormEnd(token.Text) {
-				token.SubType = IdentifierFormEnd
-				is_formend[token.Text] = true
-			}
-		}
-	}
-	// FormStart - Are we deciding statically or dynamically?
-	if t.TokenClassifiers == nil || t.TokenClassifiers.FormStartRegexTable == nil {
-		// Dynamic classification
-		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
-				continue
-			}
-			if !strings.HasPrefix(token.Text, "end") && is_formend["end"+token.Text] {
-				token.SubType = IdentifierFormStart
-			}
-		}
-	} else {
-		// Static classification
-		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
-				continue
-			}
-			if token.Type == Identifier && t.TokenClassifiers.MatchesFormStart(token.Text) {
-				token.SubType = IdentifierFormStart
-			}
-		}
-	}
-}
 
-func (t *Tokenizer) markFormPrefixTokens() {
-	// Are we deciding statically or dynamically?
-	if t.TokenClassifiers == nil || t.TokenClassifiers.FormPrefixRegexTable == nil {
-		// Dynamic classification
-		is_prefix := make(map[string]bool)
-		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
-				continue
-			}
-			if is_prefix[token.Text] {
-				token.SubType = IdentifierFormPrefix
-			} else {
-				next := token.NextToken
-				if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
-					token.SubType = IdentifierFormPrefix
-					is_prefix[token.Text] = true
-				}
-			}
+	// FormEnd
+	// Collect all identifiers.
+	for _, token := range t.tokens {
+		if token.Type == Identifier {
+			ident_exists[token.Text] = true
 		}
-	} else {
-		// Static classification
-		for _, token := range t.tokens {
-			if token.Type != Identifier || token.SubType != IdentifierUnclassified {
-				continue
-			}
-			if token.Type == Identifier && t.TokenClassifiers.MatchesFormPrefix(token.Text) {
-				token.SubType = IdentifierFormPrefix
-			}
-		}
-	}
-}
-
-func (t *Tokenizer) markOtherTokens() {
-	if t.TokenClassifiers == nil {
-		return
 	}
 	for _, token := range t.tokens {
 		if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 			continue
 		}
-
-		// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
-		if t.TokenClassifiers.MatchesCompoundLabel(token.Text) {
-			token.SubType = IdentifierCompoundLabel
-			continue // Skip further processing for this token
+		if strings.HasPrefix(token.Text, "end") {
+			stem := token.Text[3:]
+			if ident_exists[stem] {
+				token.SubType = IdentifierFormEnd
+				is_formend[token.Text] = true
+			}
 		}
+	}
 
-		// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
-		if t.TokenClassifiers.MatchesSimpleLabel(token.Text) {
-			token.SubType = IdentifierSimpleLabel
-			continue // Skip further processing for this token
+	// FormStart
+	for _, token := range t.tokens {
+		if token.Type != Identifier || token.SubType != IdentifierUnclassified {
+			continue
 		}
+		if !strings.HasPrefix(token.Text, "end") && is_formend["end"+token.Text] {
+			token.SubType = IdentifierFormStart
+		}
+	}
+}
 
+func (t *Tokenizer) markFormPrefixTokens() {
+	is_prefix := make(map[string]bool)
+	for _, token := range t.tokens {
+		if token.Type != Identifier || token.SubType != IdentifierUnclassified {
+			continue
+		}
+		if is_prefix[token.Text] {
+			token.SubType = IdentifierFormPrefix
+		} else {
+			next := token.NextToken
+			if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
+				token.SubType = IdentifierFormPrefix
+				is_prefix[token.Text] = true
+			}
+		}
 	}
 }
 
 func (t *Tokenizer) markReservedTokens() *MonogramError {
 	t.markFormPrefixTokens()
 	t.markFormSurroundTokens()
-	t.markOtherTokens()
 	return nil
 }
 
