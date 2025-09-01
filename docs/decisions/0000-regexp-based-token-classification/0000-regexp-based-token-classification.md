@@ -39,9 +39,30 @@ classifier approach was adopted instead.
 chose to delegate classification to external programs via the `--use-classifier`
 flag, providing full flexibility for classification logic.
 
-**Benefits**:
-- **Full Flexibility**: External classifiers can use any language, algorithms, or techniques for classification
-- **Extensibility**: Classification logic can evolve independently of monogram releases
+The protocol for an external classifier was deliberately kept simple. A 
+classifier accepts a series of tokens, one token per line. And, for each input
+token, the tool generates a line starting with a one-character classification.
+
+- `S` - Start token (form start, e.g., `def`, `if`, `while`)
+- `E` - End token (form end, e.g., `end`, `endif`, `endwhile`)
+- `C` - Compound token (multi-part constructs)
+- `L` - Label token (identifiers used as labels)
+- `P` - Prefix token (operators that come before their operand)
+- `O` - Operator token (infix, postfix operators)
+- `V` - Variable token (default for unclassified identifiers)
+
+Form-start tokens and operator tokens are followed by additional information:
+
+- For start tokens, the output is followed by the possible matching end tokens:
+  e.g. `if` might map into `S end endif`
+- Operators tokens are followed by their prefix, infix and postfix
+  precedences. Note that 0 indicates that they don't have that role.
+  e.g. `O 5 15 0` means an operator which can be used in prefix and
+  infix roles but not postfix roles.
+
+Note that a classifier may buffer up all the input before generate any output -
+or equally may generate output in lockstep with the input. 
+
 
 ## Architecture Overview
 
@@ -53,74 +74,17 @@ is used when `--use-classifier` is not specified:.
 **External Classification**: Classification of identifiers and signs is
 delegated to external programs when `--use-classifier` is specified.
 
-The protocol is described in 
-
-### Configuration Integration
-
-**Command-Line Flag**: 
-```go
-type FormatOptions struct {
-    UseClassifier string  // External classifier command
-    // ... other options
-}
-```
-
-**Config File Support**:
-```yaml
-option-use-classifier: "python classifier.py"
-```
-
-**Validation**: Empty classifier command is treated as an error when explicitly provided:
-```bash
-monogram --use-classifier=""  # Error: command required
-```
-
-### Implementation Details
-
-1. **Flag Integration**: The `--use-classifier` flag is integrated into the main `FormatOptions` structure and config system
-
-2. **External Process Management**: When specified, an external classifier process is spawned and managed for the duration of tokenization
-
-3. **Token Communication**: Tokens are sent to the external classifier, which returns classification decisions
-
-4. **Fallback Behavior**: When no external classifier is specified, the system uses built-in automatic classification rules
-
-## Trade-offs Made
-
-**Flexibility vs Simplicity**: Chose external process complexity over the limitations of regex patterns. While external processes add operational complexity, they provide unlimited flexibility for classification logic.
-
-**Arbitrary Patterns vs Sophisticated Logic**: Moved away from potentially arbitrary regex patterns toward user-defined classification logic that can be as sophisticated as needed.
-
-**Built-in vs External**: Accepted the overhead of external processes in exchange for keeping the core system simple and allowing classification to evolve independently.
-
-**Configuration Complexity vs Implementation Power**: Traded complex regex configuration for the power to implement any classification approach in any language.
-
-## Removed Components
-
-The following regex-based classification components were removed:
-
-- `TokenClassifiers` and `TokenClassifiersCompiled` structures
-- `simple-label-regex`, `compound-label-regex`, `form-prefix-regex` patterns
-- `form-start-regex`, `form-end-regex`, `form-surround-match` patterns  
-- Complex backreference emulation logic
-- `regexptable` dependency and compilation logic
-
-These were replaced with simple external classifier delegation.
 
 ## Migration Impact
 
-**Existing Functionality**: All existing automatic classification behavior is preserved when no `--use-classifier` flag is provided.
+**Existing Functionality**: All existing automatic classification behavior is
+preserved when no `--use-classifier` flag is provided.
 
-**New Capability**: Users can now specify external classification programs for advanced use cases.
+**Provided Classification**: For many scenarios the provided `re-classify` is
+more than adequate but still easy to configure.
 
-**Simplification**: The core codebase is significantly simpler without the complex regex pattern matching system.
-
-## Future Considerations
-
-- External classifiers can be written in any language and use any classification approach
-- Standard classifier implementations could be provided as examples
-- Classification protocols could be standardized for interoperability
-- Performance optimizations could include classifier process reuse across multiple files
+**New Capability**: But users can now write their own external classification
+programs for advanced use cases.
 
 ## Additional Notes
 
