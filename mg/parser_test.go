@@ -6,7 +6,7 @@ import (
 )
 
 func getTokens(input string) (*Token, error) {
-	initToken, _, err := tokenizeInput(input, 0, nil, nil)
+	initToken, _, err := tokenizeInput(input, 0, nil)
 	if err != nil {
 		return nil, fmt.Errorf("tokenizeInput error: %s", err.Message)
 	}
@@ -24,7 +24,7 @@ func getParser(input string) (*Parser, error) {
 		Decimal:       false,
 		CheckLiterals: true,
 	}
-	return NewParser(initToken, coreOptions, &TokenClassifiersCompiled{}), nil
+	return NewParser(initToken, coreOptions), nil
 }
 
 func TestParsePrefix0(t *testing.T) {

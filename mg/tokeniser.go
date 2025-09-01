@@ -12,28 +12,26 @@ import (
 )
 
 type Tokenizer struct {
-	input            string                    // The input string to tokenize
-	tokens           []*Token                  // The array of tokens generated
-	lineNo           int                       // Current line number
-	colNo            int                       // Current column number
-	pos              int                       // Current byte position in the input
-	NewlineSeen      bool                      // New field to indicate if a newline has been seen
-	markStack        []int                     // Stack of position markers
-	lineNoStack      []int                     // Array to store line numbers for each token
-	lineColStack     []int                     // Array to store column numbers for each token
-	TokenClassifiers *TokenClassifiersCompiled // Token classification patterns
+	input        string   // The input string to tokenize
+	tokens       []*Token // The array of tokens generated
+	lineNo       int      // Current line number
+	colNo        int      // Current column number
+	pos          int      // Current byte position in the input
+	NewlineSeen  bool     // New field to indicate if a newline has been seen
+	markStack    []int    // Stack of position markers
+	lineNoStack  []int    // Array to store line numbers for each token
+	lineColStack []int    // Array to store column numbers for each token
 }
 
 // Create a new Tokenizer.
-func newTokenizer(input string, classifiers *TokenClassifiersCompiled) *Tokenizer {
+func newTokenizer(input string) *Tokenizer {
 	return &Tokenizer{
-		input:            input,
-		tokens:           []*Token{},
-		lineNo:           1,
-		colNo:            1,
-		pos:              0,
-		NewlineSeen:      false,
-		TokenClassifiers: classifiers,
+		input:       input,
+		tokens:      []*Token{},
+		lineNo:      1,
+		colNo:       1,
+		pos:         0,
+		NewlineSeen: false,
 	}
 }
 
@@ -1482,107 +1480,6 @@ func (t *Tokenizer) markReservedTokens() *MonogramError {
 	t.markFormSurroundTokens()
 	t.markOtherTokens()
 	return nil
-
-	// ident_exists := make(map[string]bool)
-	// is_reserved := make(map[string]bool)
-
-	// // Collect all identifiers.
-	// for _, token := range t.tokens {
-	// 	if token.Type == Identifier {
-	// 		ident_exists[token.Text] = true
-	// 	}
-	// }
-
-	// // Classify identifiers that can be independently classified.
-	// for n, token := range t.tokens {
-	// 	if token.Type != Identifier {
-	// 		continue
-	// 	}
-	// 	if t.TokenClassifiers != nil {
-
-	// 		// Classify as a IdentifierCompoundLabel if compound-label-regex is specified.
-	// 		if t.TokenClassifiers.CompoundLabelRegexCompiled != nil {
-	// 			if t.TokenClassifiers.CompoundLabelRegexCompiled.MatchString(token.Text) {
-	// 				token.SubType = IdentifierCompoundLabel
-	// 				continue // Skip further processing for this token
-	// 			}
-	// 		}
-
-	// 		// Classify as a IdentifierSimpleLabel if simple-label-regex is specified.
-	// 		if t.TokenClassifiers.SimpleLabelRegexCompiled != nil {
-	// 			if t.TokenClassifiers.SimpleLabelRegexCompiled.MatchString(token.Text) {
-	// 				token.SubType = IdentifierSimpleLabel
-	// 				continue // Skip further processing for this token
-	// 			}
-	// 		}
-
-	// 		// Classify as a IdentifierFormPrefix if form-prefix-regex is specified.
-	// 		if t.TokenClassifiers.FormPrefixRegexCompiled != nil {
-	// 			if t.TokenClassifiers.FormPrefixRegexCompiled.MatchString(token.Text) {
-	// 				token.SubType = IdentifierFormPrefix
-	// 				is_reserved[token.Text] = true
-	// 				continue // Skip further processing for this token
-	// 			}
-	// 		}
-
-	// 	}
-
-	// 	var next *Token
-	// 	if n < len(t.tokens)-1 {
-	// 		next = t.tokens[n+1]
-	// 	}
-	// 	if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
-	// 		if strings.HasPrefix(token.Text, "end") {
-	// 			//return fmt.Errorf("cannot use %s as an opening keyword", token.Text)
-	// 			return &MonogramError{
-	// 				Message: fmt.Sprintf("cannot use '%s' as an opening keyword", token.Text),
-	// 				Line:    token.Span.StartLine,
-	// 				Column:  token.Span.StartColumn,
-	// 			}
-	// 		}
-	// 		token.SubType = IdentifierFormPrefix
-	// 		is_reserved[token.Text] = true
-	// 	}
-	// }
-
-	// // Mark surround-form identifiers.
-	// for _, token := range t.tokens {
-	// 	if token.Type != Identifier || strings.HasPrefix(token.Text, "endend") {
-	// 		continue
-	// 	}
-	// 	if token.SubType != IdentifierVariable {
-	// 		continue // Already classified
-	// 	}
-
-	// 	starts_with_end := strings.HasPrefix(token.Text, "end")
-	// 	if t.TokenClassifiers != nil && t.TokenClassifiers.FormStartRegexCompiled != nil {
-	// 		// Use static classification
-	// 		if starts_with_end {
-	// 			stem := token.Text[3:]
-	// 			if t.TokenClassifiers.FormStartRegexCompiled.MatchString(stem) {
-	// 				token.SubType = IdentifierFormEnd
-	// 			}
-	// 		} else if t.TokenClassifiers.FormStartRegexCompiled.MatchString(token.Text) {
-	// 			token.SubType = IdentifierFormStart
-	// 		}
-	// 	} else {
-	// 		// Otherwise use dynamic classification.
-	// 		if starts_with_end {
-	// 			stem := token.Text[3:]
-	// 			if ident_exists[stem] {
-	// 				token.SubType = IdentifierFormEnd
-	// 			}
-	// 		} else if is_reserved[token.Text] {
-	// 			token.SubType = IdentifierFormStart
-	// 		} else {
-	// 			if ident_exists["end"+token.Text] {
-	// 				token.SubType = IdentifierFormStart
-	// 			}
-	// 		}
-	// 	}
-
-	// }
-	// return nil
 }
 
 // Link tokens into a singly-linked list.
@@ -1617,9 +1514,9 @@ func (t *Tokenizer) addFiniToken() *Token {
 	return endToken
 }
 
-func tokenizeInput(input string, colOffset int, classifiers *TokenClassifiersCompiled, externalClassifier *ExternalClassifier) (*Token, Span, *MonogramError) {
+func tokenizeInput(input string, colOffset int, externalClassifier *ExternalClassifier) (*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
-	tokenizer := newTokenizer(input, classifiers)
+	tokenizer := newTokenizer(input)
 
 	initToken := tokenizer.addInitToken() // Add capstone token for the start of input
 
@@ -1730,23 +1627,6 @@ func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) 
 		// Apply the classification to the token
 		if err := t.applyClassificationToToken(token, classification); err != nil {
 			return err
-		}
-	}
-
-	// Build FormSurroundMatchTable if we have form-start patterns
-	if builder != nil {
-		if t.TokenClassifiers == nil {
-			t.TokenClassifiers = &TokenClassifiersCompiled{}
-		}
-
-		var err error
-		t.TokenClassifiers.FormSurroundMatchTable, err = builder.Build(true, true) // Exact matching
-		if err != nil {
-			return &MonogramError{
-				Message: fmt.Sprintf("failed to compile form-surround-match patterns: %v", err),
-				Line:    1,
-				Column:  1,
-			}
 		}
 	}
 

@@ -25,7 +25,7 @@ func VSCodeClassifyTokens(input io.Reader, output io.Writer) {
 	if err != nil {
 		log.Fatalf("Error: Failed to read input: %v", err)
 	}
-	initToken, _, terr := tokenizeInput(string(data), 0, nil, nil)
+	initToken, _, terr := tokenizeInput(string(data), 0, nil)
 	if terr != nil {
 		jsonOutput, err := json.MarshalIndent(map[string]interface{}{
 			"error": terr, // Nest the TokenizerError under an "error" field
@@ -46,7 +46,7 @@ func VSCodeClassifyTokens(input io.Reader, output io.Writer) {
 		Decimal:       false,
 		CheckLiterals: false,
 	}
-	parseTokensToNodes(initToken, false, coreOptions, &TokenClassifiersCompiled{})
+	parseTokensToNodes(initToken, false, coreOptions)
 
 	var classifications []TokenClassification = []TokenClassification{}
 

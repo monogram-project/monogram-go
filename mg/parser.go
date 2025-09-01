@@ -22,10 +22,9 @@ type Parser struct {
 	Decimal       bool
 	CheckLiterals bool // Whether to check regex syntax.
 	Idents        map[string]HowIdentsAreUsed
-	Classifiers   *TokenClassifiersCompiled
 }
 
-func NewParser(init_token *Token, coreOptions *CoreFormatOptions, classifiers *TokenClassifiersCompiled) *Parser {
+func NewParser(init_token *Token, coreOptions *CoreFormatOptions) *Parser {
 	return &Parser{
 		currentToken:  init_token,
 		UnglueOption:  &Token{Type: Identifier, SubType: IdentifierVariable, Text: coreOptions.DefaultLabel},
@@ -33,7 +32,6 @@ func NewParser(init_token *Token, coreOptions *CoreFormatOptions, classifiers *T
 		Decimal:       coreOptions.Decimal,
 		CheckLiterals: coreOptions.CheckLiterals,
 		Idents:        make(map[string]HowIdentsAreUsed),
-		Classifiers:   classifiers,
 	}
 }
 
@@ -435,14 +433,8 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 		token := p.safePeek()
 		if token.Type == Identifier && token.SubType == IdentifierFormEnd {
 			// Check if this is a matching form-end token
-			var isMatch bool
-			if p.Classifiers != nil && p.Classifiers.FormSurroundMatchTable != nil {
-				// Use regex-based matching
-				isMatch = p.Classifiers.CheckFormStartEndMatch(formStart.Text, token.Text)
-			} else {
-				// Fall back to default "end" + formStart.Text matching
-				isMatch = token.Text == "end"+formStart.Text
-			}
+			// Use default "end" + formStart.Text matching
+			isMatch := token.Text == "end"+formStart.Text
 
 			if isMatch {
 				endLineCol = p.endLineCol()
@@ -1119,7 +1111,6 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 			IncludeSpans: p.IncludeSpans,
 			Decimal:      p.Decimal,
 		},
-		TokenClassifiersCompiled: &TokenClassifiersCompiled{}, // Empty classifiers for literal expressions
 	}
 	expressionNode, err := p_opts.ParseToAST(subToken.Text, "", true)
 	expressionNode.Name = NameInterpolate // The outer brackets can be repurposed!
@@ -1135,8 +1126,8 @@ func (p *Parser) convertLiteralExpressionStringSubToken(subToken *Token) (*Node,
 	return expressionNode, nil
 }
 
-func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOptions, classifiers *TokenClassifiersCompiled) ([]*Node, error) {
-	parser := NewParser(initToken, coreOptions, classifiers)
+func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOptions) ([]*Node, error) {
+	parser := NewParser(initToken, coreOptions)
 	nodes := []*Node{}
 	for parser.hasNext() {
 		if parser.nextIf(Punctuation, PunctuationSemicolon) != nil {
@@ -1158,15 +1149,15 @@ func parseTokensToNodes(initToken *Token, limit bool, coreOptions *CoreFormatOpt
 	return nodes, nil
 }
 
-func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreFormatOptions, classifiers *TokenClassifiersCompiled, externalClassifier *ExternalClassifier) ([]*Node, Span, error) {
+func parseToASTArray(input string, limit bool, colOffset int, coreOptions *CoreFormatOptions, externalClassifier *ExternalClassifier) ([]*Node, Span, error) {
 	// Step 1: Tokenize the input
-	initToken, span, terr := tokenizeInput(input, colOffset, classifiers, externalClassifier)
+	initToken, span, terr := tokenizeInput(input, colOffset, externalClassifier)
 	if terr != nil {
 		return nil, Span{}, fmt.Errorf("%s (line %d, column %d)", terr.Message, terr.Line, terr.Column)
 	}
 
 	// Step 2: Parse the tokens into nodes
-	nodes, err := parseTokensToNodes(initToken, limit, coreOptions, classifiers)
+	nodes, err := parseTokensToNodes(initToken, limit, coreOptions)
 	if err != nil {
 		return nil, Span{}, err
 	}

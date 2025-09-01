@@ -3,7 +3,6 @@ package mg
 type ParserOptions struct {
 	colOffset int
 	CoreFormatOptions
-	*TokenClassifiersCompiled
 	ExternalClassifier *ExternalClassifier
 }
 
@@ -16,15 +15,12 @@ func NewParserOptions() *ParserOptions {
 			Decimal:       false,
 			CheckLiterals: false,
 		},
-		TokenClassifiersCompiled: &TokenClassifiersCompiled{
-			// All fields default to nil (no regex patterns)
-		},
 	}
 }
 
 func (p_opts *ParserOptions) ParseToAST(input string, src string, limit bool) (*Node, error) {
 	// Get the array of nodes
-	nodes, span, err := parseToASTArray(input, limit, p_opts.colOffset, &p_opts.CoreFormatOptions, p_opts.TokenClassifiersCompiled, p_opts.ExternalClassifier)
+	nodes, span, err := parseToASTArray(input, limit, p_opts.colOffset, &p_opts.CoreFormatOptions, p_opts.ExternalClassifier)
 	if err != nil {
 		return nil, err
 	}

@@ -43,7 +43,7 @@ import (
 var IsBuiltForDocker = "false"
 
 // setupFlags initializes a flag set with the common flag definitions.
-func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string, useClassifier *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
+func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
 	fs.StringVarP(&options.Format, "format", "f", options.Format, "Output format xml|json|yaml|mermaid|dot")
 	fs.StringVarP(&options.Input, "input", "i", options.Input, "Input file (optional, defaults to stdin)")
 	fs.StringVarP(&options.Output, "output", "o", options.Output, "Output file (optional, defaults to stdout)")
@@ -53,11 +53,9 @@ func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string
 	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include start/end of expressions in the output")
 	fs.BoolVar(&options.Decimal, "decimal", options.Decimal, "Decode numbers integers and floats in base 10")
 	fs.BoolVar(&options.CheckLiterals, "check-literals", options.CheckLiterals, "Check regexs and other literal strings for validity")
+	fs.StringVar(&options.UseClassifier, "use-classifier", "", "External command to use for token classification")
 	if configFile != nil {
 		fs.StringVarP(configFile, "config", "c", "", "Configuration file (YAML format)")
-	}
-	if useClassifier != nil {
-		fs.StringVar(useClassifier, "use-classifier", "", "External command to use for token classification")
 	}
 	if showHelp != nil {
 		fs.BoolVarP(showHelp, "help", "h", false, "Display help information")
@@ -125,11 +123,10 @@ var availableFormatNames = func() []string {
 	return formats
 }()
 
-func parseToAST(input string, foptions *mg.FormatOptions, classifiers *mg.TokenClassifiersCompiled, externalClassifier *mg.ExternalClassifier) (*mg.Node, error) {
+func parseToAST(input string, foptions *mg.FormatOptions, externalClassifier *mg.ExternalClassifier) (*mg.Node, error) {
 	p_opts := &mg.ParserOptions{
-		CoreFormatOptions:        foptions.CoreFormatOptions,
-		TokenClassifiersCompiled: classifiers,
-		ExternalClassifier:       externalClassifier,
+		CoreFormatOptions:  foptions.CoreFormatOptions,
+		ExternalClassifier: externalClassifier,
 	}
 	return p_opts.ParseToAST(input, foptions.Input, foptions.Limit)
 }
@@ -150,7 +147,6 @@ func main() {
 	}
 
 	var configFile string
-	var useClassifier string
 	var showHelp bool
 	var classifyTokens bool
 	var showVersion bool // New variable for the --version flag
@@ -158,19 +154,16 @@ func main() {
 	openBrowserFlag := true
 
 	// Set up the main command-line flag set
-	setupFlags(pflag.CommandLine, &options, &configFile, &useClassifier, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
+	setupFlags(pflag.CommandLine, &options, &configFile, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
 
 	// Parse command-line flags
 	pflag.Parse()
 
-	// Check that --config and --use-classifier are mutually exclusive
-	if configFile != "" && useClassifier != "" {
-		log.Fatalf("Error: --config and --use-classifier options are mutually exclusive")
-	}
-
 	// Load configuration file if specified
 	var config *mg.Config
 	var err error
+	var flagsExplicitlySet map[string]bool
+
 	if configFile != "" {
 		config, err = mg.LoadConfig(configFile)
 		if err != nil {
@@ -178,17 +171,28 @@ func main() {
 		}
 
 		// Track which flags were explicitly set to avoid overriding them with config defaults
-		flagsExplicitlySet := make(map[string]bool)
+		flagsExplicitlySet = make(map[string]bool)
 		pflag.Visit(func(flag *pflag.Flag) {
 			flagsExplicitlySet[flag.Name] = true
 		})
 
 		// Apply config defaults only for flags that weren't explicitly set
 		config.ApplyConfigDefaults(&options, flagsExplicitlySet)
+	} else {
+		// Even if no config file, we need to track explicitly set flags for validation
+		flagsExplicitlySet = make(map[string]bool)
+		pflag.Visit(func(flag *pflag.Flag) {
+			flagsExplicitlySet[flag.Name] = true
+		})
+	}
+
+	// Validate use-classifier flag: if explicitly set, it cannot be empty
+	if flagsExplicitlySet["use-classifier"] && options.UseClassifier == "" {
+		log.Fatalf("Error: --use-classifier flag was provided but no command was specified")
 	}
 
 	if testPort != "" {
-		startTestServer(testPort, openBrowserFlag, &options, config, useClassifier)
+		startTestServer(testPort, openBrowserFlag, &options, config, options.UseClassifier)
 		os.Exit(0) // Exit after printing the version, cannot be reached at present.
 	}
 
@@ -239,7 +243,7 @@ func main() {
 
 	// Handle built-in formats
 	if isBuiltInFormat {
-		err := translator.translate(inputReader, outputWriter, &options, config, useClassifier)
+		err := translator.translate(inputReader, outputWriter, &options, config, options.UseClassifier)
 		if err != nil {
 			log.Fatalf("Error: Failed to translate input: %v", err)
 		}
@@ -276,29 +280,21 @@ func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string
 		return fmt.Errorf("failed to read input: %v", err)
 	}
 
-	// Get TokenClassifiersCompiled from config, or use empty if no config
-	var classifiers *mg.TokenClassifiersCompiled
+	// Create external classifier if specified
 	var externalClassifier *mg.ExternalClassifier
 
-	if useClassifier != "" {
+	if options.UseClassifier != "" {
 		// Create external classifier
 		var err error
-		externalClassifier, err = mg.NewExternalClassifier(useClassifier)
+		externalClassifier, err = mg.NewExternalClassifier(options.UseClassifier)
 		if err != nil {
 			log.Fatalf("Error creating external classifier: %v", err)
 		}
 		defer externalClassifier.Close()
-
-		// Use empty classifiers when using external classifier
-		classifiers = &mg.TokenClassifiersCompiled{}
-	} else if config != nil {
-		classifiers = config.CompiledClassifiers
-	} else {
-		classifiers = &mg.TokenClassifiersCompiled{}
 	}
 
 	// Convert the input string into an AST
-	ast, err := parseToAST(string(data), options, classifiers, externalClassifier)
+	ast, err := parseToAST(string(data), options, externalClassifier)
 	if err != nil {
 		return err
 	}
