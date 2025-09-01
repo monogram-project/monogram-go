@@ -193,7 +193,7 @@ func (ce *ClassifierEngine) BuildFormStartEndMappings(tokens []string, config *C
 	}
 
 	// Add all literal end tokens to the builder (with escaping) using -1
-	for endToken, _ := range endTokensMap {
+	for endToken := range endTokensMap {
 		// Escape the end token since it should be matched literally, not as a regex
 		escapedEndToken := regexp.QuoteMeta(endToken)
 		endTableBuilder.AddPattern(escapedEndToken, -1)

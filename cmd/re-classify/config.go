@@ -175,8 +175,3 @@ func substitutePattern(pattern string, groups []string) string {
 	}
 	return result
 }
-
-// simpleSubstitute performs simple $0 substitution (legacy function for backward compatibility)
-func simpleSubstitute(pattern, matchText string) string {
-	return strings.ReplaceAll(pattern, "$0", matchText)
-}
