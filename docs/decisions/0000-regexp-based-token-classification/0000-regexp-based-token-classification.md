@@ -1,4 +1,5 @@
-# 0000 - Regexp based token classification, 2025-08-27
+# 0000 - External Classifier Integration, 2025-09-01
+_Supersedes regexp-based classification approach from 2025-08-27_
 
 ## Issue
 
@@ -20,170 +21,111 @@ token roles based on context and syntactic markers, but explicit classification
 provides an alternative approach that can simplify the surface syntax while
 giving precise control over recognized syntax.
 
-## Factors
+## Decision Evolution
 
-- **Performance**: Regex matching needs to be efficient as it's applied to every identifier token
-- **Configuration flexibility**: Patterns should be specifiable in easy to understand configuration files e.g. JSON, YAML
-- **Regex engine limitations**: Go's standard `regexp` package lacks backreferences, which are needed for paired constructs, but is significantly more efficient than general alternatives
-- **Maintainability**: The solution should be clean and avoid complex workarounds where possible
-- **Backwards compatibility**: Existing behaviour is preserved
-- **Classification override**: Manual patterns should optionally override automatic classifiers for matching identifiers
-- **Syntactic cleanliness**: Enable syntax without required `:` and `!` markers when explicit classification is used
-- **Language constraint**: Provide precise control over which identifiers are recognized for each syntactic role
-- **Pattern types needed**:
-  - **Simple Labels**: `simple-label-regex` - Identifies simple labels (e.g., "if", "else", "while")
-  - **Compound Labels**: `compound-label-regex` - Identifies compound labels (e.g., "else-if", "else-while")
-  - **Prefix Forms**: `form-prefix-regex` - Identifies prefix keywords (e.g., "return", "break", "continue")
-  - **Surround Forms** (with three sub-classifiers):
-    - `form-start-regex` - Identifies opening keywords (e.g., "function", "class", "struct")
-    - `form-end-regex` - Identifies closing keywords (e.g., "endfunction", "endclass", "endstruct")
-    - `form-surround-match` - Matches paired constructs (e.g., "if endif", "while endwhile", "function endfunction")
+**Initial Approach (2025-08-27)**: A regex-based classification system was
+designed and fully implemented, featuring multiple pattern types
+(`simple-label-regex`, `compound-label-regex`, `form-prefix-regex`, etc.) with
+sophisticated matching rules and backreference emulation.
 
-## Key Decisions
+**Pivot Decision (2025-09-01)**: After implementation and evaluation, the regex
+approach was determined to be somewhat arbitrary and potentially limiting for
+users with sophisticated classification needs. A more flexible external
+classifier approach was adopted instead.
 
-### Decision 1: Use Go's Built-in Regexp Package
+## Key Decision: External Classifier Architecture
 
-**Rationale**: Despite considering many alternatives, we chose to stick with
-Go's built-in `regexp` package for two critical reasons:
+**Rationale**: Rather than constraining users to regex pattern matching, we
+chose to delegate classification to external programs via the `--use-classifier`
+flag, providing full flexibility for classification logic.
 
-1. **Exposed Syntax**: Any regex solution must expose a concrete regexp syntax
-   to users in configuration files. Using Go's standard syntax ensures
-   familiarity and consistency.
+**Benefits**:
+- **Full Flexibility**: External classifiers can use any language, algorithms, or techniques for classification
+- **Extensibility**: Classification logic can evolve independently of monogram releases
 
-2. **Performance**: Performance is critical for tokenization, and the RE2 engine
-   underlying Go's regexp package provides predictable, linear-time performance.
+## Architecture Overview
 
-**Future Consideration**: A hybrid solution could be explored in the future, as
-`regexptable` supports pluggable regexp engines, potentially allowing fallback
-to more feature-rich engines when needed.
+### Core Grammar Preservation
 
-### Decision 2: Piecemeal Override Architecture
+**Essential Syntactic Rules**: Monogram's classification by discovery remains
+is used when `--use-classifier` is not specified:.
 
-**Rationale**: Manual configuration was designed to piecemeal override the
-automatic classifiers for each role, rather than wholesale replacement of the
-classification system.
+**External Classification**: Classification of identifiers and signs is
+delegated to external programs when `--use-classifier` is specified.
 
-**Implementation Challenge**: This required ensuring that late-stage automated
-classification of labels was properly disabled when manual label classification
-was enabled. The system needed to check for manual patterns first and only fall
-back to automatic classification when no manual patterns matched.
+The protocol is described in 
 
-**Benefit**: This approach preserves the existing automatic classification logic
-while providing precise control over specific identifier roles.
+### Configuration Integration
 
-### Decision 3: Redundant but Clear Surround-Forms Representation
+**Command-Line Flag**: 
+```go
+type FormatOptions struct {
+    UseClassifier string  // External classifier command
+    // ... other options
+}
+```
 
-**Rationale**: For representing the start/end matching rules of surround-forms,
-we prioritized ease of explanation over eliminating redundancy.
+**Config File Support**:
+```yaml
+option-use-classifier: "python classifier.py"
+```
 
-**Design Choice**: Rather than trying to eliminate the redundancy between
-separate start/end rules and matching rules, we chose to provide both:
-- `form-start-regex` and `form-end-regex` for individual pattern matching  
-- `form-surround-match` for paired construct validation
-
-**Technical Challenge**: This approach required solving the issue of RE2 lacking
-backreferences. We implemented manual backreference emulation by using capture
-groups and verifying that all captured groups are equal.
-
-**Benefit**: The redundant representation makes the configuration more intuitive
-and self-documenting, even though it requires slightly more configuration.
+**Validation**: Empty classifier command is treated as an error when explicitly provided:
+```bash
+monogram --use-classifier=""  # Error: command required
+```
 
 ### Implementation Details
 
-1. **Pattern Compilation**: All regex patterns are compiled at startup using `regexptable.RegexpTableBuilder` for efficient runtime matching
+1. **Flag Integration**: The `--use-classifier` flag is integrated into the main `FormatOptions` structure and config system
 
-2. **Configuration Structure**:
-   ```yaml
-   # Simple Labels classifier
-   simple-label-regex: ["if", "else", "while", "for", "case", "default"]
-   
-   # Compound Labels classifier  
-   compound-label-regex: ["else-if", "else-while"]
-   
-   # Prefix Forms classifier
-   form-prefix-regex: ["return", "break", "continue"]
-   
-   # Surround Forms classifier (three sub-classifiers)
-   form-start-regex: ["function", "class", "struct"]       # form-starts
-   form-end-regex: ["endfunction", "endclass", "endstruct"] # form-ends
-   form-surround-match: ["if endif", "while endwhile", "function endfunction"] # start/end matches
-   ```
+2. **External Process Management**: When specified, an external classifier process is spawned and managed for the duration of tokenization
 
-3. **Backreference Emulation**: For `form-surround-match` patterns, we use capture groups and manually verify that all captured groups are equal, effectively emulating backreferences:
-   ```go
-   func (tcc *TokenClassifiersCompiled) MatchesFormSurroundPattern(text string) bool {
-       _, captures, ok := tcc.FormSurroundMatchTable.TryLookup(text)
-       if ok && len(captures) > 1 {
-           // All captured matches must be equal
-           for n, m := range captures {
-               if n == 0 { continue }
-               if m != captures[0] { return false }
-           }
-       }
-       return ok
-   }
-   ```
+3. **Token Communication**: Tokens are sent to the external classifier, which returns classification decisions
 
-4. **Classification Logic**: The system provides four main classifiers that completely override automatic classification when matches occur:
+4. **Fallback Behavior**: When no external classifier is specified, the system uses built-in automatic classification rules
 
-   **During Tokenization (Initial Classification)**:
-   - **Prefix Forms**: Manual `form-prefix-regex` patterns → `IdentifierFormPrefix` (overrides automatic)
-   - **Surround Forms - Form Ends**: Manual `form-end-regex` patterns → `IdentifierFormEnd` (overrides automatic)
-   - **Surround Forms - Form Starts**: Manual `form-start-regex` patterns → `IdentifierFormStart` (overrides automatic)
-   - Automatic classification applies only when no manual patterns match
+## Trade-offs Made
 
-   **During Parsing (Context-Aware Classification)**:
-   - **Simple Labels**: Manual `simple-label-regex` patterns → `IdentifierSimpleLabel` (overrides automatic)
-   - **Compound Labels**: Manual `compound-label-regex` patterns → `IdentifierCompoundLabel` (overrides automatic)
-   - **Surround Forms - Start/End Matching**: `form-surround-match` patterns validate paired constructs
-   - Automatic context-based classification applies only when no manual patterns match
-   - Fallback → `IdentifierVariable`
+**Flexibility vs Simplicity**: Chose external process complexity over the limitations of regex patterns. While external processes add operational complexity, they provide unlimited flexibility for classification logic.
 
-5. **Performance Optimization**: 
-   - Patterns are pre-compiled into efficient lookup tables
-   - Exact string matching where possible
-   - Early termination on first match
+**Arbitrary Patterns vs Sophisticated Logic**: Moved away from potentially arbitrary regex patterns toward user-defined classification logic that can be as sophisticated as needed.
 
-### Trade-offs Made
+**Built-in vs External**: Accepted the overhead of external processes in exchange for keeping the core system simple and allowing classification to evolve independently.
 
-**Explicit vs Automatic**: Chose to provide explicit classification as an
-alternative to automatic classification with syntactic markers. This enables
-cleaner syntax at the cost of requiring configuration.
+**Configuration Complexity vs Implementation Power**: Traded complex regex configuration for the power to implement any classification approach in any language.
 
-**Manual vs Automatic**: Enhanced rather than replaced the existing automatic
-classification system. Manual patterns provide explicit control while preserving
-the intelligent automatic behavior for cases where syntactic markers are
-acceptable.
+## Removed Components
 
-**Performance vs Features**: Chose performance-optimized approach over full
-regex feature support. The backreference emulation is a controlled compromise
-that handles the specific use case needed.
+The following regex-based classification components were removed:
 
-**Simplicity vs Flexibility**: The exact matching approach limits some regex
-features but provides predictable performance and simpler debugging.
+- `TokenClassifiers` and `TokenClassifiersCompiled` structures
+- `simple-label-regex`, `compound-label-regex`, `form-prefix-regex` patterns
+- `form-start-regex`, `form-end-regex`, `form-surround-match` patterns  
+- Complex backreference emulation logic
+- `regexptable` dependency and compilation logic
 
-**Dependencies vs Features**: Avoided heavy external regex dependencies in favor
-of a lightweight solution with manual feature emulation where needed.
+These were replaced with simple external classifier delegation.
 
-### Future Considerations
+## Migration Impact
 
-- A `regexp2re2` library could provide the ideal solution: full regex parsing
-  with intelligent fallback to RE2 for performance
-- Current solution is adequate for monogram's needs but may need revisiting for
-  more complex regex requirements
-- Pattern compilation could be cached to disk for very large pattern sets
+**Existing Functionality**: All existing automatic classification behavior is preserved when no `--use-classifier` flag is provided.
+
+**New Capability**: Users can now specify external classification programs for advanced use cases.
+
+**Simplification**: The core codebase is significantly simpler without the complex regex pattern matching system.
+
+## Future Considerations
+
+- External classifiers can be written in any language and use any classification approach
+- Standard classifier implementations could be provided as examples
+- Classification protocols could be standardized for interoperability
+- Performance optimizations could include classifier process reuse across multiple files
 
 ## Additional Notes
 
-- The implementation provides explicit classification as an alternative to
-  syntactic marker-based automatic classification
-- Enables cleaner syntax by eliminating the need for `:` and `!` markers when
-  explicit patterns are used
-- Provides precise language constraint capabilities for defining exactly which
-  identifiers have special meaning
-- All existing functionality is preserved - the system gracefully falls back to
-  automatic classification when no manual patterns are specified
-- The solution is well-tested and handles edge cases like malformed patterns
-  gracefully
-- Configuration is entirely optional - systems work exactly as before when no
-  regex patterns are provided
+- The external classifier approach provides maximum flexibility while keeping the core system simple
+- All built-in automatic classification rules are preserved for backward compatibility
+- The `--use-classifier` flag is optional - systems work exactly as before when not specified
+- External classifier commands are validated to prevent empty command errors
+- The approach enables sophisticated classification without adding complexity to the core tokenizer

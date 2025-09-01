@@ -1,6 +1,8 @@
 # re-classify Tool
 
-The `re-classify` tool is a command-line utility that classifies tokens based on configurable regular expression patterns. It reads tokens from standard input and outputs classification codes for each token.
+The `re-classify` tool is a command-line utility that classifies tokens based on
+configurable regular expression patterns. It reads tokens from standard input
+and outputs classification codes for each token.
 
 ## Usage
 
@@ -14,17 +16,18 @@ go build -o re-classify ./cmd/re-classify/
 ./re-classify <config.yaml>
 ```
 
-The tool reads tokens from standard input, **one token per line**, and outputs a single classification character for each token.
+The tool reads tokens from standard input, **one token per line**, and outputs a
+single classification character for each token.
 
 ### Example
 
 ```bash
-printf "if\nvariable\nend\n" | go run ./cmd/re-classify/ config.yaml
+printf "if\nvariable\nend\n" | re-classify config.yaml
 ```
 
 Or using echo with newlines:
 ```bash
-echo -e "if\nvariable\nend" | go run ./cmd/re-classify/ config.yaml
+echo -e "if\nvariable\nend" | re-classify config.yaml
 ```
 
 ## Classification Codes
@@ -210,7 +213,7 @@ operator-regexp:
 Create a simple test with the existing test configuration (one token per line):
 
 ```bash
-printf "if\nvariable\nendif\n" | go run ./cmd/re-classify/ ./cmd/re-classify/test-config.yaml
+printf "if\nvariable\nendif\n" | re-classify ./cmd/re-classify/test-config.yaml
 ```
 
 Expected output:
@@ -225,7 +228,9 @@ This shows:
 - `variable` classified as Variable (`V`)  
 - `endif` classified as End token (`E`)
 
-**Important**: The tool expects **one token per line** on standard input, not space-separated tokens. The number of output lines will always match the number of input lines.
+**Important**: The tool expects **one token per line** on standard input, not
+space-separated tokens. The number of output lines will always match the number
+of input lines.
 
 ## Implementation Notes
 
