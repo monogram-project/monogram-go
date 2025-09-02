@@ -176,34 +176,22 @@ operator-regexp:
 ```
 
 
-## Example 
+## Example
+
+In this simple example we pair `if`/`fi` together and `while`/`done` together
+and make `do` a simple label.
 
 ### Configuration
 
 ```yaml
 surround-regexp:
-  - start: "def"
-    endings: ["enddef", "end"]
-  - start: "if|while"
-    endings: ["end$0", "$0_end"]
-  - start: "begin"
-    end: "end"
-
-form-prefix-regexp:
-  - "not"
+  - start: if
+    endings: fi
+  - start: while
+    endings: done
 
 simple-label-regexp:
-  - "[a-z]+:"
-
-operator-regexp:
-  - pattern: "="
-    prefix-prec: 0
-    infix-prec: 1
-    postfix-prec: 0
-  - pattern: "\\+\\+"
-    prefix-prec: 100
-    infix-prec: 0
-    postfix-prec: 75
+  - do
 ```
 
 ### Testing

@@ -14,7 +14,8 @@ For each token, the tool outputs a line starting with a single-character code:
 - `L` - Label token (identifiers used as labels)
 - `P` - Prefix token (operators that come before their operand)
 - `O` - Operator token (infix, postfix operators)
-- `V` - Variable token (default for unclassified identifiers)
+- `V` - Variable token (identifiers used as variables)
+- `U` - Unclassified (continue with the initially assigned role)
 
 Form-start tokens and operator tokens are followed by additional information:
 

@@ -1625,6 +1625,9 @@ func (t *Tokenizer) applyClassificationToToken(token *Token, classification *Ext
 			Column:  token.Span.StartColumn,
 		}
 
+	case "U": // Unclassified - leave token unchanged
+		// Do nothing - token remains as it was originally classified
+
 	default:
 		return &MonogramError{
 			Message: fmt.Sprintf("unknown classification role from external classifier: %s", classification.Role),

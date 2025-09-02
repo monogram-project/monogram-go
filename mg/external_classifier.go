@@ -23,7 +23,7 @@ type ExternalClassifier struct {
 
 // ExternalTokenClassification represents the classification result from the external classifier
 type ExternalTokenClassification struct {
-	Role            string   // V, P, S, E, O, L, C, X
+	Role            string   // V, P, S, E, O, L, C, X, U
 	EndTokens       []string // For S (form-start) tokens, possible end tokens
 	PrefixPrec      uint16   // For O (operator) tokens, prefix precedence (0 = not applicable)
 	InfixPrec       uint16   // For O (operator) tokens, infix precedence (0 = not applicable)
@@ -226,6 +226,11 @@ func parseClassificationResponse(response string) (*ExternalTokenClassification,
 			return nil, fmt.Errorf("exception classification must specify reason, got: %s", response)
 		}
 		classification.ExceptionReason = strings.Join(fields[1:], " ")
+
+	case "U": // Unclassified - leave token unchanged, no additional fields
+		if len(fields) != 1 {
+			return nil, fmt.Errorf("unclassified role should have no additional fields, got: %s", response)
+		}
 
 	default:
 		return nil, fmt.Errorf("unknown classification role: %s", fields[0])

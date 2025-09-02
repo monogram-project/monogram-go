@@ -27,15 +27,11 @@ type OperatorConfig struct {
 
 // ClassifierConfig represents the configuration structure for the re-classify tool
 type ClassifierConfig struct {
-	// New surround regex patterns with substitution
-	SurroundRegexp []SurroundRegexpConfig `yaml:"surround-regexp,omitempty"`
-
-	// Legacy regex patterns for identifier classification (for backward compatibility)
-	FormStartRegexp     []string `yaml:"form-start-regexp,omitempty"`
-	FormEndRegexp       []string `yaml:"form-end-regexp,omitempty"`
-	FormPrefixRegexp    []string `yaml:"form-prefix-regexp,omitempty"`
-	SimpleLabelRegexp   []string `yaml:"simple-label-regexp,omitempty"`
-	CompoundLabelRegexp []string `yaml:"compound-label-regexp,omitempty"`
+	SurroundRegexp      []SurroundRegexpConfig `yaml:"surround-regexp,omitempty"`
+	FormPrefixRegexp    []string               `yaml:"form-prefix-regexp,omitempty"`
+	SimpleLabelRegexp   []string               `yaml:"simple-label-regexp,omitempty"`
+	CompoundLabelRegexp []string               `yaml:"compound-label-regexp,omitempty"`
+	VariableRegExp      []string               `yaml:"variable-regexp,omitempty"`
 
 	// Operator configurations with precedence values
 	OperatorRegexp []OperatorConfig `yaml:"operator-regexp,omitempty"`
@@ -63,6 +59,7 @@ type CompiledClassifierConfig struct {
 	FormPrefixRegexpTable    *regexptable.RegexpTable[bool]
 	SimpleLabelRegexpTable   *regexptable.RegexpTable[bool]
 	CompoundLabelRegexpTable *regexptable.RegexpTable[bool]
+	VariableRegexpTable      *regexptable.RegexpTable[bool]
 	OperatorRegexpTable      *regexptable.RegexpTable[CompiledOperatorConfig]
 }
 
@@ -137,6 +134,20 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 		compiled.CompoundLabelRegexpTable, err = builder.Build(true, true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to build compound-label-regexp table: %w", err)
+		}
+	}
+
+	// Build variable-regexp table
+	if len(cc.VariableRegExp) > 0 {
+		builder := regexptable.NewRegexpTableBuilder[bool]()
+		for _, pattern := range cc.VariableRegExp {
+			if pattern != "" {
+				builder.AddPattern(pattern, true)
+			}
+		}
+		compiled.VariableRegexpTable, err = builder.Build(true, true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build variable-regexp table: %w", err)
 		}
 	}
 
