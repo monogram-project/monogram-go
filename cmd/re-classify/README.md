@@ -1,38 +1,45 @@
 # re-classify Tool
 
-The `re-classify` tool is a command-line utility that classifies tokens based on
-configurable regular expression patterns. It reads tokens from standard input
-and outputs classification codes for each token.
+The `re-classify` tool is a command-line utility that classifies tokens using on
+a configuration file based on regular expression patterns. It is designed to
+implement Monogram's stripped down external classification protocol, in which
+tokens are read, one per line, from the standard input and their 1-line
+classification is written to the standard output.
+
+**Useful tips**: The number of output lines will always match the number
+of input lines. You will need to provide the whole of the input before any
+output is generated.
+
+
+## Installation
+
+The easiest way to install is via the `go install` command. This will copy to
+`$GOBIN` or `$HOME/go/bin` depending on what you have defined.
+```
+go install ./cmd/re-classify
+```
 
 ## Usage
 
-```bash
-go run ./cmd/re-classify/ <config.yaml>
-```
+The `re-classify` command takes a single argument, which is the name of a
+configuration file, whose format is described below.
 
-Or build and run:
 ```bash
-go build -o re-classify ./cmd/re-classify/
-./re-classify <config.yaml>
+re-classify [OPTIONS] FILE < STDIN > STDOUT
 ```
 
 The tool reads tokens from standard input, **one token per line**, and outputs a
-single classification character for each token.
+single classification character for each token to the standard output.
 
-### Example
+The ony supported options are `--help` and `--check`. The `--check` option
+verifies the syntax of the configuration file and exits.
 
-```bash
-printf "if\nvariable\nend\n" | re-classify config.yaml
-```
 
-Or using echo with newlines:
-```bash
-echo -e "if\nvariable\nend" | re-classify config.yaml
-```
+## Classification Protocol
 
-## Classification Codes
-
-The tool outputs single-character codes for each token:
+The tool outputs 1-line classifications for each token. These consist of
+a single letter optionally followed by additional, whitespace-separated data.
+The 1-letter codes are:
 
 - `S` - Start token (form start, e.g., `def`, `if`, `while`)
 - `E` - End token (form end, e.g., `end`, `endif`, `endwhile`)
@@ -58,14 +65,6 @@ surround-regexp:
   - start: "another_pattern"
     end: "single_end_pattern"
 
-form-start-regexp:
-  - "pattern1"
-  - "pattern2"
-
-form-end-regexp:
-  - "end_pattern1"
-  - "end_pattern2"
-
 form-prefix-regexp:
   - "prefix_pattern"
 
@@ -80,15 +79,46 @@ operator-regexp:
     prefix-prec: 100
     infix-prec: 50
     postfix-prec: 75
-    end-tokens: ["end1", "end2"]  # optional
 ```
 
 ### Pattern Types
 
 #### 1. Surround Patterns (`surround-regexp`)
 
-Surround patterns define start tokens and their corresponding end patterns. These support pattern substitution.
+Surround patterns have three components, namely:
 
+- `start`, which is a single regular expression, which must match the whole
+  of a token's text. Required.
+- `endings`, which is a list of substitutions, where $0 is replaced by the
+  whole of the token's text and $1, $2, etc by any captured group. To generate
+  a `$` use `$$`.
+- `end`, which is a single regular expression, which must match the whole of a
+  token's text. Optional - although one of `endings` and `end` must be present.
+
+The rules for using these components are as follows:
+
+1. If a token matches the `start` expression in full then it is considered a
+   form-start. 
+2. If `endings` is present, then triggered by a match of a start token, all the
+   substitutions are generated and these are the matching form-end for that
+   start token.
+3. If `end` is present, then any token matching the `end` expression in 
+   full is additionally considered to be a form-end token. 
+    - When `endings` are missing, then _in addition_ all of these tokens 
+      are considered to be the form-end for the corresponding form-start.
+    - When `endings` are present, then _only_ the generated tokens are
+      considered pairs i.e. `endings` refines the pairing relationship.
+4. When `end` is missing, `endings` are required and an attempt is made to
+   synthesize the `end` from the endings. This can be done when the 
+   substitutions are either constant or only include $0 and not $1, $2, ...
+    - If the substitution text includes $N, where N != 1, re-classify
+      will fail with an error.
+
+
+
+Here is a simplified example, where `def` is matched with `enddef` or `end`;
+`if` and `while` are matched with `endif`/`if_end` and `endwhile`/`white_end`
+respectively, and `begin` is matched with `end`.
 ```yaml
 surround-regexp:
   - start: "def"
@@ -99,31 +129,9 @@ surround-regexp:
     end: "end"  # Single end pattern (alternative to endings array)
 ```
 
-#### 2. Form Start Patterns (`form-start-regexp`)
+#### 2. Form Prefix Patterns (`form-prefix-regexp`)
 
-Legacy patterns for identifying form start tokens:
-
-```yaml
-form-start-regexp:
-  - "def"
-  - "class"
-  - "if|while|for"
-```
-
-#### 3. Form End Patterns (`form-end-regexp`)
-
-Legacy patterns for identifying form end tokens:
-
-```yaml
-form-end-regexp:
-  - "end.*"
-  - "fi"
-  - "done"
-```
-
-#### 4. Form Prefix Patterns (`form-prefix-regexp`)
-
-Patterns for identifying prefix operators:
+This introduces a list of regexs for identifying form-prefixes.
 
 ```yaml
 form-prefix-regexp:
@@ -131,9 +139,9 @@ form-prefix-regexp:
   - "\\+"  # Literal + character
 ```
 
-#### 5. Simple Label Patterns (`simple-label-regexp`)
+#### 3. Simple Label Patterns (`simple-label-regexp`)
 
-Patterns for identifying simple labels:
+This introduces a list of regexs for identifying simple labels:
 
 ```yaml
 simple-label-regexp:
@@ -141,17 +149,17 @@ simple-label-regexp:
   - "label[0-9]+"
 ```
 
-#### 6. Compound Label Patterns (`compound-label-regexp`)
+#### 4. Compound Label Patterns (`compound-label-regexp`)
 
-Patterns for identifying compound labels:
+This introduces a list of regexs for identifying compound labels:
 
 ```yaml
 compound-label-regexp:
-  - "else-if"
-  - "[a-z]+-[a-z]+"
+  - "elseif"
+  - "[a-z]+__[a-z]+"
 ```
 
-#### 7. Operator Patterns (`operator-regexp`)
+#### 5. Operator Patterns (`operator-regexp`)
 
 Operators with precedence values for prefix, infix, and postfix positions:
 
@@ -165,22 +173,12 @@ operator-regexp:
     prefix-prec: 100
     infix-prec: 0
     postfix-prec: 75
-    end-tokens: [")", "]"]  # Optional end tokens for form-start operators
 ```
 
-### Pattern Substitution
 
-Patterns in `surround-regexp` support substitution using:
+## Example 
 
-- `$0` - The entire matched string
-
-```yaml
-surround-regexp:
-  - start: "if|while"
-    endings: ["end$0", "$0_end"]  # if -> endif, if_end; while -> endwhile, while_end
-```
-
-### Example Configuration
+### Configuration
 
 ```yaml
 surround-regexp:
@@ -213,11 +211,11 @@ operator-regexp:
 Create a simple test with the existing test configuration (one token per line):
 
 ```bash
-printf "if\nvariable\nendif\n" | re-classify ./cmd/re-classify/test-config.yaml
+printf "if\nvariable\nendif\n" | re-classify config.yaml
 ```
 
 Expected output:
-```
+```txt
 S endif if_end
 V
 E
@@ -227,15 +225,3 @@ This shows:
 - `if` classified as Start token (`S`) with expected endings `endif` and `if_end`
 - `variable` classified as Variable (`V`)  
 - `endif` classified as End token (`E`)
-
-**Important**: The tool expects **one token per line** on standard input, not
-space-separated tokens. The number of output lines will always match the number
-of input lines.
-
-## Implementation Notes
-
-- The tool uses `RegexpTable` for efficient pattern matching
-- Start tokens are processed first to build end token mappings
-- Pattern matching is case-sensitive unless specified otherwise
-- Capture groups in patterns enable flexible token transformation
-- The tool processes all tokens in two phases for optimal classification accuracy
