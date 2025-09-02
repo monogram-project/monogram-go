@@ -195,11 +195,18 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 
 // substitutePattern performs substitution using capture groups
 // groups[0] is the full match ($0), groups[1] is first capture group ($1), etc.
+// Also handles $$ as an escape sequence for literal $
 func substitutePattern(pattern string, groups []string) string {
 	result := pattern
+
+	// Perform normal substitutions
 	for i, group := range groups {
 		placeholder := fmt.Sprintf("$%d", i)
 		result = strings.ReplaceAll(result, placeholder, group)
 	}
+
+	// Handle $$ escape sequence for literal $
+	result = strings.ReplaceAll(result, "$$", "$")
+
 	return result
 }
