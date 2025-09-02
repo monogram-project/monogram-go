@@ -89,6 +89,23 @@ func LoadClassifierConfig(filename string) (*ClassifierConfig, error) {
 // CompileRegexes compiles static regex patterns in the configuration using RegexpTables
 // Note: StartTokenTable and EndTokenTable are built dynamically during token analysis
 func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) {
+	// Validate surround-regexp configurations
+	for i, surroundConfig := range cc.SurroundRegexp {
+		// Ensure that at least one of 'endings' or 'end' is present
+		if len(surroundConfig.Endings) == 0 && surroundConfig.End == "" {
+			return nil, fmt.Errorf("surround-regexp[%d] must have either 'endings' array or 'end' pattern (or both)", i)
+		}
+
+		// Check for invalid backreference usage in endings when end is missing
+		if len(surroundConfig.Endings) > 0 && surroundConfig.End == "" {
+			for j, ending := range surroundConfig.Endings {
+				if nonZeroSubstRegex.MatchString(ending) {
+					return nil, fmt.Errorf("surround-regexp[%d].endings[%d] contains backreferences ($1, $2, etc.) but no 'end' pattern is provided for capture groups. Use $0 for the full match or provide an 'end' pattern", i, j)
+				}
+			}
+		}
+	}
+
 	compiled := &CompiledClassifierConfig{}
 	var err error
 
