@@ -45,15 +45,15 @@ type CompiledSurroundRegexp struct {
 
 // StartTokenInfo holds information about a start token including its serial number and endings
 type StartTokenInfo struct {
-	SerialNumber int      // Serial number for this start/end/endings group
-	Endings      []string // End substitution patterns
+	SerialNumber int             // Serial number for this start/end/endings group
+	Endings      map[string]bool // End substitution patterns
 }
 
 // CompiledClassifierConfig holds compiled RegexpTable patterns
 type CompiledClassifierConfig struct {
 	// New efficient start token recognizer - maps start patterns to start token info
-	StartTokenTable *regexptable.RegexpTable[StartTokenInfo] // For quick lookup of serial number and end substitutions
-	EndTokenTable   *regexptable.RegexpTable[int]            // For quick lookup of end tokens mapping to serial numbers
+	StartTokenTable *regexptable.RegexpTable[*StartTokenInfo] // For quick lookup of serial number and end substitutions
+	EndTokenTable   *regexptable.RegexpTable[bool]            // For quick lookup of end tokens mapping to serial numbers
 
 	// All patterns now use RegexpTables for performance
 	FormPrefixRegexpTable    *regexptable.RegexpTable[bool]
@@ -197,16 +197,39 @@ func (cc *ClassifierConfig) CompileRegexes() (*CompiledClassifierConfig, error) 
 // groups[0] is the full match ($0), groups[1] is first capture group ($1), etc.
 // Also handles $$ as an escape sequence for literal $
 func substitutePattern(pattern string, groups []string) string {
-	result := pattern
-
-	// Perform normal substitutions
-	for i, group := range groups {
-		placeholder := fmt.Sprintf("$%d", i)
-		result = strings.ReplaceAll(result, placeholder, group)
+	if !strings.Contains(pattern, "$") {
+		return pattern // Fast path for patterns with no substitutions
 	}
 
-	// Handle $$ escape sequence for literal $
-	result = strings.ReplaceAll(result, "$$", "$")
+	var result strings.Builder
+	result.Grow(len(pattern)) // Pre-allocate capacity
 
-	return result
+	for i := 0; i < len(pattern); i++ {
+		if pattern[i] == '$' && i+1 < len(pattern) {
+			next := pattern[i+1]
+			if next == '$' {
+				// Handle $$ -> $
+				result.WriteByte('$')
+				i++ // Skip the second $
+			} else if next >= '0' && next <= '9' {
+				// Handle $0, $1, $2, etc.
+				groupIndex := int(next - '0')
+				if groupIndex < len(groups) {
+					result.WriteString(groups[groupIndex])
+				} else {
+					// Group index out of range, keep original
+					result.WriteByte('$')
+					result.WriteByte(next)
+				}
+				i++ // Skip the digit
+			} else {
+				// Just a $ not followed by digit or $
+				result.WriteByte('$')
+			}
+		} else {
+			result.WriteByte(pattern[i])
+		}
+	}
+
+	return result.String()
 }

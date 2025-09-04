@@ -57,150 +57,103 @@ func hasOnlyDollarZeroSubstitution(pattern string) bool {
 
 // BuildFormStartEndMappings analyzes all tokens and dynamically builds the classification tables
 func (ce *ClassifierEngine) BuildFormStartEndMappings(tokens []string, config *ClassifierConfig) error {
-	// Step 1: Build a config-based StartTokenTable that maps start patterns to StartTokenInfo
-	// This will be used for both token analysis AND final classification
-	configStartTableBuilder := regexptable.NewRegexpTableBuilder[StartTokenInfo]()
 
+	// Build a config-based StartTokenTable that maps start patterns to StartTokenInfo.
+	configStartTableBuilder := regexptable.NewRegexpTableBuilder[*StartTokenInfo]()
+	startTokenInfoList := make([]*StartTokenInfo, len(config.SurroundRegexp))
 	for i, surroundConfig := range config.SurroundRegexp {
 		if surroundConfig.Start != "" {
-			// Make a copy of the slice to avoid reference issues
-			endPatternsCopy := make([]string, len(surroundConfig.Endings))
-			copy(endPatternsCopy, surroundConfig.Endings)
-
 			// Create StartTokenInfo with serial number and endings
-			startInfo := StartTokenInfo{
+			startInfo := &StartTokenInfo{
 				SerialNumber: i, // Use the index as the serial number
-				Endings:      endPatternsCopy,
+				Endings:      make(map[string]bool),
 			}
+			for _, ending := range surroundConfig.Endings {
+				startInfo.Endings[ending] = true
+			}
+
+			startTokenInfoList[i] = startInfo
 			configStartTableBuilder.AddPattern(surroundConfig.Start, startInfo)
 		}
 	}
-
-	var err error
-	if len(config.SurroundRegexp) > 0 {
-		ce.config.StartTokenTable, err = configStartTableBuilder.Build(true, true)
-		if err != nil {
-			return fmt.Errorf("failed to build start token table: %w", err)
-		}
-	}
-
-	// Step 2: Initialize end-tokens map with serial numbers instead of just boolean
-	endTokensMap := make(map[string]int) // Maps end token to serial number
-
-	// Step 3: Build EndTokenTable builder and populate it from `end` patterns first
-	endTableBuilder := regexptable.NewRegexpTableBuilder[int]()
-
-	// Add patterns from the `end` field (if present) before scanning tokens
-	for i, surroundConfig := range config.SurroundRegexp {
-		serialNumber := i // Use index as serial number
-		if surroundConfig.End != "" {
-			// Use -1 if endings is not empty (we don't need reverse map for these)
-			// Use actual serial number if endings is empty (we need reverse map for these)
-			valueToStore := -1
-			if len(surroundConfig.Endings) == 0 {
-				valueToStore = serialNumber
-			}
-			// Add the end pattern to the builder
-			endTableBuilder.AddPattern(surroundConfig.End, valueToStore)
-		}
-	}
-
-	// Add constant end-tokens and patterns with single $0 substitution
-	for i, surroundConfig := range config.SurroundRegexp {
-		serialNumber := i // Use index as serial number
-		for _, endPattern := range surroundConfig.Endings {
-			// Check if this is a constant (no $\d+ substitutions)
-			if !hasSubstitutionVariable(endPattern) {
-				endTokensMap[endPattern] = serialNumber
-			} else if hasOnlyDollarZeroSubstitution(endPattern) {
-				// This pattern has only $0 substitutions (can be multiple occurrences)
-				// We can create a regex pattern by replacing $0 with the start pattern
-				if surroundConfig.Start != "" {
-					// Replace $0 with the start regex pattern
-					regexPattern := strings.ReplaceAll(endPattern, "$0", "("+surroundConfig.Start+")")
-					// Add this directly as a regex pattern to the EndTokenTable
-					endTableBuilder.AddPattern(regexPattern, serialNumber)
-				}
-			}
-		}
-	}
-
-	// Step 3.5: Build initial EndTokenTable from `end` patterns to scan for present end tokens
-	initialEndTokenTable, err := endTableBuilder.Build(true, true)
+	t, err := configStartTableBuilder.Build(true, true)
 	if err != nil {
-		return fmt.Errorf("failed to build initial end token table: %w", err)
+		return fmt.Errorf("failed to build start token table: %w", err)
 	}
+	ce.config.StartTokenTable = t
 
-	// Step 3.6: Scan tokens to find which end tokens are present and build reverse map
-	endTokensBySerial := make(map[int]map[string]bool) // Maps serial number to set of end tokens
-	for _, token := range tokens {
-		if serialNumber, _, ok := initialEndTokenTable.TryLookup(token); ok {
-			// Only store in reverse map if serial number is not -1 (i.e., endings array is empty)
-			if serialNumber != -1 {
-				// This token matches an end pattern, add it to the set for this serial number
-				if endTokensBySerial[serialNumber] == nil {
-					endTokensBySerial[serialNumber] = make(map[string]bool)
-				}
-				endTokensBySerial[serialNumber][token] = true
-			}
-		}
-	}
-
-	// Step 4: Analyze tokens to generate dynamic end tokens
-	for _, token := range tokens {
-		if ce.config.StartTokenTable != nil {
-			startInfo, captureGroups, ok := ce.config.StartTokenTable.TryLookup(token)
-			if ok {
-				if len(startInfo.Endings) > 0 {
-					// Use the endings array to generate end tokens with full substitution
-					for _, endPattern := range startInfo.Endings {
-						endToken := substitutePattern(endPattern, captureGroups)
-						endTokensMap[endToken] = startInfo.SerialNumber
-					}
-				} else {
-					// Endings array is empty, use the reverse map to find tokens from the `end` regexp
-					if endTokensSet, exists := endTokensBySerial[startInfo.SerialNumber]; exists {
-						// Add all end tokens found for this serial number
-						for endToken := range endTokensSet {
-							endTokensMap[endToken] = startInfo.SerialNumber
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// Step 5: Add all other end patterns to the same builder with -1 (no reverse map needed)
-
-	// Add constant end-tokens and patterns with single $0 substitution
+	// When Endings is not set, the startInfoTokens will be missing proper
+	// endings. So we must infer the endings from the end patterns
+	// applied to the list of tokens and backfill the startInfoTokens.
+	count := 0
+	inferEndingsTableBuilder := regexptable.NewRegexpTableBuilder[int]()
 	for i, surroundConfig := range config.SurroundRegexp {
-		serialNumber := i // Use index as serial number
-		for _, endPattern := range surroundConfig.Endings {
-			// Check if this is a constant (no $\d+ substitutions)
-			if !hasSubstitutionVariable(endPattern) {
-				endTokensMap[endPattern] = serialNumber
-			} else if hasOnlyDollarZeroSubstitution(endPattern) {
-				// This pattern has only $0 substitutions (can be multiple occurrences)
-				// We can create a regex pattern by replacing $0 with the start pattern
-				if surroundConfig.Start != "" {
-					// Replace $0 with the start regex pattern
-					regexPattern := strings.ReplaceAll(endPattern, "$0", "("+surroundConfig.Start+")")
-					// Add this directly as a regex pattern to the EndTokenTable with -1 (no reverse map needed)
-					endTableBuilder.AddPattern(regexPattern, -1)
+		if len(surroundConfig.Endings) == 0 && surroundConfig.End != "" {
+			inferEndingsTableBuilder.AddPattern(surroundConfig.End, i)
+
+		}
+	}
+	if count > 0 {
+		it, err := inferEndingsTableBuilder.Build(true, true)
+		if err != nil {
+			return fmt.Errorf("failed to build inferred endings table: %w", err)
+		}
+		// If there are no explicit endings, we need to find all tokens that match the end pattern
+		for _, token := range tokens {
+			if serialNumber, _, ok := it.TryLookup(token); ok {
+				startTokenInfoList[serialNumber].Endings[token] = true
+			}
+		}
+	}
+
+	// Now we create the ce.config.EndTokenTable - but a backfill obligation
+	// may remain.
+	backfillEnd := make(map[int]bool, 0)
+	endTokenTableBuilder := regexptable.NewRegexpTableBuilder[bool]()
+	for i, surroundConfig := range config.SurroundRegexp {
+		if surroundConfig.End != "" {
+			endTokenTableBuilder.AddPattern(surroundConfig.End, true)
+		} else {
+			// If there is no End then we must infer it from the Endings
+			// pattern, if possible.
+			for _, ending := range surroundConfig.Endings {
+				// Does the pattern contain $0 or $N, N>1.
+				hasDollarZero := strings.Contains(ending, "$0")
+				hasDollarNonZero := nonZeroSubstRegex.MatchString(ending)
+				if !hasDollarZero && !hasDollarNonZero {
+					endTokenTableBuilder.AddPattern(regexp.QuoteMeta(ending), true)
+				} else if hasDollarZero && !hasDollarNonZero {
+					// Split at $0 and QuoteMeta the components then join
+					// using the Start regexp.
+					startPattern := regexp.QuoteMeta(surroundConfig.Start)
+					parts := strings.Split(ending, "$0")
+					for i, part := range parts {
+						parts[i] = regexp.QuoteMeta(part)
+					}
+					endTokenTableBuilder.AddPattern(strings.Join(parts, startPattern), true)
+				} else {
+					// We will need to backfill this pattern by applying the
+					// endings to actual tokens.
+					backfillEnd[i] = true
 				}
 			}
 		}
 	}
 
-	// Add all literal end tokens to the builder (with escaping) using -1
-	for endToken := range endTokensMap {
-		// Escape the end token since it should be matched literally, not as a regex
-		escapedEndToken := regexp.QuoteMeta(endToken)
-		endTableBuilder.AddPattern(escapedEndToken, -1)
+	if len(backfillEnd) > 0 {
+		// We need to backfill the end patterns for these tokens.
+		for _, token := range tokens {
+			if info, _, ok := ce.config.StartTokenTable.TryLookup(token); ok {
+				if backfillEnd[info.SerialNumber] {
+					// Backfill the end pattern for this token
+					endTokenTableBuilder.AddPattern(regexp.QuoteMeta(token), true)
+				}
+			}
+		}
 	}
 
-	// Step 6: Build the final EndTokenTable using the same builder
-	ce.config.EndTokenTable, err = endTableBuilder.Build(true, true)
+	// Now we can construct ce.config.EndTokenTable.
+	ce.config.EndTokenTable, err = endTokenTableBuilder.Build(true, true)
 	if err != nil {
 		return fmt.Errorf("failed to build end token table: %w", err)
 	}
@@ -240,7 +193,7 @@ func (ce *ClassifierEngine) ClassifyToken(token string) string {
 		if ok {
 			// Generate the possible end tokens for display
 			endTokens := make([]string, 0, len(startInfo.Endings))
-			for _, endPattern := range startInfo.Endings {
+			for endPattern := range startInfo.Endings {
 				endToken := substitutePattern(endPattern, captureGroups)
 				endTokens = append(endTokens, endToken)
 			}
