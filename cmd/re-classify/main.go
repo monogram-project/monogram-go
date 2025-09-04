@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"os"
 	"regexp"
@@ -9,6 +10,9 @@ import (
 
 	"github.com/sfkleach/regexptable"
 )
+
+// Version is set at build time via -ldflags
+var Version = "unknown"
 
 // Pre-compiled regex for detecting non-zero substitution variables
 var nonZeroSubstRegex = regexp.MustCompile(`\$[1-9]`)
@@ -23,36 +27,6 @@ func NewClassifierEngine(config *CompiledClassifierConfig) *ClassifierEngine {
 	return &ClassifierEngine{
 		config: config,
 	}
-}
-
-// hasSubstitutionVariable checks if a pattern contains $\d+ substitution variables
-func hasSubstitutionVariable(pattern string) bool {
-	for i := 0; i < len(pattern); i++ {
-		if pattern[i] == '$' && i+1 < len(pattern) {
-			// Found $, check if followed by digits
-			j := i + 1
-			for j < len(pattern) && pattern[j] >= '0' && pattern[j] <= '9' {
-				j++
-			}
-			// If we found at least one digit after $, it's a substitution variable
-			if j > i+1 {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// hasOnlyDollarZeroSubstitution checks if a pattern contains only $0 substitutions (no $1, $2, etc.)
-func hasOnlyDollarZeroSubstitution(pattern string) bool {
-	// Check if pattern contains $0
-	hasDollarZero := strings.Contains(pattern, "$0")
-
-	// Check if pattern contains any $[1-9] (which we want to avoid)
-	hasNonZeroSubst := nonZeroSubstRegex.MatchString(pattern)
-
-	// Return true only if we have $0 and no $[1-9]
-	return hasDollarZero && !hasNonZeroSubst
 }
 
 // BuildFormStartEndMappings analyzes all tokens and dynamically builds the classification tables
@@ -237,14 +211,39 @@ func (ce *ClassifierEngine) ProcessTokens(tokens []string) {
 }
 
 func main() {
+	// Define command-line flags
+	checkOnly := flag.Bool("check", false, "Validate configuration syntax only (don't process input)")
+	version := flag.Bool("version", false, "Show version information")
 
-	// Check command line arguments
-	if len(os.Args) != 2 {
-		fmt.Fprintf(os.Stderr, "Usage: %s <config.yaml>\n", os.Args[0])
+	// Customize usage message
+	flag.Usage = func() {
+		fmt.Printf("Usage: %s [options] <config.yaml>\n\n", os.Args[0])
+		fmt.Println("re-classify is a token classification tool that uses regex patterns")
+		fmt.Println("to classify identifiers and operators in monogram syntax.")
+		fmt.Println("\nOptions:")
+		flag.PrintDefaults()
+		fmt.Println("\nThe tool reads tokens from stdin (one per line) and outputs")
+		fmt.Println("classification results based on the regex patterns in config.yaml")
+	}
+
+	// Parse command-line flags
+	flag.Parse()
+
+	// Handle version flag
+	if *version {
+		fmt.Printf("re-classify version %s\n", Version)
+		return
+	}
+
+	// Check for required config file argument
+	args := flag.Args()
+	if len(args) != 1 {
+		fmt.Fprintf(os.Stderr, "Error: exactly one config file must be specified\n\n")
+		flag.Usage()
 		os.Exit(1)
 	}
 
-	configFile := os.Args[1]
+	configFile := args[0]
 
 	// Load configuration
 	config, err := LoadClassifierConfig(configFile)
@@ -258,6 +257,12 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error compiling regexes: %v\n", err)
 		os.Exit(1)
+	}
+
+	// If check-only mode, just report success and exit
+	if *checkOnly {
+		fmt.Println("Configuration syntax is valid")
+		return
 	}
 
 	// Create classifier engine
