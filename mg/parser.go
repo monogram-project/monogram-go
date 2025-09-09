@@ -418,6 +418,22 @@ const (
 	endif
 */
 
+func IsPaired(formStart *Token, formEnd *Token) bool {
+	if formEnd.Type != Identifier || formEnd.SubType != IdentifierFormEnd {
+		return false
+	}
+	if len(formStart.SubTokens) == 0 {
+		return formEnd.Text == "end"+formStart.Text
+	} else {
+		for _, t := range formStart.SubTokens {
+			if formEnd.Text == t.Text {
+				return true
+			}
+		}
+		return false
+	}
+}
+
 func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) {
 	allowFlags := flagComma | flagSemicolon | flagNewline
 	context = context.setInsideForm(true)
@@ -431,16 +447,11 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 			return nil, fmt.Errorf("unexpected end of tokens (missing end of form): %s", formStart.Text)
 		}
 		token := p.safePeek()
-		if token.Type == Identifier && token.SubType == IdentifierFormEnd {
-			// Check if this is a matching form-end token
-			// Use default "end" + formStart.Text matching
-			isMatch := token.Text == "end"+formStart.Text
 
-			if isMatch {
-				endLineCol = p.endLineCol()
-				p.next()
-				break
-			}
+		if IsPaired(formStart, token) {
+			endLineCol = p.endLineCol()
+			p.next()
+			break
 		}
 
 		if mode == alphaMode {

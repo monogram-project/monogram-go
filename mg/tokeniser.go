@@ -7,8 +7,6 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/sfkleach/regexptable"
 )
 
 type Tokenizer struct {
@@ -1520,9 +1518,6 @@ func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) 
 		}
 	}
 
-	// Build FormSurroundMatchTable on the fly
-	var builder *regexptable.RegexpTableBuilder[bool]
-
 	// Step 3: Apply classifications to all tokens using the map
 	for _, token := range tokensToClassify {
 		classification, err := classifier.GetClassification(token.Text)
@@ -1540,23 +1535,6 @@ func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) 
 				Message: fmt.Sprintf("missing closing token for form-start token '%s'", token.Text),
 				Line:    token.Span.StartLine,
 				Column:  token.Span.StartColumn,
-			}
-		}
-
-		// Collect form-start patterns for FormSurroundMatchTable
-		if classification.Role == "S" && len(classification.EndTokens) > 0 {
-			if builder == nil {
-				builder = regexptable.NewRegexpTableBuilder[bool]()
-			}
-
-			// Create pattern in format "start end" for each end token
-			startPattern := regexp.QuoteMeta(token.Text)
-			for _, endToken := range classification.EndTokens {
-				if endToken != "" {
-					endPattern := regexp.QuoteMeta(endToken)
-					pattern := startPattern + " " + endPattern
-					builder.AddPattern(pattern, true)
-				}
 			}
 		}
 
@@ -1585,7 +1563,9 @@ func (t *Tokenizer) applyClassificationToToken(token *Token, classification *Ext
 	case "S": // Form-start
 		if token.Type == Identifier {
 			token.SubType = IdentifierFormStart
-			// End tokens are handled in applyExternalClassification via FormSurroundMatchTable
+			for _, t := range classification.EndTokens {
+				token.SubTokens = append(token.SubTokens, &Token{Type: Identifier, SubType: IdentifierFormEnd, Text: t, Span: Span{-1, -1, -1, -1}, IsMultiLine: false})
+			}
 		}
 
 	case "E": // Form-end

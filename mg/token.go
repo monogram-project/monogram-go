@@ -95,7 +95,7 @@ type Token struct {
 	QuoteRune            rune      // New field to indicate the quote rune for strings
 	NextToken            *Token    // The next token in the chain
 
-	SubTokens []*Token // Subtokens for interpolated string tokens
+	SubTokens []*Token // Subtokens for interpolated string tokens (or other uses)
 
 	// Cache for precedence
 	cachedPrecedence OperatorPrecedence
