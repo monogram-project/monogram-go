@@ -1551,52 +1551,45 @@ func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) 
 func (t *Tokenizer) applyClassificationToToken(token *Token, classification *ExternalTokenClassification) *MonogramError {
 	switch classification.Role {
 	case "V": // Variable
-		if token.Type == Identifier {
-			token.SubType = IdentifierVariable
-		}
+		token.Type = Identifier
+		token.SubType = IdentifierVariable
 
 	case "P": // Prefix form
-		if token.Type == Identifier {
-			token.SubType = IdentifierFormPrefix
-		}
+		token.Type = Identifier
+		token.SubType = IdentifierFormPrefix
 
 	case "S": // Form-start
-		if token.Type == Identifier {
-			token.SubType = IdentifierFormStart
-			for _, t := range classification.EndTokens {
-				token.SubTokens = append(token.SubTokens, &Token{Type: Identifier, SubType: IdentifierFormEnd, Text: t, Span: Span{-1, -1, -1, -1}, IsMultiLine: false})
-			}
+		token.Type = Identifier
+		token.SubType = IdentifierFormStart
+		for _, t := range classification.EndTokens {
+			token.SubTokens = append(token.SubTokens, &Token{Type: Identifier, SubType: IdentifierFormEnd, Text: t, Span: Span{-1, -1, -1, -1}, IsMultiLine: false})
 		}
 
 	case "E": // Form-end
-		if token.Type == Identifier {
-			token.SubType = IdentifierFormEnd
-		}
+		token.Type = Identifier
+		token.SubType = IdentifierFormEnd
 
 	case "O": // Operator
-		if token.Type == Sign {
-			token.SubType = SignOperator
-			// Set precedence in the cached precedence
-			token.cachedPrecedence = OperatorPrecedence{
-				isInitialised:     true,
-				canBePrefix:       classification.PrefixPrec > 0,
-				canBeInfix:        classification.InfixPrec > 0,
-				canBePostfix:      classification.PostfixPrec > 0,
-				prefixPrecedence:  OpPrec(classification.PrefixPrec),
-				infixPrecedence:   OpPrec(classification.InfixPrec),
-				postfixPrecedence: OpPrec(classification.PostfixPrec),
-			}
+		token.Type = Sign
+		token.SubType = SignOperator
+		// Set precedence in the cached precedence
+		token.cachedPrecedence = OperatorPrecedence{
+			isInitialised:     true,
+			canBePrefix:       classification.PrefixPrec > 0,
+			canBeInfix:        classification.InfixPrec > 0,
+			canBePostfix:      classification.PostfixPrec > 0,
+			prefixPrecedence:  OpPrec(classification.PrefixPrec),
+			infixPrecedence:   OpPrec(classification.InfixPrec),
+			postfixPrecedence: OpPrec(classification.PostfixPrec),
 		}
 
 	case "L": // Simple label
-		if token.Type == Identifier {
-			token.SubType = IdentifierSimpleLabel
-		}
+		token.Type = Identifier
+		token.SubType = IdentifierSimpleLabel
 
 	case "C": // Compound label
-		if token.Type == Identifier {
-			token.SubType = IdentifierCompoundLabel
-		}
+		token.Type = Identifier
+		token.SubType = IdentifierCompoundLabel
 
 	case "X": // Exception
 		return &MonogramError{

@@ -330,6 +330,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config,
 			IncludeSpans:  includeSpans,
 			Decimal:       decimal,
 			CheckLiterals: checkLiterals,
+			UseClassifier: useClassifier,
 		},
 	}
 
