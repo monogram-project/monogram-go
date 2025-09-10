@@ -394,10 +394,12 @@ func (t *Tokenizer) tokenize() *MonogramError {
 				}
 				token.SetSeen(t, seen) // Process as a raw string
 			} else {
-				return &MonogramError{
-					Message: fmt.Sprintf("Expected opening quote after '@%s'", tagText),
-					Line:    t.lineNo,
-					Column:  t.colNo,
+				at_token := t.addToken(Sign, SignOperator, "@", t.lineNo, t.colNo)
+				at_token.Span.EndColumn = at_token.Span.StartColumn + 1
+				at_token.Span.EndLine = at_token.Span.StartLine
+				if tagText != "" {
+					id_token := t.addToken(Identifier, IdentifierVariable, tagText, t.lineNo, t.colNo)
+					id_token.SetSeen(t, seen)
 				}
 			}
 			continue
