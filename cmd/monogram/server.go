@@ -241,7 +241,7 @@ func startTestServer(port string, openBrowserFlag bool, options *mg.FormatOption
 		indexHandler(w, r, options, config)
 	})
 	http.HandleFunc("/translate", func(w http.ResponseWriter, r *http.Request) {
-		translateHandler(w, r, config, useClassifier)
+		translateHandler(w, r, config, useClassifier, options.TrimTokenOnOutput)
 	})
 
 	// Default to localhost for normal execution.
@@ -293,7 +293,7 @@ func indexHandler(w http.ResponseWriter, _ *http.Request, options *mg.FormatOpti
 }
 
 // translateHandler processes the form and renders the translation output.
-func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config, useClassifier string) {
+func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config, useClassifier string, serverTrimTokenOnOutput int) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
 		return
@@ -312,6 +312,9 @@ func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config,
 		indent = indentParsed
 	}
 
+	// Use the trimTokenOnOutput value from server options (command line)
+	trimTokenOnOutput := serverTrimTokenOnOutput
+
 	formatObject, ok := nameToFormatHandler[format]
 	if !ok {
 		http.Error(w, "Unknown format: "+format, http.StatusBadRequest)
@@ -324,13 +327,14 @@ func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config,
 		Output: "", // Output will be captured in a buffer.
 		Limit:  false,
 		ConfigurableOptions: mg.ConfigurableOptions{
-			Format:        formatObject.Format,
-			Indent:        indent,
-			DefaultLabel:  defaultLabel,
-			IncludeSpans:  includeSpans,
-			Decimal:       decimal,
-			CheckLiterals: checkLiterals,
-			UseClassifier: useClassifier,
+			Format:            formatObject.Format,
+			Indent:            indent,
+			DefaultLabel:      defaultLabel,
+			IncludeSpans:      includeSpans,
+			Decimal:           decimal,
+			CheckLiterals:     checkLiterals,
+			UseClassifier:     useClassifier,
+			TrimTokenOnOutput: trimTokenOnOutput,
 		},
 	}
 

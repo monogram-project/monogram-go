@@ -10,10 +10,11 @@ func NewParserOptions() *ParserOptions {
 	return &ParserOptions{
 		colOffset: 0,
 		ConfigurableOptions: ConfigurableOptions{
-			DefaultLabel:  "_",
-			IncludeSpans:  false,
-			Decimal:       false,
-			CheckLiterals: false,
+			DefaultLabel:      "_",
+			IncludeSpans:      false,
+			Decimal:           false,
+			CheckLiterals:     false,
+			TrimTokenOnOutput: 0,
 		},
 	}
 }

@@ -6,33 +6,36 @@ import (
 	"strings"
 )
 
-func PrintASTDOT(root *Node, indentDelta string, output io.Writer) {
+func PrintASTDOT(root *Node, indentDelta string, output io.Writer, options *ConfigurableOptions) {
 	// Initialize the DOT graph
 	fmt.Fprintln(output, `digraph G {`)
 	fmt.Fprintln(output, `  bgcolor="transparent";`)
 	fmt.Fprintln(output, `  node [shape="box", style="filled", fontname="Ubuntu Mono"];`)
 
 	// Recursively print the nodes and edges
-	printNodeDOT(root, "", output)
+	printNodeDOT(root, "", output, options)
 
 	// Close the graph
 	fmt.Fprintln(output, `}`)
 }
 
-func printNodeDOT(node *Node, parentID string, output io.Writer) {
+func printNodeDOT(node *Node, parentID string, output io.Writer, options *ConfigurableOptions) {
 	// Generate a unique identifier for the current node
 	nodeID := fmt.Sprintf("node_%p", node)
 
 	// Create the node label
 	label := node.Name
 	if len(node.Options) == 1 {
-		for _, value := range node.Options {
-			label = fmt.Sprintf("%s: %s", node.Name, escapeDOTValue(value))
+		for key, value := range node.Options {
+			trimmedValue := TrimValue(key, value, options.TrimTokenOnOutput)
+			label = fmt.Sprintf("%s: %s", node.Name, escapeDOTValue(trimmedValue))
 		}
 	} else if value, exists := node.Options["value"]; exists {
-		label = fmt.Sprintf("%s: %s", node.Name, escapeDOTValue(value))
+		trimmedValue := TrimValue("value", value, options.TrimTokenOnOutput)
+		label = fmt.Sprintf("%s: %s", node.Name, escapeDOTValue(trimmedValue))
 	} else if name, exists := node.Options["name"]; exists {
-		label = fmt.Sprintf("%s: %s", node.Name, escapeDOTValue(name))
+		trimmedValue := TrimValue("name", name, options.TrimTokenOnOutput)
+		label = fmt.Sprintf("%s: %s", node.Name, escapeDOTValue(trimmedValue))
 	}
 
 	// Determine the fill color based on the tag
@@ -51,7 +54,7 @@ func printNodeDOT(node *Node, parentID string, output io.Writer) {
 
 	// Recurse for child nodes
 	for _, child := range node.Children {
-		printNodeDOT(child, nodeID, output)
+		printNodeDOT(child, nodeID, output, options)
 	}
 }
 

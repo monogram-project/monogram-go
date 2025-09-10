@@ -54,6 +54,7 @@ func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string
 	fs.BoolVar(&options.Decimal, "decimal", options.Decimal, "Decode numbers integers and floats in base 10")
 	fs.BoolVar(&options.CheckLiterals, "check-literals", options.CheckLiterals, "Check regexs and other literal strings for validity")
 	fs.StringVar(&options.UseClassifier, "use-classifier", "", "External command to use for token classification")
+	fs.IntVar(&options.TrimTokenOnOutput, "trim-token-on-output", options.TrimTokenOnOutput, "Limit the width of token text in output (0 for no limit)")
 	if configFile != nil {
 		fs.StringVarP(configFile, "config", "c", "", "Configuration file (YAML format)")
 	}
@@ -79,7 +80,7 @@ func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string
 
 // Define a type for the translation function
 // type translationFunc func(io.Reader, io.Writer, *mg.FormatOptions)
-type translateFunc func(root *mg.Node, indentDelta string, output io.Writer)
+type translateFunc func(root *mg.Node, indentDelta string, output io.Writer, options *mg.ConfigurableOptions)
 
 type formatHandler struct {
 	Format string
@@ -273,7 +274,7 @@ func (printAST *formatHandler) translate(input io.Reader, output io.Writer, opti
 	return translate(input, output, printAST.Fn, options, config, useClassifier)
 }
 
-func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer), options *mg.FormatOptions, config *mg.Config, useClassifier string) error {
+func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer, *mg.ConfigurableOptions), options *mg.FormatOptions, config *mg.Config, useClassifier string) error {
 	// Read the entire input as a string
 	data, err := io.ReadAll(input)
 	if err != nil {
@@ -306,7 +307,7 @@ func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string
 	}
 
 	// Use the provided print function to recursively print the AST
-	printAST(ast, indent, output)
+	printAST(ast, indent, output, &options.ConfigurableOptions)
 
 	return nil
 }

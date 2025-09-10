@@ -12,39 +12,19 @@ monogram --config config.yaml [other options]
 
 The configuration file supports the following options:
 
-### Regex Patterns (Future Use)
-These patterns will be used for regex-based identifier classification:
-
-- `simple-label-regex`: Pattern for simple labels (e.g., "if", "else", "while")
-- `compound-label-regex`: Pattern for compound labels (e.g., "else-if")
-- `form-start-regex`: Pattern for form start identifiers (e.g., "function", "class")
-- `form-end-regex`: Pattern for form end identifiers (e.g., "endfunction", "endclass")
-- `form-prefix-regex`: Pattern for prefix form identifiers (e.g., "return", "break")
-- `form-surround-match`: List of regex patterns for matching paired constructs
-  that create form boundaries, each pattern having the form `{open_regex}
-  {close_regex}`. These patterns will be matched using the regexp2 engine, not
-  Go's built-in matcher, so that backrefs are available.
-
-### Default Options
-These options provide defaults that are applied when the corresponding command-line flag is not specified:
-
 - `option-format`: Default output format (xml, json, yaml, mermaid, dot)
 - `option-indent`: Default indentation (number of spaces)
 - `option-default-label`: Default label text
 - `option-include-spans`: Include source spans in output (true/false)
 - `option-decimal`: Decode numbers in base 10 (true/false)
 - `option-check-literals`: Check regex and literal string validity (true/false)
+- `option-use-classifier`: Optional command to use to classify tokens.
+- `option-trim-token-on-output`: Trims the width of tokens to a maximum for display purposes (e.g. with Mermaid output)
+
 
 ## Example Configuration
 
 ```yaml
-# Regex patterns for identifier classification
-simple-label-regex: "^(if|else|while|for|case|default)$"
-compound-label-regex: "^(else-if|else-while)$"
-form-start-regex: "^(function|class|struct)$"
-form-end-regex: "^end(function|class|struct)$"
-form-prefix-regex: "^(return|break|continue)$"
-
 # Default configuration values
 option-format: "xml"
 option-indent: 2
