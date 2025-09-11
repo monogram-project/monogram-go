@@ -101,9 +101,9 @@ func (p *Parser) readExpr(context Context) (*Node, error) {
 	return n, e
 }
 
-func (p *Parser) readArguments(subType uint8, context Context) (string, *Node, error) {
+func (p *Parser) readArguments(closingTokens []*Token, subType uint8, context Context) (string, *Node, error) {
 	lineCol := p.startLineCol()
-	sep, seq, err := p.readExprSeqTo(CloseBracket, subType, true, context.setInsideForm(false))
+	sep, seq, err := p.readExprSeqTo(CloseBracket, subType, closingTokens, true, context.setInsideForm(false))
 	if err != nil {
 		return "", nil, err
 	}
@@ -214,8 +214,8 @@ func (p *Parser) readExprPrec(outer_prec OpPrec, context Context) (*Node, error)
 		token2 := p.next()
 		c := context.setInsideForm(false)
 		curr_lhs := lhs
-		if token2.Type == OpenBracket && token2.SubType != BracketBrace {
-			sep_text, args, err := p.readArguments(token2.SubType, c)
+		if token2.Type == OpenBracket && token2.IsInfixBracket {
+			sep_text, args, err := p.readArguments(token2.SubTokens, token2.SubType, c)
 			if err != nil {
 				return nil, err
 			}
@@ -230,9 +230,9 @@ func (p *Parser) readExprPrec(outer_prec OpPrec, context Context) (*Node, error)
 			}
 		} else if token2.Type == Sign && token2.SubType == SignDot && p.hasNext() {
 			property := p.safeNext()
-			if t := p.safePeek(); t.Type == OpenBracket && t.SubType != BracketBrace {
+			if t := p.safePeek(); t.Type == OpenBracket && t.IsInfixBracket {
 				token3 := p.next()
-				sep_text, rhs, err := p.readArguments(token3.SubType, c)
+				sep_text, rhs, err := p.readArguments(t.SubTokens, token3.SubType, c)
 				if err != nil {
 					return nil, err
 				}
@@ -291,7 +291,22 @@ const (
 	flagNewline   uint8 = 4
 )
 
-func (p *Parser) readExprSeqTo(closingType TokenType, closingSubtype uint8, allowComma bool, context Context) (string, []*Node, error) {
+func isMatchingClosingToken(current *Token, closingType TokenType, closingSubtype uint8, closingTokens []*Token) bool {
+	if current.Type != closingType || current.SubType != closingSubtype {
+		return false
+	}
+	if closingSubtype != BracketOther {
+		return true
+	}
+	for _, ct := range closingTokens {
+		if current.Text == ct.Text {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *Parser) readExprSeqTo(closingType TokenType, closingSubtype uint8, closingTokens []*Token, allowComma bool, context Context) (string, []*Node, error) {
 	seq := []*Node{}
 	allowFlags := flagSemicolon | flagNewline
 	if allowComma {
@@ -325,7 +340,7 @@ func (p *Parser) readExprSeqTo(closingType TokenType, closingSubtype uint8, allo
 			p.next()
 			continue
 		}
-		if t.Type == closingType && t.SubType == closingSubtype {
+		if isMatchingClosingToken(t, closingType, closingSubtype, closingTokens) {
 			p.next()
 			break
 		}
@@ -419,6 +434,9 @@ const (
 */
 
 func IsPaired(formStart *Token, formEnd *Token) bool {
+	if formStart.Type == OpenBracket {
+		return formEnd.Type == CloseBracket && formEnd.SubType == formStart.SubType
+	}
 	if formEnd.Type != Identifier || formEnd.SubType != IdentifierFormEnd {
 		return false
 	}
@@ -535,7 +553,7 @@ func (p *Parser) readFormExpr(formStart *Token, context Context) (*Node, error) 
 
 // readDelimitedExpr reads a delimited expression.
 func (p *Parser) readDelimitedExpr(open *Token, context Context) (*Node, error) {
-	sep, seq, err := p.readExprSeqTo(CloseBracket, open.SubType, true, context.setInsideDelimiters(true))
+	sep, seq, err := p.readExprSeqTo(CloseBracket, open.SubType, open.SubTokens, true, context.setInsideDelimiters(true))
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +657,10 @@ func (p *Parser) doReadPrimaryExpr(context Context) (*Node, error) {
 			return nil, fmt.Errorf("unexpected identifier: %s", token.Text)
 		}
 	case OpenBracket:
-		return p.readDelimitedExpr(token, context)
+		if token.IsOutfixBracket {
+			return p.readDelimitedExpr(token, context)
+		}
+		return nil, fmt.Errorf("unexpected open bracket: %s", token.Text)
 	case Sign:
 		if token.SubType == SignDot {
 			if !token.FollowedByWhitespace {
@@ -920,7 +941,7 @@ func (p *Parser) readXmlElement() (*Node, error) {
 
 	// Now read elements up to the closing tag.
 	kidsStartLineCol := p.startLineCol()
-	sep, nodes, err := p.readExprSeqTo(Sign, SignLessThanSlash, true, makeContext())
+	sep, nodes, err := p.readExprSeqTo(Sign, SignLessThanSlash, nil, true, makeContext())
 	if err != nil {
 		return nil, err
 	}

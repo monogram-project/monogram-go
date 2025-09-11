@@ -56,6 +56,7 @@ const (
 	BracketParenthesis uint8 = iota
 	BracketBrace
 	BracketBracket
+	BracketOther // Used to indicate externally classified brackets.
 )
 
 // Subtypes for Sign
@@ -92,6 +93,8 @@ type Token struct {
 	FollowedByWhitespace bool      // New field to indicate if the token is followed by whitespace
 	EscapeSeen           bool      // New field to indicate if an escape sequence was seen
 	IsMultiLine          bool      // New field to indicate if the token is a multi-line string
+	IsInfixBracket       bool      // New field to indicate if the bracket works like f( x )
+	IsOutfixBracket      bool      // New field to indicate if the bracket works like { ... }
 	QuoteRune            rune      // New field to indicate the quote rune for strings
 	NextToken            *Token    // The next token in the chain
 
@@ -227,8 +230,8 @@ const signChars = ".*/%+-<>~!&^|?:="
 // These roughly correspond to the precedence of the operators in the C language.
 // Note how the prefix operators sneak ahead of their infix counterparts. Blanks
 // are used to encode gaps in the precedence order.
-const precCharactersInfix = ".([                */%+-<>~!&^|?:="
-const precCharactersPrefx = "   .*/%-+<>~!&^|?:="
+const precCharactersInfix = ".([{                */%+-<>~!&^|?:="
+const precCharactersPrefx = "    .*/%-+<>~!&^|?:="
 
 func (t *Token) DelimiterName() string {
 	switch t.Type {
@@ -272,6 +275,10 @@ func (t *Token) Precedence(infix bool) (OpPrec, bool) {
 	}
 
 	if t.Type == Sign && (t.SubType == SignLessThanSlash || t.SubType == SignSlashGreaterThan) {
+		return 0, false
+	}
+
+	if t.Type == OpenBracket && !t.IsInfixBracket {
 		return 0, false
 	}
 

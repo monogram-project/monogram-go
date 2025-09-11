@@ -28,6 +28,8 @@ type ExternalTokenClassification struct {
 	PrefixPrec      uint16   // For O (operator) tokens, prefix precedence (0 = not applicable)
 	InfixPrec       uint16   // For O (operator) tokens, infix precedence (0 = not applicable)
 	PostfixPrec     uint16   // For O (operator) tokens, postfix precedence (0 = not applicable)
+	IsInfixBracket  bool     // For [ (brackets), whether they can be used infix-style.
+	IsOutfixBracket bool     // For [ (brackets), whether they can be used outfix-style.
 	ExceptionReason string   // For X (exception) tokens, the reason
 }
 
@@ -219,6 +221,19 @@ func parseClassificationResponse(response string) (*ExternalTokenClassification,
 	case "C": // Compound label - no additional fields
 		if len(fields) != 1 {
 			return nil, fmt.Errorf("compound label classification should have no additional fields, got: %s", response)
+		}
+
+	case "[":
+		if len(fields) < 2 {
+			return nil, fmt.Errorf("bracket classification must specify infix/outfix mode, got: %s", response)
+		}
+		classification.IsInfixBracket = fields[1] == "1" || fields[1] == "3"
+		classification.IsOutfixBracket = fields[1] == "2" || fields[1] == "3"
+		classification.EndTokens = fields[2:]
+
+	case "]":
+		if len(fields) != 1 {
+			return nil, fmt.Errorf("closing bracket classification should have no additional fields, got: %s", response)
 		}
 
 	case "X": // Exception - followed by reason

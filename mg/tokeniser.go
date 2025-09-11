@@ -511,8 +511,12 @@ func (t *Tokenizer) readBracket() *Token {
 		subType = BracketBrace
 	}
 
-	// Add the bracket token
-	return t.addToken(ttype, subType, string(r), startLine, startCol)
+	// Assert that the brace token acts as a surround-form by default.
+	token := t.addToken(ttype, subType, string(r), startLine, startCol)
+	token.IsOutfixBracket = true
+	token.IsInfixBracket = subType != BracketBrace
+
+	return token
 }
 
 func (t *Tokenizer) readPunctuation() *Token {
@@ -1500,7 +1504,7 @@ func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) 
 
 	for _, token := range t.tokens {
 		// Only classify identifiers and signs
-		if token.Type == Identifier || token.Type == Sign {
+		if token.Type == Identifier || token.Type == Sign || token.Type == OpenBracket || token.Type == CloseBracket {
 			classifier.AddToken(token.Text)
 			tokensToClassify = append(tokensToClassify, token)
 		}
@@ -1592,6 +1596,19 @@ func (t *Tokenizer) applyClassificationToToken(token *Token, classification *Ext
 	case "C": // Compound label
 		token.Type = Identifier
 		token.SubType = IdentifierCompoundLabel
+
+	case "[": // Open bracket
+		token.Type = OpenBracket
+		token.SubType = BracketOther
+		token.IsInfixBracket = classification.IsInfixBracket
+		token.IsOutfixBracket = classification.IsOutfixBracket
+		for _, t := range classification.EndTokens {
+			token.SubTokens = append(token.SubTokens, &Token{Type: CloseBracket, SubType: BracketOther, Text: t, Span: Span{-1, -1, -1, -1}, IsMultiLine: false})
+		}
+
+	case "]": // Close bracket
+		token.Type = CloseBracket
+		token.SubType = BracketOther
 
 	case "X": // Exception
 		return &MonogramError{
