@@ -6,29 +6,32 @@ import (
 	"strings"
 )
 
-func PrintASTMermaid(root *Node, indentDelta string, output io.Writer) {
+func PrintASTMermaid(root *Node, indentDelta string, output io.Writer, options *ConfigurableOptions) {
 	// Initialize the Mermaid graph
 	fmt.Fprintln(output, "graph LR")
 
 	// Recursively print the nodes and their relationships
-	printNodeMermaid(root, "", output)
+	printNodeMermaid(root, "", output, options)
 	addStyles(output)
 }
 
-func printNodeMermaid(node *Node, parentID string, output io.Writer) {
+func printNodeMermaid(node *Node, parentID string, output io.Writer, options *ConfigurableOptions) {
 	// Generate a unique ID for the current node
 	nodeID := fmt.Sprintf("node_%p", node)
 
 	// Create the node label
 	label := node.Name
 	if len(node.Options) == 1 {
-		for _, value := range node.Options {
-			label = fmt.Sprintf("%s: %s", node.Name, escapeMermaidValue(value))
+		for key, value := range node.Options {
+			trimmedValue := TrimValue(key, value, options.TrimTokenOnOutput)
+			label = fmt.Sprintf("%s: %s", node.Name, escapeMermaidValue(trimmedValue))
 		}
 	} else if value, exists := node.Options["value"]; exists {
-		label = fmt.Sprintf("%s: %s", node.Name, escapeMermaidValue(value))
+		trimmedValue := TrimValue("value", value, options.TrimTokenOnOutput)
+		label = fmt.Sprintf("%s: %s", node.Name, escapeMermaidValue(trimmedValue))
 	} else if name, exists := node.Options["name"]; exists {
-		label = fmt.Sprintf("%s: %s", node.Name, escapeMermaidValue(name))
+		trimmedValue := TrimValue("name", name, options.TrimTokenOnOutput)
+		label = fmt.Sprintf("%s: %s", node.Name, escapeMermaidValue(trimmedValue))
 	}
 
 	// Format the label for Mermaid
@@ -49,7 +52,7 @@ func printNodeMermaid(node *Node, parentID string, output io.Writer) {
 
 	// Recurse for child nodes
 	for _, child := range node.Children {
-		printNodeMermaid(child, nodeID, output)
+		printNodeMermaid(child, nodeID, output, options)
 	}
 }
 

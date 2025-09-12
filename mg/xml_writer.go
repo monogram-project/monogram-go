@@ -7,12 +7,12 @@ import (
 	"strings"
 )
 
-func PrintASTXML(root *Node, indentDelta string, output io.Writer) {
+func PrintASTXML(root *Node, indentDelta string, output io.Writer, options *ConfigurableOptions) {
 	// Print the root node (which is the "unit" node)
-	printNodeXML(root, "", indentDelta, output)
+	printNodeXML(root, "", indentDelta, output, options)
 }
 
-func printNodeXML(node *Node, currentIndent string, indentDelta string, output io.Writer) {
+func printNodeXML(node *Node, currentIndent string, indentDelta string, output io.Writer, options *ConfigurableOptions) {
 	// Open the XML tag
 	fmt.Fprintf(output, "%s<%s", currentIndent, node.Name)
 
@@ -27,7 +27,8 @@ func printNodeXML(node *Node, currentIndent string, indentDelta string, output i
 	// Print attributes in alphabetical order
 	for _, key := range sortedKeys {
 		value := node.Options[key]
-		fmt.Fprintf(output, ` %s="%s"`, key, escapeXMLValue(value))
+		trimmedValue := TrimValue(key, value, options.TrimTokenOnOutput)
+		fmt.Fprintf(output, ` %s="%s"`, key, escapeXMLValue(trimmedValue))
 	}
 
 	// Handle self-closing tag if no children are present
@@ -40,7 +41,7 @@ func printNodeXML(node *Node, currentIndent string, indentDelta string, output i
 	fmt.Fprintln(output, ">")
 	newIndent := currentIndent + indentDelta
 	for _, child := range node.Children {
-		printNodeXML(child, newIndent, indentDelta, output)
+		printNodeXML(child, newIndent, indentDelta, output, options)
 	}
 
 	// Close the XML tag

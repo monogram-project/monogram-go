@@ -17,6 +17,7 @@ add-decision TOPIC:
 jumpstart:
     sh jumpstart.sh
 
+# BUMP = major|minor|patch|build
 # Bump the version of monogram and optionally commit and push
 bump BUMP:
     python3 ./scripts/bump.py --bump={{BUMP}} --save 

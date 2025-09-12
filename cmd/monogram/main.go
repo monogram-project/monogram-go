@@ -42,31 +42,21 @@ import (
 // Controlled by ldflags.
 var IsBuiltForDocker = "false"
 
-type FormatOptions struct {
-	Format        string
-	Input         string
-	Output        string
-	Indent        int
-	Limit         bool
-	DefaultLabel  string
-	IncludeSpans  bool
-	Decimal       bool
-	CheckLiterals bool
-}
-
 // setupFlags initializes a flag set with the common flag definitions.
-func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
+func setupFlags(fs *pflag.FlagSet, options *mg.FormatOptions, configFile *string, showHelp *bool, classifyTokens *bool, showVersion *bool, testPort *string, openBrowserFlag *bool) {
 	fs.StringVarP(&options.Format, "format", "f", options.Format, "Output format xml|json|yaml|mermaid|dot")
 	fs.StringVarP(&options.Input, "input", "i", options.Input, "Input file (optional, defaults to stdin)")
 	fs.StringVarP(&options.Output, "output", "o", options.Output, "Output file (optional, defaults to stdout)")
 	fs.IntVar(&options.Indent, "indent", options.Indent, "Number of spaces for indentation (0 for no formatting)")
 	fs.BoolVar(&options.Limit, "one", options.Limit, "Process only one monogram value and do not wrap in a unit node")
-	fs.StringVarP(&options.DefaultLabel, "default-breaker", "b", options.DefaultLabel, "Default breakers")
+	fs.StringVarP(&options.DefaultLabel, "default-label", "b", options.DefaultLabel, "Default labels")
 	fs.BoolVar(&options.IncludeSpans, "include-spans", options.IncludeSpans, "Include start/end of expressions in the output")
 	fs.BoolVar(&options.Decimal, "decimal", options.Decimal, "Decode numbers integers and floats in base 10")
 	fs.BoolVar(&options.CheckLiterals, "check-literals", options.CheckLiterals, "Check regexs and other literal strings for validity")
-	if optionsFile != nil {
-		fs.StringVar(optionsFile, "options-file", "", "File containing additional options")
+	fs.StringVar(&options.UseClassifier, "use-classifier", "", "External command to use for token classification")
+	fs.IntVar(&options.TrimTokenOnOutput, "trim-token-on-output", options.TrimTokenOnOutput, "Limit the width of token text in output (0 for no limit)")
+	if configFile != nil {
+		fs.StringVarP(configFile, "config", "c", "", "Configuration file (YAML format)")
 	}
 	if showHelp != nil {
 		fs.BoolVarP(showHelp, "help", "h", false, "Display help information")
@@ -89,8 +79,8 @@ func setupFlags(fs *pflag.FlagSet, options *FormatOptions, optionsFile *string, 
 }
 
 // Define a type for the translation function
-// type translationFunc func(io.Reader, io.Writer, *FormatOptions)
-type translateFunc func(root *mg.Node, indentDelta string, output io.Writer)
+// type translationFunc func(io.Reader, io.Writer, *mg.FormatOptions)
+type translateFunc func(root *mg.Node, indentDelta string, output io.Writer, options *mg.ConfigurableOptions)
 
 type formatHandler struct {
 	Format string
@@ -134,30 +124,30 @@ var availableFormatNames = func() []string {
 	return formats
 }()
 
-func parseToAST(input string, foptions *FormatOptions) (*mg.Node, error) {
+func parseToAST(input string, foptions *mg.FormatOptions, externalClassifier *mg.ExternalClassifier) (*mg.Node, error) {
 	p_opts := &mg.ParserOptions{
-		DefaultLabel:  foptions.DefaultLabel,
-		IncludeSpans:  foptions.IncludeSpans,
-		Decimal:       foptions.Decimal,
-		CheckLiterals: foptions.CheckLiterals,
+		ConfigurableOptions: foptions.ConfigurableOptions,
+		ExternalClassifier:  externalClassifier,
 	}
 	return p_opts.ParseToAST(input, foptions.Input, foptions.Limit)
 }
 
 func main() {
 	// Initialize the options struct
-	options := FormatOptions{
-		Format:       "",
-		Input:        "",
-		Output:       "",
-		Indent:       2,
-		Limit:        false,
-		DefaultLabel: "_",
-		IncludeSpans: false,
-		Decimal:      false,
+	options := mg.FormatOptions{
+		Input:  "",
+		Output: "",
+		Limit:  false,
+		ConfigurableOptions: mg.ConfigurableOptions{
+			Format:       "",
+			Indent:       2,
+			DefaultLabel: "_",
+			IncludeSpans: false,
+			Decimal:      false,
+		},
 	}
 
-	var optionsFile string
+	var configFile string
 	var showHelp bool
 	var classifyTokens bool
 	var showVersion bool // New variable for the --version flag
@@ -165,31 +155,45 @@ func main() {
 	openBrowserFlag := true
 
 	// Set up the main command-line flag set
-	setupFlags(pflag.CommandLine, &options, &optionsFile, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
+	setupFlags(pflag.CommandLine, &options, &configFile, &showHelp, &classifyTokens, &showVersion, &testPort, &openBrowserFlag)
 
-	// Parse command-line flags first to check for `--options-file`
+	// Parse command-line flags
 	pflag.Parse()
 
-	// Process options file if specified
-	if optionsFile != "" {
-		fileArgs, err := readOptionsFile(optionsFile)
+	// Load configuration file if specified
+	var config *mg.Config
+	var err error
+	var flagsExplicitlySet map[string]bool
+
+	if configFile != "" {
+		config, err = mg.LoadConfig(configFile)
 		if err != nil {
-			log.Fatalf("Error reading options file: %v", err)
+			log.Fatalf("Error loading config file: %v", err)
 		}
 
-		// Create a temporary FlagSet for file-based options
-		fileFlagSet := pflag.NewFlagSet("file-flags", pflag.ContinueOnError)
-		setupFlags(fileFlagSet, &options, nil, nil, nil, nil, nil, nil) // Reuse the same setup logic
-		if err := fileFlagSet.Parse(fileArgs); err != nil {
-			log.Fatalf("Error parsing options from file: %v", err)
-		}
+		// Track which flags were explicitly set to avoid overriding them with config defaults
+		flagsExplicitlySet = make(map[string]bool)
+		pflag.Visit(func(flag *pflag.Flag) {
+			flagsExplicitlySet[flag.Name] = true
+		})
 
-		// Re-parse the command-line arguments to ensure they override file-based options
-		pflag.Parse()
+		// Apply config defaults only for flags that weren't explicitly set
+		config.ApplyConfigDefaults(&options, flagsExplicitlySet)
+	} else {
+		// Even if no config file, we need to track explicitly set flags for validation
+		flagsExplicitlySet = make(map[string]bool)
+		pflag.Visit(func(flag *pflag.Flag) {
+			flagsExplicitlySet[flag.Name] = true
+		})
+	}
+
+	// Validate use-classifier flag: if explicitly set, it cannot be empty
+	if flagsExplicitlySet["use-classifier"] && options.UseClassifier == "" {
+		log.Fatalf("Error: --use-classifier flag was provided but no command was specified")
 	}
 
 	if testPort != "" {
-		startTestServer(testPort, openBrowserFlag, &options)
+		startTestServer(testPort, openBrowserFlag, &options, config, options.UseClassifier)
 		os.Exit(0) // Exit after printing the version, cannot be reached at present.
 	}
 
@@ -240,7 +244,7 @@ func main() {
 
 	// Handle built-in formats
 	if isBuiltInFormat {
-		err := translator.translate(inputReader, outputWriter, &options)
+		err := translator.translate(inputReader, outputWriter, &options, config, options.UseClassifier)
 		if err != nil {
 			log.Fatalf("Error: Failed to translate input: %v", err)
 		}
@@ -260,38 +264,38 @@ func main() {
 	newArgs[0] = execName
 	copy(newArgs[1:], os.Args[1:])
 
-	err := syscall.Exec(execName, newArgs, os.Environ())
+	err = syscall.Exec(execName, newArgs, os.Environ())
 	if err != nil {
 		log.Fatalf("Failed to execute %s: %v", execName, err)
 	}
 }
 
-// readOptionsFile reads the options from the specified file and returns them as a slice of strings
-func readOptionsFile(filename string) ([]string, error) {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	// Split the file into individual arguments (by whitespace or newlines)
-	content := string(data)
-	args := strings.Fields(content) // Splits by any whitespace (including newlines)
-	return args, nil
+func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *mg.FormatOptions, config *mg.Config, useClassifier string) error {
+	return translate(input, output, printAST.Fn, options, config, useClassifier)
 }
 
-func (printAST *formatHandler) translate(input io.Reader, output io.Writer, options *FormatOptions) error {
-	return translate(input, output, printAST.Fn, options)
-}
-
-func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer), options *FormatOptions) error {
+func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string, io.Writer, *mg.ConfigurableOptions), options *mg.FormatOptions, config *mg.Config, useClassifier string) error {
 	// Read the entire input as a string
 	data, err := io.ReadAll(input)
 	if err != nil {
 		return fmt.Errorf("failed to read input: %v", err)
 	}
 
+	// Create external classifier if specified
+	var externalClassifier *mg.ExternalClassifier
+
+	if options.UseClassifier != "" {
+		// Create external classifier
+		var err error
+		externalClassifier, err = mg.NewExternalClassifier(options.UseClassifier)
+		if err != nil {
+			log.Fatalf("Error creating external classifier: %v", err)
+		}
+		defer externalClassifier.Close()
+	}
+
 	// Convert the input string into an AST
-	ast, err := parseToAST(string(data), options)
+	ast, err := parseToAST(string(data), options, externalClassifier)
 	if err != nil {
 		return err
 	}
@@ -303,7 +307,7 @@ func translate(input io.Reader, output io.Writer, printAST func(*mg.Node, string
 	}
 
 	// Use the provided print function to recursively print the AST
-	printAST(ast, indent, output)
+	printAST(ast, indent, output, &options.ConfigurableOptions)
 
 	return nil
 }

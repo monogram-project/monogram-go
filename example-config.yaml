@@ -1,0 +1,47 @@
+# Sample Monogram Configuration File
+# This file demonstrates the configuration options for the monogram tool
+
+# Regex patterns for identifier classification
+# Arrays of regex patterns that will be compiled using regexptable for efficient matching
+simple-label-regex: 
+  - if
+  - else
+  - while
+  - for
+  - case
+  - default
+compound-label-regex: 
+  - else-if
+  - else-while
+form-start-regex: 
+  - function
+  - class
+  - struct
+form-end-regex: 
+  - endfunction
+  - endclass
+  - endstruct
+form-prefix-regex: 
+  - return
+  - break
+  - continue
+
+# Form surround match patterns - list of regex patterns for matching paired constructs
+form-surround-match:
+  - "if endif"
+  - "while endwhile"
+  - "for endfor"
+  - "function endfunction"
+  - "class endclass"
+  - "struct endstruct"
+  - "try endtry"
+  - "switch endswitch"
+
+# Default configuration values
+# These are applied only when the corresponding command-line flag is not used
+option-format: "xml"
+option-indent: 2
+option-default-label: "seq"
+option-include-spans: false
+option-decimal: false
+option-check-literals: true

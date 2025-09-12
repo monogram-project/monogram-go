@@ -38,13 +38,13 @@ func escapeJSONString(value string) string {
 	return sb.String()
 }
 
-func PrintASTJSON(root *Node, indentDelta string, output io.Writer) {
+func PrintASTJSON(root *Node, indentDelta string, output io.Writer, options *ConfigurableOptions) {
 	// Print the root node (which is the "unit" node)
-	printNodeJSON(root, "", indentDelta, output)
+	printNodeJSON(root, "", indentDelta, output, options)
 }
 
 // printNodeJSON recursively prints a single node and its children in JSON format.
-func printNodeJSON(node *Node, currentIndent string, indentDelta string, output io.Writer) {
+func printNodeJSON(node *Node, currentIndent string, indentDelta string, output io.Writer, options *ConfigurableOptions) {
 	// Precompute the next level of indentation
 	nextIndent := currentIndent + indentDelta
 
@@ -59,7 +59,8 @@ func printNodeJSON(node *Node, currentIndent string, indentDelta string, output 
 	current := 0
 	for key, value := range node.Options {
 		current++
-		escapedValue := escapeJSONString(value)              // Escape the option value
+		trimmedValue := TrimValue(key, value, options.TrimTokenOnOutput)
+		escapedValue := escapeJSONString(trimmedValue)       // Escape the option value
 		if current < optionCount || len(node.Children) > 0 { // Add a comma if there are more fields or children
 			fmt.Fprintf(output, "%s\"%s\": \"%s\",\n", nextIndent, key, escapedValue)
 		} else {
@@ -73,7 +74,7 @@ func printNodeJSON(node *Node, currentIndent string, indentDelta string, output 
 
 		childIndent := nextIndent + indentDelta
 		for i, child := range node.Children {
-			printNodeJSON(child, childIndent, indentDelta, output)
+			printNodeJSON(child, childIndent, indentDelta, output, options)
 			if i < len(node.Children)-1 {
 				fmt.Fprintln(output, ",") // Add a comma for all but the last child
 			} else {

@@ -15,6 +15,8 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/monogram-project/monogram-go/mg"
 )
 
 // Controlled by a build tag, withweb, to include or exclude web server functionality.
@@ -167,8 +169,8 @@ var formTemplate = template.Must(template.New("form").Parse(`
 			</div>
 
 			<div>
-				<label for="defaultBreaker">Default Breaker:</label>
-				<input type="text" id="defaultBreaker" name="defaultBreaker" value="{{.Breaker}}">
+				<label for="defaultLabel">Default Label:</label>
+				<input type="text" id="defaultLabel" name="defaultLabel" value="{{.DefaultLabel}}">
 			</div>
 			
 			<div>
@@ -234,11 +236,13 @@ var formTemplate = template.Must(template.New("form").Parse(`
 
 // startTestServer initializes an HTTP server on the specified port.
 // It adjusts the bind address depending on whether it's running inside a container.
-func startTestServer(port string, openBrowserFlag bool, options *FormatOptions) {
+func startTestServer(port string, openBrowserFlag bool, options *mg.FormatOptions, config *mg.Config, useClassifier string) {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		indexHandler(w, r, options)
+		indexHandler(w, r, options, config)
 	})
-	http.HandleFunc("/translate", translateHandler)
+	http.HandleFunc("/translate", func(w http.ResponseWriter, r *http.Request) {
+		translateHandler(w, r, config, useClassifier, options.TrimTokenOnOutput)
+	})
 
 	// Default to localhost for normal execution.
 	// When running inside a container, bind to 0.0.0.0 so the server is accessible externally.
@@ -258,7 +262,7 @@ func startTestServer(port string, openBrowserFlag bool, options *FormatOptions) 
 	}
 }
 
-func indexHandler(w http.ResponseWriter, _ *http.Request, options *FormatOptions) {
+func indexHandler(w http.ResponseWriter, _ *http.Request, options *mg.FormatOptions, _ *mg.Config) {
 	format := "XML" // Default format
 	if options.Format != "" {
 		format = options.Format
@@ -273,7 +277,7 @@ func indexHandler(w http.ResponseWriter, _ *http.Request, options *FormatOptions
 		Decimal       bool
 		CheckLiterals bool
 		Indent        int
-		Breaker       string
+		DefaultLabel  string
 	}{
 		IsError:       false,
 		Output:        "",
@@ -284,12 +288,12 @@ func indexHandler(w http.ResponseWriter, _ *http.Request, options *FormatOptions
 		Decimal:       options.Decimal,
 		CheckLiterals: options.CheckLiterals,
 		Indent:        options.Indent,
-		Breaker:       options.DefaultLabel,
+		DefaultLabel:  options.DefaultLabel,
 	})
 }
 
 // translateHandler processes the form and renders the translation output.
-func translateHandler(w http.ResponseWriter, r *http.Request) {
+func translateHandler(w http.ResponseWriter, r *http.Request, config *mg.Config, useClassifier string, serverTrimTokenOnOutput int) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Failed to parse form: "+err.Error(), http.StatusBadRequest)
 		return
@@ -297,7 +301,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	monogramInput := r.FormValue("monogramInput")
 	format := r.FormValue("format")
 	indentVal := r.FormValue("indent")
-	defaultBreaker := r.FormValue("defaultBreaker")
+	defaultLabel := r.FormValue("defaultLabel")
 	includeSpans := r.FormValue("includeSpans") == "on"
 	decimal := r.FormValue("decimal") == "on"
 	checkLiterals := r.FormValue("checkLiterals") == "on"
@@ -308,6 +312,9 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		indent = indentParsed
 	}
 
+	// Use the trimTokenOnOutput value from server options (command line)
+	trimTokenOnOutput := serverTrimTokenOnOutput
+
 	formatObject, ok := nameToFormatHandler[format]
 	if !ok {
 		http.Error(w, "Unknown format: "+format, http.StatusBadRequest)
@@ -315,16 +322,20 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set up FormatOptions based on the form values:
-	options := FormatOptions{
-		Format:        formatObject.Format,
-		Input:         "", // Not used in test mode — we’re using form data.
-		Output:        "", // Output will be captured in a buffer.
-		Indent:        indent,
-		Limit:         false,
-		DefaultLabel:  defaultBreaker,
-		IncludeSpans:  includeSpans,
-		Decimal:       decimal,
-		CheckLiterals: checkLiterals,
+	options := mg.FormatOptions{
+		Input:  "", // Not used in test mode — we’re using form data.
+		Output: "", // Output will be captured in a buffer.
+		Limit:  false,
+		ConfigurableOptions: mg.ConfigurableOptions{
+			Format:            formatObject.Format,
+			Indent:            indent,
+			DefaultLabel:      defaultLabel,
+			IncludeSpans:      includeSpans,
+			Decimal:           decimal,
+			CheckLiterals:     checkLiterals,
+			UseClassifier:     useClassifier,
+			TrimTokenOnOutput: trimTokenOnOutput,
+		},
 	}
 
 	// Create reader from input text and a bytes.Buffer for capturing output:
@@ -332,7 +343,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 	var outputBuffer bytes.Buffer
 
 	// Perform the translation.
-	err := formatObject.translate(inputReader, &outputBuffer, &options)
+	err := formatObject.translate(inputReader, &outputBuffer, &options, config, useClassifier)
 	if err != nil {
 		// Render the same form with the translation output shown:
 		temp_err := formTemplate.Execute(w, struct {
@@ -345,7 +356,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 			Decimal       bool
 			CheckLiterals bool
 			Indent        int
-			Breaker       string
+			Label         string
 		}{
 			IsError:       true,
 			Output:        err.Error(),
@@ -356,7 +367,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 			Decimal:       decimal,
 			CheckLiterals: checkLiterals,
 			Indent:        indent,
-			Breaker:       defaultBreaker,
+			Label:         defaultLabel,
 		})
 		if temp_err != nil {
 			http.Error(w, "Failed to render form: "+temp_err.Error(), http.StatusInternalServerError)
@@ -375,7 +386,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		Decimal       bool
 		CheckLiterals bool
 		Indent        int
-		Breaker       string
+		DefaultLabel  string
 	}{
 		IsError:       false,
 		Output:        outputBuffer.String(),
@@ -386,7 +397,7 @@ func translateHandler(w http.ResponseWriter, r *http.Request) {
 		Decimal:       decimal,
 		CheckLiterals: checkLiterals,
 		Indent:        indent,
-		Breaker:       defaultBreaker,
+		DefaultLabel:  defaultLabel,
 	})
 	if temp_err != nil {
 		http.Error(w, "Failed to render form: "+temp_err.Error(), http.StatusInternalServerError)

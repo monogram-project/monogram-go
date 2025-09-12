@@ -1,26 +1,27 @@
 package mg
 
 type ParserOptions struct {
-	colOffset     int
-	DefaultLabel  string
-	IncludeSpans  bool
-	Decimal       bool
-	CheckLiterals bool
+	colOffset int
+	ConfigurableOptions
+	ExternalClassifier *ExternalClassifier
 }
 
 func NewParserOptions() *ParserOptions {
 	return &ParserOptions{
-		colOffset:     0,
-		DefaultLabel:  "_",
-		IncludeSpans:  false,
-		Decimal:       false,
-		CheckLiterals: false,
+		colOffset: 0,
+		ConfigurableOptions: ConfigurableOptions{
+			DefaultLabel:      "_",
+			IncludeSpans:      false,
+			Decimal:           false,
+			CheckLiterals:     false,
+			TrimTokenOnOutput: 0,
+		},
 	}
 }
 
 func (p_opts *ParserOptions) ParseToAST(input string, src string, limit bool) (*Node, error) {
 	// Get the array of nodes
-	nodes, span, err := parseToASTArray(input, limit, p_opts.DefaultLabel, p_opts.IncludeSpans, p_opts.Decimal, p_opts.CheckLiterals, p_opts.colOffset)
+	nodes, span, err := parseToASTArray(input, limit, p_opts.colOffset, &p_opts.ConfigurableOptions, p_opts.ExternalClassifier)
 	if err != nil {
 		return nil, err
 	}

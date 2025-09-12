@@ -5,6 +5,7 @@ import (
 )
 
 type TokenType int
+type OpPrec uint16
 
 const (
 	// Major Types
@@ -35,7 +36,9 @@ const (
 
 // Subtypes for Identifier
 const (
-	IdentifierVariable uint8 = iota
+	IdentifierUnclassified uint8 = iota
+	IdentifierVariable
+	IdentifierFormPrefix
 	IdentifierFormStart
 	IdentifierFormEnd
 	IdentifierSimpleLabel
@@ -53,6 +56,7 @@ const (
 	BracketParenthesis uint8 = iota
 	BracketBrace
 	BracketBracket
+	BracketOther // Used to indicate externally classified brackets.
 )
 
 // Subtypes for Sign
@@ -69,6 +73,16 @@ const (
 	SignOperator
 )
 
+type OperatorPrecedence struct {
+	isInitialised     bool
+	canBePrefix       bool
+	canBeInfix        bool
+	canBePostfix      bool
+	prefixPrecedence  OpPrec
+	infixPrecedence   OpPrec
+	postfixPrecedence OpPrec
+}
+
 type Token struct {
 	Type                 TokenType // The type of token (Sign, Bracket, etc.)
 	SubType              uint8     // The specific subtype of the token (if any)
@@ -79,15 +93,15 @@ type Token struct {
 	FollowedByWhitespace bool      // New field to indicate if the token is followed by whitespace
 	EscapeSeen           bool      // New field to indicate if an escape sequence was seen
 	IsMultiLine          bool      // New field to indicate if the token is a multi-line string
+	IsInfixBracket       bool      // New field to indicate if the bracket works like f( x )
+	IsOutfixBracket      bool      // New field to indicate if the bracket works like { ... }
 	QuoteRune            rune      // New field to indicate the quote rune for strings
 	NextToken            *Token    // The next token in the chain
 
-	SubTokens []*Token // Subtokens for interpolated string tokens
+	SubTokens []*Token // Subtokens for interpolated string tokens (or other uses)
 
 	// Cache for precedence
-	precValue int  // Cached precedence value
-	precValid bool // Indicates if the precedence has been computed
-	errFlag   bool // Cached error flag for precedence validity
+	cachedPrecedence OperatorPrecedence
 }
 
 func (t *Token) SpanString() string {
@@ -115,29 +129,35 @@ func (t *Token) IsSemi() bool {
 }
 
 func (t *Token) IsLabelToken(formStart *Token) bool {
-	return t.IsSimpleLabelToken() || t.IsCompoundLabelToken(formStart)
+	return t.IsSimpleLabelToken() || t.IsCompoundLabelToken(formStart) || t.IsEffectivelyCompoundLabelToken()
 }
 
 func (t *Token) IsSimpleLabelToken() bool {
-	if t.Type != Identifier || t.SubType != IdentifierVariable {
+	if t.Type != Identifier {
 		return false
 	}
-	if t.FollowedByWhitespace {
+	if t.SubType == IdentifierSimpleLabel {
+		return true // Simple labels are always valid
+	}
+	if t.SubType != IdentifierUnclassified {
 		return false
 	}
-	if t.NextToken == nil {
-		return false
-	}
-	if t.NextToken.Type != Sign || t.NextToken.SubType != SignLabel {
-		return false
-	}
-	return true
+	hasFollowingSignLabel := !t.FollowedByWhitespace && t.NextToken != nil && t.NextToken.Type == Sign && t.NextToken.SubType == SignLabel
+	return hasFollowingSignLabel // Variable labels must be followed by a sign label
+}
+
+func (t *Token) IsEffectivelyCompoundLabelToken() bool {
+	return t.Type == Identifier && t.SubType == IdentifierCompoundLabel
 }
 
 func (t *Token) IsCompoundLabelToken(formStart *Token) bool {
-	if t.Type != Identifier || t.SubType != IdentifierVariable {
+	if t.Type != Identifier || (t.SubType != IdentifierVariable && t.SubType != IdentifierUnclassified) {
 		return false
 	}
+	return t.ContinuesLikeCompoundLabelToken(formStart)
+}
+
+func (t *Token) ContinuesLikeCompoundLabelToken(formStart *Token) bool {
 	if t.FollowedByWhitespace {
 		return false
 	}
@@ -152,7 +172,7 @@ func (t *Token) IsCompoundLabelToken(formStart *Token) bool {
 	if t2 == nil {
 		return false
 	}
-	if t2.Type != Identifier || t2.SubType != IdentifierFormStart {
+	if t2.Type != Identifier || (t2.SubType != IdentifierFormStart && t2.SubType != IdentifierFormPrefix) {
 		return false
 	}
 	if t2.Text != formStart.Text {
@@ -165,15 +185,8 @@ func (t *Token) IsLabel() bool {
 	return t.Type == Sign && t.SubType == SignLabel
 }
 
-func (t *Token) IsMacro() bool {
-	if t.Type != Identifier || t.SubType != IdentifierFormStart || t.FollowedByWhitespace {
-		return false
-	}
-	t1 := t.NextToken
-	if t1 == nil {
-		return false
-	}
-	return t1.Type == Sign && t1.SubType == SignForce
+func (t *Token) IsPrefixForm() bool {
+	return t.Type == Identifier && t.SubType == IdentifierFormPrefix
 }
 
 func (t *Token) IsTaggedString() bool {
@@ -217,8 +230,8 @@ const signChars = ".*/%+-<>~!&^|?:="
 // These roughly correspond to the precedence of the operators in the C language.
 // Note how the prefix operators sneak ahead of their infix counterparts. Blanks
 // are used to encode gaps in the precedence order.
-const precCharactersInfix = ".([                */%+-<>~!&^|?:="
-const precCharactersPrefx = "   .*/%-+<>~!&^|?:="
+const precCharactersInfix = ".([{                */%+-<>~!&^|?:="
+const precCharactersPrefx = "    .*/%-+<>~!&^|?:="
 
 func (t *Token) DelimiterName() string {
 	switch t.Type {
@@ -236,104 +249,97 @@ func (t *Token) DelimiterName() string {
 }
 
 const (
-	maxPrecedence int = 999
+	maxPrecedence OpPrec = 65535
 )
 
-func (t *Token) InfixPrecedence() (int, bool) {
+func (t *Token) InfixPrecedence() (OpPrec, bool) {
 	return t.Precedence(true) // Use infix precedence
 }
 
-func (t *Token) PrefixPrecedence() (int, bool) {
+func (t *Token) PrefixPrecedence() (OpPrec, bool) {
 	return t.Precedence(false) // Use prefix precedence
 }
 
-func (t *Token) Precedence(infix bool) (int, bool) {
+func (t *Token) Precedence(infix bool) (OpPrec, bool) {
 	// Check if precedence is already cached
-	if t.precValid {
-		return t.precValue, !t.errFlag // Return cached result
+	if t.cachedPrecedence.isInitialised {
+		if infix {
+			return t.cachedPrecedence.infixPrecedence, t.cachedPrecedence.canBeInfix // Return cached result
+		}
+		return t.cachedPrecedence.prefixPrecedence, t.cachedPrecedence.canBePrefix // Return cached result
 	}
 
 	// Precedence is only meaningful for Signs and Brackets
 	if t.Type != Sign && t.Type != OpenBracket {
-		return setCacheNoValidPrecedence(t) // Cache that this token has no valid precedence
+		return 0, false
 	}
 
 	if t.Type == Sign && (t.SubType == SignLessThanSlash || t.SubType == SignSlashGreaterThan) {
-		return setCacheNoValidPrecedence(t) // Cache that this token has no valid precedence
+		return 0, false
 	}
 
-	P, ok := textPrecedence(t.Text, infix)
-	if !ok {
-		return setCacheNoValidPrecedence(t)
+	if t.Type == OpenBracket && !t.IsInfixBracket {
+		return 0, false
 	}
 
-	// // Get the first rune of the token's text
-	// runes := []rune(t.Text)
-	// if len(runes) == 0 {
-	// 	// Invalid token with empty text
-	// 	return setCacheNoValidPrecedence(t)
-	// }
-	// firstRune := runes[0]
-
-	// // Find the position of the first rune in the signs string
-	// pos := strings.IndexRune(precCharacters, firstRune)
-	// if pos == -1 {
-	// 	// If the rune is not in the signs string
-	// 	return setCacheNoValidPrecedence(t)
-	// }
-
-	// // Calculate precedence
-	// P := (pos + 1) * 10
-	// if len(runes) > 1 && runes[0] == runes[1] {
-	// 	// If the first rune occurs twice in the token, subtract 1
-	// 	P--
-	// }
+	P1, ok1, P2, ok2, P3, ok3 := textPrecedence(t.Text)
 
 	// Cache the precedence result and success
-	t.precValue = P
-	t.precValid = true
-	t.errFlag = false // Cache success (no error)
+	t.cachedPrecedence = OperatorPrecedence{
+		isInitialised:     true,
+		prefixPrecedence:  P1,
+		infixPrecedence:   P2,
+		postfixPrecedence: P3,
+		canBePrefix:       ok1,
+		canBeInfix:        ok2,
+		canBePostfix:      ok3,
+	}
 
-	return P, true
+	if infix {
+		return P2, ok2
+	}
+	return P1, ok1
 }
 
-func textPrecedence(text string, infix bool) (int, bool) {
+// Note that a precedence of 0 is reserved for non-operators.
+func textPrecedence(text string) (OpPrec, bool, OpPrec, bool, OpPrec, bool) {
 	// Get the first rune of the token's text
 	runes := []rune(text)
 	// We need at least one rune. And we use spaces to encode a non-matching character in the precedence strings.
 	// So if the first rune is a space, we can set it as a non-operator.
 	if len(runes) == 0 || runes[0] == ' ' {
 		// Invalid token with empty text
-		return 0, false
+		return 0, false, 0, false, 0, false
 	}
 	firstRune := runes[0]
 
-	// Find the position of the first rune in the signs string
-	precCharacters := precCharactersInfix
-	if !infix {
-		precCharacters = precCharactersPrefx
-	}
-	pos := strings.IndexRune(precCharacters, firstRune)
-	if pos == -1 {
-		// If the rune is not in the signs string
-		return 0, false
+	// Find the position of the first rune in the signs string.
+	posInfix := strings.IndexRune(precCharactersInfix, firstRune)
+	posPrefx := strings.IndexRune(precCharactersPrefx, firstRune)
+
+	if posInfix == -1 && posPrefx == -1 {
+		// If the rune is not in either signs string.
+		return 0, false, 0, false, 0, false
 	}
 
 	// Calculate precedence
-	P := (pos + 1) * 10
-	if len(runes) > 1 && runes[0] == runes[1] {
+	doubled := len(runes) > 1 && runes[0] == runes[1]
+
+	// Smallest precedence is 9.
+	Pinfix := (posInfix + 1) * 10
+	if doubled {
 		// If the first rune occurs twice in the token, subtract 1
-		P--
+		Pinfix--
 	}
 
-	return P, true
-}
+	// Smallest precedence is 9.
+	Pprefix := (posPrefx + 1) * 10
+	if doubled {
+		// If the first rune occurs twice in the token, subtract 1
+		Pprefix--
+	}
 
-func setCacheNoValidPrecedence(t *Token) (int, bool) {
-	t.precValue = 0
-	t.precValid = true
-	t.errFlag = true
-	return 0, false
+	return (OpPrec)(Pprefix), posPrefx != -1, (OpPrec)(Pinfix), posInfix != -1, 0, false
 }
 
 // VSCodeTokenType maps the token's type and subtype to a VSCode semantic token type.
@@ -350,9 +356,9 @@ func (t *Token) VSCodeTokenType() string {
 		}
 	case Identifier:
 		switch t.SubType {
-		case IdentifierVariable:
+		case IdentifierVariable, IdentifierUnclassified:
 			return "variable"
-		case IdentifierFormStart:
+		case IdentifierFormStart, IdentifierFormPrefix:
 			// Assuming a callable-like entity
 			return "function"
 		case IdentifierFormEnd:

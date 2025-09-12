@@ -1,0 +1,70 @@
+# Functional tests for configuration file behavior
+normalize: xml
+tests:
+
+  - name: "Config file provides default format"
+    command: "{command} --config config-test-files/basic.yaml"
+    input: |
+      hello
+    expected_output: |
+      <unit>
+        <identifier name="hello" />
+      </unit>
+
+  - name: "Config file provides default indent"
+    command: "{command} --config config-test-files/basic.yaml --format xml"
+    input: |
+      hello
+    expected_output: |
+      <unit>
+          <identifier name="hello" />
+      </unit>
+
+  - name: "Command line overrides config file format"
+    command: "{command} --config config-test-files/basic.yaml --format json"
+    input: |
+      hello
+    expected_output: |
+      {
+        "role": "unit",
+        "children": [
+          {
+            "role": "identifier",
+            "name": "hello"
+          }
+        ]
+      }
+    normalize: json
+
+  - name: "Command line overrides config file indent"
+    command: "{command} --config config-test-files/basic.yaml --format xml --indent 2"
+    input: |
+      hello
+    expected_output: |
+      <unit>
+        <identifier name="hello" />
+      </unit>
+
+  - name: "Config file with include-spans enabled"
+    command: "{command} --config config-test-files/basic.yaml --format xml --include-spans"
+    input: |
+      xyz
+    expected_output: |
+      <unit span="1 1 2 1">
+          <identifier name="xyz" span="1 1 1 4" />
+      </unit>
+
+  - name: "Config file can specify use-classifier option"
+    command: "{command} --config config-test-files/with-classifier.yaml --format xml"
+    input: |
+      hello
+    expected_output: |
+      <unit>
+        <identifier name="hello" />
+      </unit>
+
+  - name: "Invalid config file path gives error"
+    command: "{command} --config nonexistent-config.yaml --format xml"
+    input: |
+      hello
+    expected_exit_status: 1

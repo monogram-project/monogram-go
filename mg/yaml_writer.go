@@ -7,9 +7,9 @@ import (
 	"strings"
 )
 
-func PrintASTYAML(root *Node, indentDelta string, output io.Writer) {
+func PrintASTYAML(root *Node, indentDelta string, output io.Writer, options *ConfigurableOptions) {
 	// Print the root node (which is the "unit" node)
-	printNodeYAML(root, 0, indentDelta, output)
+	printNodeYAML(root, 0, indentDelta, output, options)
 }
 
 func n1print(indent int, indentDelta string, output io.Writer) {
@@ -18,7 +18,7 @@ func n1print(indent int, indentDelta string, output io.Writer) {
 	}
 }
 
-func printNodeYAML(node *Node, currentIndent int, indentDelta string, output io.Writer) {
+func printNodeYAML(node *Node, currentIndent int, indentDelta string, output io.Writer, options *ConfigurableOptions) {
 	// Print the node name as a key at the current indentation
 	if currentIndent > 0 {
 		n1print(currentIndent-1, indentDelta, output)
@@ -36,7 +36,8 @@ func printNodeYAML(node *Node, currentIndent int, indentDelta string, output io.
 	// Print attributes (options) in alphabetical order
 	for _, key := range sortedKeys {
 		value := node.Options[key]
-		escapedValue := escapeYAMLString(value) // Escape YAML special characters
+		trimmedValue := TrimValue(key, value, options.TrimTokenOnOutput)
+		escapedValue := escapeYAMLString(trimmedValue) // Escape YAML special characters
 		n1print(currentIndent, indentDelta, output)
 		fmt.Fprintf(output, "%s: %s\n", key, escapedValue)
 	}
@@ -47,7 +48,7 @@ func printNodeYAML(node *Node, currentIndent int, indentDelta string, output io.
 		fmt.Fprintf(output, "children:\n")
 		childIndent := currentIndent + 1
 		for _, child := range node.Children {
-			printNodeYAML(child, childIndent, indentDelta, output) // Indent child nodes appropriately
+			printNodeYAML(child, childIndent, indentDelta, output, options) // Indent child nodes appropriately
 		}
 	}
 }

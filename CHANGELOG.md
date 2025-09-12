@@ -2,6 +2,37 @@
 
 Following the style in https://keepachangelog.com/en/1.0.0/
 
+## Unreleased 
+
+### Added
+
+- Major new feature: External token classfiers now supported.
+  - These allow you to change the role of tokens, significantly altering the
+    range of texts supported by Monogram.
+  - Can be written in any programming language, invoked as an external command.
+  - A simple specification format that is easy to implement.
+
+- Configuration file support via `--config` (`-c`) flag. Supports YAML format
+  with both regex patterns for identifier classification and default options.
+  See [docs/config.md](docs/config.md) for details.
+
+- `@` can now be used as an operator.
+
+- A new option for trimming token-text on output is now available:
+  `--trim-token-on-output=WIDTH`. This is intended for making Mermaid diagrams
+  and other presentation formats less unwieldy.
+
+
+
+### Changed
+
+- `--default-breaker` flag renamed to `--default-label` for clarity and consistency.
+- Configuration file option fields now follow `option-{commandOptionName}` naming scheme (e.g., `option-format`, `option-indent`).
+
+### Removed
+
+- Experimental `--options-file` flag has been withdrawn in favor of the new YAML configuration file system.
+
 ## [0.7.1] XML start/end tags
 
 ### Changed
@@ -132,9 +163,9 @@ The above example is translated into XML like this:
     # ! marks a prefix form.
     if! predicate(x) {
       action(x)
-    } else-if test(y) {     # else-if is recognised as a 'breaker'
+    } else-if test(y) {     # else-if is recognised as a 'label'
       action(y)
-    } else: {               # else: is also recognised as a 'breaker'
+    } else: {               # else: is also recognised as a 'label'
       0
     }
     ```

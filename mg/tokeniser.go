@@ -21,14 +21,15 @@ type Tokenizer struct {
 	lineColStack []int    // Array to store column numbers for each token
 }
 
-// Create a new Tokenizer
-func NewTokenizer(input string) *Tokenizer {
+// Create a new Tokenizer.
+func newTokenizer(input string) *Tokenizer {
 	return &Tokenizer{
-		input:  input,
-		tokens: []*Token{},
-		lineNo: 1,
-		colNo:  1,
-		pos:    0,
+		input:       input,
+		tokens:      []*Token{},
+		lineNo:      1,
+		colNo:       1,
+		pos:         0,
+		NewlineSeen: false,
 	}
 }
 
@@ -393,10 +394,12 @@ func (t *Tokenizer) tokenize() *MonogramError {
 				}
 				token.SetSeen(t, seen) // Process as a raw string
 			} else {
-				return &MonogramError{
-					Message: fmt.Sprintf("Expected opening quote after '@%s'", tagText),
-					Line:    t.lineNo,
-					Column:  t.colNo,
+				at_token := t.addToken(Sign, SignOperator, "@", t.lineNo, t.colNo)
+				at_token.Span.EndColumn = at_token.Span.StartColumn + 1
+				at_token.Span.EndLine = at_token.Span.StartLine
+				if tagText != "" {
+					id_token := t.addToken(Identifier, IdentifierVariable, tagText, t.lineNo, t.colNo)
+					id_token.SetSeen(t, seen)
 				}
 			}
 			continue
@@ -508,8 +511,12 @@ func (t *Tokenizer) readBracket() *Token {
 		subType = BracketBrace
 	}
 
-	// Add the bracket token
-	return t.addToken(ttype, subType, string(r), startLine, startCol)
+	// Assert that the brace token acts as a surround-form by default.
+	token := t.addToken(ttype, subType, string(r), startLine, startCol)
+	token.IsOutfixBracket = true
+	token.IsInfixBracket = subType != BracketBrace
+
+	return token
 }
 
 func (t *Tokenizer) readPunctuation() *Token {
@@ -1327,7 +1334,7 @@ func (t *Tokenizer) readIdentifier() (*Token, *MonogramError) {
 	}
 
 	// Add the identifier token with the new field
-	token := t.addTokenLineCol(Identifier, IdentifierVariable, text.String(), startLineCol)
+	token := t.addTokenLineCol(Identifier, IdentifierUnclassified, text.String(), startLineCol)
 	token.EscapeSeen = escSeen
 	t.markFollowedByWhitespace(token)
 	return token, nil
@@ -1356,52 +1363,62 @@ func isClosingQuoteChar(r rune) bool {
 	return r == '\'' || r == '"' || r == '`' || r == '»'
 }
 
-func (t *Tokenizer) markReservedTokens() *MonogramError {
+func (t *Tokenizer) markFormSurroundTokens() {
 	ident_exists := make(map[string]bool)
-	is_reserved := make(map[string]bool) // A subset of ident_exists
+	is_formend := make(map[string]bool)
+
+	// FormEnd
+	// Collect all identifiers.
 	for _, token := range t.tokens {
 		if token.Type == Identifier {
 			ident_exists[token.Text] = true
 		}
 	}
-	for n, token := range t.tokens {
-		if token.Type != Identifier {
-			continue
-		}
-		var next *Token
-		if n < len(t.tokens)-1 {
-			next = t.tokens[n+1]
-		}
-		if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
-			if strings.HasPrefix(token.Text, "end") {
-				//return fmt.Errorf("cannot use %s as an opening keyword", token.Text)
-				return &MonogramError{
-					Message: fmt.Sprintf("cannot use '%s' as an opening keyword", token.Text),
-					Line:    token.Span.StartLine,
-					Column:  token.Span.StartColumn,
-				}
-			}
-			token.SubType = IdentifierFormStart
-			is_reserved[token.Text] = true
-		}
-	}
 	for _, token := range t.tokens {
-		if token.Type != Identifier || strings.HasPrefix(token.Text, "endend") {
+		if token.Type != Identifier || token.SubType != IdentifierUnclassified {
 			continue
 		}
 		if strings.HasPrefix(token.Text, "end") {
 			stem := token.Text[3:]
 			if ident_exists[stem] {
 				token.SubType = IdentifierFormEnd
-			}
-		} else if is_reserved[token.Text] {
-			token.SubType = IdentifierFormStart
-		} else {
-			if ident_exists["end"+token.Text] {
-				token.SubType = IdentifierFormStart
+				is_formend[token.Text] = true
 			}
 		}
 	}
+
+	// FormStart
+	for _, token := range t.tokens {
+		if token.Type != Identifier || token.SubType != IdentifierUnclassified {
+			continue
+		}
+		if !strings.HasPrefix(token.Text, "end") && is_formend["end"+token.Text] {
+			token.SubType = IdentifierFormStart
+		}
+	}
+}
+
+func (t *Tokenizer) markFormPrefixTokens() {
+	is_prefix := make(map[string]bool)
+	for _, token := range t.tokens {
+		if token.Type != Identifier || token.SubType != IdentifierUnclassified {
+			continue
+		}
+		if is_prefix[token.Text] {
+			token.SubType = IdentifierFormPrefix
+		} else {
+			next := token.NextToken
+			if next != nil && next.Type == Sign && next.SubType == SignForce && !token.FollowedByWhitespace {
+				token.SubType = IdentifierFormPrefix
+				is_prefix[token.Text] = true
+			}
+		}
+	}
+}
+
+func (t *Tokenizer) markReservedTokens() *MonogramError {
+	t.markFormPrefixTokens()
+	t.markFormSurroundTokens()
 	return nil
 }
 
@@ -1437,9 +1454,9 @@ func (t *Tokenizer) addFiniToken() *Token {
 	return endToken
 }
 
-func tokenizeInput(input string, colOffset int) (*Token, Span, *MonogramError) {
+func tokenizeInput(input string, colOffset int, externalClassifier *ExternalClassifier) (*Token, Span, *MonogramError) {
 	// Create a new Tokenizer instance
-	tokenizer := NewTokenizer(input)
+	tokenizer := newTokenizer(input)
 
 	initToken := tokenizer.addInitToken() // Add capstone token for the start of input
 
@@ -1451,12 +1468,20 @@ func tokenizeInput(input string, colOffset int) (*Token, Span, *MonogramError) {
 
 	tokenizer.addFiniToken() // Add capstone token for the end of input
 
-	terr = tokenizer.markReservedTokens()
-	if terr != nil {
-		return nil, Span{}, terr
-	}
-
 	tokenizer.chainTokens()
+
+	// Apply external classification if provided, otherwise use internal classification
+	if externalClassifier != nil {
+		terr = tokenizer.applyExternalClassification(externalClassifier)
+		if terr != nil {
+			return nil, Span{}, terr
+		}
+	} else {
+		terr = tokenizer.markReservedTokens()
+		if terr != nil {
+			return nil, Span{}, terr
+		}
+	}
 
 	if colOffset > 0 {
 		for _, token := range tokenizer.tokens {
@@ -1470,4 +1495,138 @@ func tokenizeInput(input string, colOffset int) (*Token, Span, *MonogramError) {
 
 	// Return the list of tokens
 	return initToken, Span{1, 1, tokenizer.lineNo, tokenizer.colNo}, nil
+}
+
+// applyExternalClassification applies external classification to all relevant tokens
+func (t *Tokenizer) applyExternalClassification(classifier *ExternalClassifier) *MonogramError {
+	// Step 1: Collect tokens and send unique token texts to classifier
+	var tokensToClassify []*Token
+
+	for _, token := range t.tokens {
+		// Only classify identifiers and signs
+		if token.Type == Identifier || token.Type == Sign || token.Type == OpenBracket || token.Type == CloseBracket {
+			classifier.AddToken(token.Text)
+			tokensToClassify = append(tokensToClassify, token)
+		}
+	}
+
+	// Check if we have any tokens to classify
+	if len(tokensToClassify) == 0 {
+		return nil
+	}
+
+	// Step 2: Process the batch
+	if err := classifier.ProcessBatch(); err != nil {
+		return &MonogramError{
+			Message: fmt.Sprintf("external classifier batch processing error: %v", err),
+			Line:    1,
+			Column:  1,
+		}
+	}
+
+	// Step 3: Apply classifications to all tokens using the map
+	for _, token := range tokensToClassify {
+		classification, err := classifier.GetClassification(token.Text)
+		if err != nil {
+			return &MonogramError{
+				Message: fmt.Sprintf("external classifier error getting classification for token '%s': %v", token.Text, err),
+				Line:    token.Span.StartLine,
+				Column:  token.Span.StartColumn,
+			}
+		}
+
+		// Check for missing closing keywords
+		if classification.Role == "S" && len(classification.EndTokens) == 0 {
+			return &MonogramError{
+				Message: fmt.Sprintf("missing closing token for form-start token '%s'", token.Text),
+				Line:    token.Span.StartLine,
+				Column:  token.Span.StartColumn,
+			}
+		}
+
+		// Apply the classification to the token
+		if err := t.applyClassificationToToken(token, classification); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// applyClassificationToToken applies a single classification result to a token
+func (t *Tokenizer) applyClassificationToToken(token *Token, classification *ExternalTokenClassification) *MonogramError {
+	switch classification.Role {
+	case "V": // Variable
+		token.Type = Identifier
+		token.SubType = IdentifierVariable
+
+	case "P": // Prefix form
+		token.Type = Identifier
+		token.SubType = IdentifierFormPrefix
+
+	case "S": // Form-start
+		token.Type = Identifier
+		token.SubType = IdentifierFormStart
+		for _, t := range classification.EndTokens {
+			token.SubTokens = append(token.SubTokens, &Token{Type: Identifier, SubType: IdentifierFormEnd, Text: t, Span: Span{-1, -1, -1, -1}, IsMultiLine: false})
+		}
+
+	case "E": // Form-end
+		token.Type = Identifier
+		token.SubType = IdentifierFormEnd
+
+	case "O": // Operator
+		token.Type = Sign
+		token.SubType = SignOperator
+		// Set precedence in the cached precedence
+		token.cachedPrecedence = OperatorPrecedence{
+			isInitialised:     true,
+			canBePrefix:       classification.PrefixPrec > 0,
+			canBeInfix:        classification.InfixPrec > 0,
+			canBePostfix:      classification.PostfixPrec > 0,
+			prefixPrecedence:  OpPrec(classification.PrefixPrec),
+			infixPrecedence:   OpPrec(classification.InfixPrec),
+			postfixPrecedence: OpPrec(classification.PostfixPrec),
+		}
+
+	case "L": // Simple label
+		token.Type = Identifier
+		token.SubType = IdentifierSimpleLabel
+
+	case "C": // Compound label
+		token.Type = Identifier
+		token.SubType = IdentifierCompoundLabel
+
+	case "[": // Open bracket
+		token.Type = OpenBracket
+		token.SubType = BracketOther
+		token.IsInfixBracket = classification.IsInfixBracket
+		token.IsOutfixBracket = classification.IsOutfixBracket
+		for _, t := range classification.EndTokens {
+			token.SubTokens = append(token.SubTokens, &Token{Type: CloseBracket, SubType: BracketOther, Text: t, Span: Span{-1, -1, -1, -1}, IsMultiLine: false})
+		}
+
+	case "]": // Close bracket
+		token.Type = CloseBracket
+		token.SubType = BracketOther
+
+	case "X": // Exception
+		return &MonogramError{
+			Message: fmt.Sprintf("external classifier exception: %s", classification.ExceptionReason),
+			Line:    token.Span.StartLine,
+			Column:  token.Span.StartColumn,
+		}
+
+	case "U": // Unclassified - leave token unchanged
+		// Do nothing - token remains as it was originally classified
+
+	default:
+		return &MonogramError{
+			Message: fmt.Sprintf("unknown classification role from external classifier: %s", classification.Role),
+			Line:    token.Span.StartLine,
+			Column:  token.Span.StartColumn,
+		}
+	}
+
+	return nil
 }

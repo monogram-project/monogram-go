@@ -1,0 +1,10 @@
+# Basic test configuration file
+# Used for functional testing of configuration file behavior
+
+# Default configuration values for testing
+option-format: "xml"
+option-indent: 4
+option-default-label: "test"
+option-include-spans: false
+option-decimal: false
+option-check-literals: true

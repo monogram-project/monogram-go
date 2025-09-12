@@ -124,3 +124,17 @@ func (b *FormBuilder) Build(endForm LineCol, separator string) *Node {
 	}
 	return b.node
 }
+
+// TrimValue trims a value if it's a token value and trimming is enabled
+func TrimValue(key, value string, trimLength int) string {
+	if key == OptionValue && trimLength > 0 && len(value) > trimLength {
+		// Reserve space for Unicode ellipsis (1 character: "…")
+		if trimLength >= 2 {
+			return value[:trimLength-1] + "…"
+		} else if trimLength >= 1 {
+			// If trim length is too small for ellipsis, just truncate
+			return value[:trimLength]
+		}
+	}
+	return value
+}

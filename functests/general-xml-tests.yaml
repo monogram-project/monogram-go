@@ -162,7 +162,7 @@ tests:
       </unit>
 
   - name: "Factorial example"
-    command: "{command} --format xml --one --default-breaker more"
+    command: "{command} --format xml --one --default-label more"
     input: |
       # The factorial function in monogram.
       def f(n):
