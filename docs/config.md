@@ -1,6 +1,7 @@
 # Configuration File Support
 
-The monogram tool now supports configuration files in YAML format using the `--config` (`-c`) flag.
+The monogram tool now supports configuration files in YAML format using the
+`--config` (`-c`) flag.
 
 ## Usage
 
@@ -19,7 +20,8 @@ The configuration file supports the following options:
 - `option-decimal`: Decode numbers in base 10 (true/false)
 - `option-check-literals`: Check regex and literal string validity (true/false)
 - `option-use-classifier`: Optional command to use to classify tokens.
-- `option-trim-token-on-output`: Trims the width of tokens to a maximum for display purposes (e.g. with Mermaid output)
+- `option-trim-token-on-output`: Trims the width of tokens to a maximum for
+  display purposes (e.g. with Mermaid output)
 
 
 ## Example Configuration
@@ -36,7 +38,8 @@ option-check-literals: true
 
 ## Precedence
 
-Command-line flags always take precedence over configuration file settings. This allows you to:
+Command-line flags always take precedence over configuration file settings. This
+allows you to:
 
 1. Set common defaults in your config file
 2. Override specific settings for individual runs using command-line flags

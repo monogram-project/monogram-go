@@ -18,8 +18,9 @@ Following the style in https://keepachangelog.com/en/1.0.0/
 
 - `@` can now be used as an operator.
 
-- A new option for trimming token-text on output is now available: --trim-token-on-output=WIDTH. This is
-  intended for making Mermaid diagrams less unwieldy.
+- A new option for trimming token-text on output is now available:
+  `--trim-token-on-output=WIDTH`. This is intended for making Mermaid diagrams
+  and other presentation formats less unwieldy.
 
 
 
