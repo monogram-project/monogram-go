@@ -17,6 +17,7 @@ add-decision TOPIC:
 jumpstart:
     sh jumpstart.sh
 
+# BUMP = major|minor|patch|build
 # Bump the version of monogram and optionally commit and push
 bump BUMP:
     python3 ./scripts/bump.py --bump={{BUMP}} --save 
@@ -48,10 +49,7 @@ clean:
 
 # This is a recipe to build all the binaries that we can in order to
 # test the build process. It is not intended to be run in production.
-build-all: build-full build-mini build-for-docker build-calc build-re-classify
-
-build-re-classify:
-    go build -o re-classify ./cmd/re-classify
+build-all: build-full build-mini build-for-docker build-calc
 
 build-calc:
     # Build the calculator executable

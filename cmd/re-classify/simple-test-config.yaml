@@ -1,5 +1,0 @@
-# Simple test configuration for re-classify tool
-
-surround-regexp:
-  - start: begin
-    end: [end, finish]
